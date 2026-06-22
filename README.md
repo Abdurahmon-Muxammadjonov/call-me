@@ -29,8 +29,23 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Backend (procell-backend)
+
+Bu frontend alohida Express + Supabase backendiga ulanadi (`procell-backend`, port `5001`).
+Backendda bajarilishi kerak bo'lgan ishlar `BACKEND_PROMPT.md` da yozilgan.
+
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Muhim:** Frontend backendga `NEXT_PUBLIC_API_BASE` env-o'zgaruvchisi orqali ulanadi.
+Lokal ishlashda u `http://localhost:5001` (default). Production'da quyidagilar shart:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Backendni ommaviy joyga deploy qiling** (Railway / Render / Fly / VPS) va **HTTPS** manzil oling.
+   Vercel HTTPS bo'lgani uchun backend ham HTTPS bo'lishi kerak (aks holda brauzer "mixed content" deb bloklaydi).
+2. Vercel loyiha sozlamalarida env qo'ying:
+   ```
+   NEXT_PUBLIC_API_BASE=https://<backend-ommaviy-manzili>
+   ```
+3. Backend CORS frontend domenini ruxsat berishi kerak (hozir `cors()` hammaga ochiq — yetarli).
+4. Supabase allaqachon bulutda — DB tomoni tayyor.
+
+`NEXT_PUBLIC_API_BASE` qo'yilmasa, deploy'dagi sayt `localhost:5001` ni qidiradi va backend "oflayn" ko'rinadi.
