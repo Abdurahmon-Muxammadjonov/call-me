@@ -1,3 +1,62 @@
+# Node
+node_modules/
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Next.js cache
+.next/cache/
+
+# Environment variables - keep ALL env files out of the repo
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test coverage
+coverage/
+
+# Misc caches
+.cache/
+.parcel-cache/
+.turbo/
+
+# Vercel/Now
+.vercel/
+
+# System files
+.DS_Store
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Optional: local env override files created by tools
+local.env
+
+# Ignore build output from storybook or other tools
+storybook-static/
+
+# Ignore package manager lockfiles? (Usually keep lockfiles committed.)
+# If you use pnpm with a workspace, you might want to ignore .pnp.js
+.pnp
+.pnp.js
+
+# OS generated files
+Thumbs.db
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
