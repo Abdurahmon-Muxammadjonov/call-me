@@ -28,6 +28,12 @@ export const Icons = {
       <path d="M4 12v0M8 8v8M12 4v16M16 8v8M20 11v2" />
     </svg>
   ),
+  pencil: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+    </svg>
+  ),
   upload: (p: IconProps) => (
     <svg {...base(p)}>
       <path d="M12 16V4m0 0 4 4m-4-4L8 8" />

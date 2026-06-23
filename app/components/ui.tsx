@@ -72,14 +72,17 @@ export function Card({
   className = "",
   glow = false,
   hover = false,
+  onClick,
 }: {
   children: ReactNode;
   className?: string;
   glow?: boolean;
   hover?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <div
+      onClick={onClick}
       className={`glass rounded-2xl ${glow ? "glow-ring" : ""} ${
         hover ? "transition-all duration-300 hover:scale-[1.02] hover:shadow-lg" : ""
       } ${className}`}

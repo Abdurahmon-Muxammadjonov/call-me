@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type SyntheticEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent, type ReactNode } from "react";
 import { Icons, type IconKey } from "./Icons";
 import { fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
 import {
@@ -9,6 +9,7 @@ import {
   listCalls,
   getCall,
   analyzeCall,
+  analyzeCallFile,
   formatUZS,
   formatDateTime,
   formatSeconds,
@@ -320,6 +321,7 @@ export function RecordingsView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [mgrFilter, setMgrFilter] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -344,10 +346,18 @@ export function RecordingsView() {
   }, []);
 
   const nameOf = (id: string) => managers[id] || `${id.slice(0, 8)}…`;
+  // O'chirilgan operatorlarning qo'ng'iroqlarini ko'rsatmaymiz: menejerlar
+  // ro'yxati bo'lsa, faqat mavjud (yoki menejersiz/test) qo'ng'iroqlar qoladi.
+  // Dinamik — operator o'chirilsa, uning yozuvlari avtomatik yo'qoladi.
+  const haveManagers = Object.keys(managers).length > 0;
+  let visible = haveManagers ? calls.filter((c) => !c.manager_id || managers[c.manager_id]) : calls;
+  if (mgrFilter) visible = visible.filter((c) => c.manager_id === mgrFilter);
   const q = query.trim().toLowerCase();
   const filtered = q
-    ? calls.filter((c) => nameOf(c.manager_id).toLowerCase().includes(q) || c.rop_comment.toLowerCase().includes(q))
-    : calls;
+    ? visible.filter((c) => nameOf(c.manager_id).toLowerCase().includes(q) || c.rop_comment.toLowerCase().includes(q))
+    : visible;
+  // Faqat qo'ng'irog'i bor operatorlar (jonli) — filtr ro'yxati uchun.
+  const operatorOptions = Object.entries(managers).filter(([id]) => calls.some((c) => c.manager_id === id));
 
   return (
     <>
@@ -357,14 +367,29 @@ export function RecordingsView() {
             title="Audio yozuvlar"
             subtitle="Backenddan jonli yuklangan qo'ng'iroqlar jurnali"
             action={
-              <div className="relative">
-                <Icons.search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Menejer yoki izoh..."
-                  className="w-44 rounded-xl border border-slate-200/70 bg-white/60 py-2 pl-9 pr-3 text-sm outline-none transition focus:w-56 focus:border-indigo-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-100"
-                />
+              <div className="flex items-center gap-2">
+                {operatorOptions.length > 0 && (
+                  <select
+                    value={mgrFilter}
+                    onChange={(e) => setMgrFilter(e.target.value)}
+                    className="rounded-xl border border-slate-200/70 bg-white/60 py-2 pl-3 pr-8 text-sm text-slate-600 outline-none transition focus:border-indigo-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200"
+                    title="Operator bo'yicha filtr"
+                  >
+                    <option value="">Barcha operatorlar</option>
+                    {operatorOptions.map(([id, name]) => (
+                      <option key={id} value={id}>{name}</option>
+                    ))}
+                  </select>
+                )}
+                <div className="relative">
+                  <Icons.search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Menejer yoki izoh..."
+                    className="w-44 rounded-xl border border-slate-200/70 bg-white/60 py-2 pl-9 pr-3 text-sm outline-none transition focus:w-56 focus:border-indigo-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-100"
+                  />
+                </div>
               </div>
             }
           />
@@ -456,6 +481,7 @@ function CallDetailModal({ id, managerName, onClose }: { id: string; managerName
   const [detail, setDetail] = useState<CallDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [realDur, setRealDur] = useState<number | null>(null);
 
   // Mounted fresh per call (keyed by id in the parent), so all state is set
   // only after the await — no synchronous setState cascade inside the effect.
@@ -502,9 +528,16 @@ function CallDetailModal({ id, managerName, onClose }: { id: string; managerName
             <div className="space-y-5 border-slate-200/60 p-6 dark:border-slate-700/50 md:border-r">
               <div className="grid grid-cols-3 gap-3">
                 <StatBox label="KPI" value={String(Math.round(detail.kpi_score))} cls={scoreColor(detail.kpi_score)} />
-                <StatBox label="Davomiylik" value={formatSeconds(detail.duration)} />
+                <StatBox label="Davomiylik" value={formatSeconds(realDur ?? detail.duration)} />
                 <StatBox label="Jarima" value={detail.penalty_amount ? formatUZS(detail.penalty_amount) : "0"} cls="text-rose-500" />
               </div>
+
+              {detail.audio_url && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Qayta eshitish</p>
+                  <AudioPlayer src={detail.audio_url} onDuration={setRealDur} />
+                </div>
+              )}
 
               {detail.conversions && (
                 <div>
@@ -579,13 +612,115 @@ function LabeledBar({ label, pct }: { label: string; pct: number }) {
   );
 }
 
+/* ---------- Audio player (qayta eshitish) ----------
+ * Qo'ng'iroq audiosini platforma ichida tinglash uchun. `onDuration` orqali
+ * audioning HAQIQIY davomiyligini (metadata'dan) tashqariga beradi — backenddagi
+ * noto'g'ri saqlangan duration o'rniga shuni ko'rsatish mumkin. */
+function AudioPlayer({ src, onDuration }: { src: string; onDuration?: (sec: number) => void }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [cur, setCur] = useState(0);
+  const [dur, setDur] = useState(0);
+  const [rate, setRate] = useState(1);
+  const [failed, setFailed] = useState(false);
+
+  function toggle() {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) a.play().catch(() => setFailed(true));
+    else a.pause();
+  }
+  function seek(e: React.ChangeEvent<HTMLInputElement>) {
+    const a = audioRef.current;
+    if (!a) return;
+    a.currentTime = Number(e.target.value);
+    setCur(a.currentTime);
+  }
+  function cycleRate() {
+    const steps = [1, 1.25, 1.5, 2, 0.75];
+    const next = steps[(steps.indexOf(rate) + 1) % steps.length];
+    setRate(next);
+    if (audioRef.current) audioRef.current.playbackRate = next;
+  }
+
+  if (failed) {
+    return (
+      <div className="flex items-center gap-2.5 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-600 dark:text-amber-400">
+        <Icons.close className="h-4 w-4 shrink-0" />
+        Audioni ijro etib bo&apos;lmadi (havola yaroqsiz yoki ruxsat yo&apos;q).
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-slate-200/60 bg-white/50 p-3 dark:border-slate-700/50 dark:bg-slate-800/40">
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="metadata"
+        onLoadedMetadata={(e) => {
+          const d = e.currentTarget.duration;
+          if (Number.isFinite(d) && d > 0) { setDur(d); onDuration?.(d); }
+        }}
+        onTimeUpdate={(e) => setCur(e.currentTarget.currentTime)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onError={() => setFailed(true)}
+      />
+      <button
+        onClick={toggle}
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-linear-to-br from-indigo-500 to-cyan-400 text-white shadow-md transition hover:scale-105"
+        title={playing ? "Pauza" : "Eshitish"}
+      >
+        {playing ? (
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+        ) : (
+          <Icons.play className="h-5 w-5" />
+        )}
+      </button>
+      <div className="min-w-0 flex-1">
+        <input
+          type="range"
+          min={0}
+          max={dur || 0}
+          value={cur}
+          onChange={seek}
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-indigo-500 dark:bg-slate-700"
+        />
+        <div className="mt-1 flex items-center justify-between font-mono text-[11px] text-slate-400">
+          <span>{formatSeconds(cur)}</span>
+          <span>{dur ? formatSeconds(dur) : "—:—"}</span>
+        </div>
+      </div>
+      <button
+        onClick={cycleRate}
+        className="shrink-0 rounded-lg border border-slate-200/70 px-2.5 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-500/10 dark:border-slate-700/60 dark:text-slate-300"
+        title="Tezlik"
+      >
+        {rate}×
+      </button>
+      <a
+        href={src}
+        download
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200/70 text-slate-400 transition hover:bg-slate-500/10 hover:text-slate-600 dark:border-slate-700/60 dark:hover:text-slate-200"
+        title="Yuklab olish"
+      >
+        <Icons.upload className="h-4 w-4 rotate-180" />
+      </a>
+    </div>
+  );
+}
+
 /* ============================ UPLOAD ============================ */
 type UploadStatus = "idle" | "analyzing" | "done" | "error";
 
 export function UploadView() {
   const [managers, setManagers] = useState<Manager[]>([]);
   const [managerId, setManagerId] = useState("");
+  const [mode, setMode] = useState<"url" | "file">("url");
   const [audioUrl, setAudioUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -606,7 +741,9 @@ export function UploadView() {
   }, []);
 
   const isUrlValid = /^https?:\/\/\S+$/i.test(audioUrl.trim());
-  const canSubmit = !!managerId && isUrlValid && status !== "analyzing";
+  const inputReady = mode === "url" ? isUrlValid : !!file;
+  // Menejer (id) hozircha ixtiyoriy — tanlanmasa ham tahlil yuboriladi.
+  const canSubmit = inputReady && status !== "analyzing";
 
   async function handleAnalyze(e: SyntheticEvent) {
     e.preventDefault();
@@ -615,7 +752,10 @@ export function UploadView() {
     setError(null);
     setResult(null);
     try {
-      const res = await analyzeCall({ audio_url: audioUrl.trim(), manager_id: managerId });
+      const res =
+        mode === "file" && file
+          ? await analyzeCallFile({ file, manager_id: managerId })
+          : await analyzeCall({ audio_url: audioUrl.trim(), manager_id: managerId });
       setResult(res);
       setStatus("done");
     } catch (err) {
@@ -632,14 +772,14 @@ export function UploadView() {
         <form onSubmit={handleAnalyze} className="space-y-5">
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Menejer (qaysi operator nomidan)
+              Menejer <span className="font-normal normal-case text-slate-400">(ixtiyoriy — hozircha shart emas)</span>
             </label>
             <select
               value={managerId}
               onChange={(e) => setManagerId(e.target.value)}
               className="w-full rounded-xl border border-slate-200/70 bg-white/60 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200"
             >
-              {managers.length === 0 && <option value="">Menejerlar topilmadi</option>}
+              <option value="">— Menejersiz (test tahlil) —</option>
               {managers.map((m) => (
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
@@ -648,19 +788,87 @@ export function UploadView() {
 
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Audio URL (ommaviy http/https havola)
+              Audio manbasi
             </label>
-            <input
-              type="url"
-              value={audioUrl}
-              onChange={(e) => setAudioUrl(e.target.value)}
-              placeholder="https://.../qongiroq.mp3"
-              className="w-full rounded-xl border border-slate-200/70 bg-white/60 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200"
-            />
-            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400">
-              <Icons.lock className="h-3.5 w-3.5" />
-              Backend audioni shu havoladan yuklab oladi · MP3/WAV/M4A · maks. 20MB
-            </p>
+            {/* URL / Fayl rejimi tanlovi */}
+            <div className="mb-3 inline-flex rounded-xl border border-slate-200/70 bg-white/50 p-1 dark:border-slate-700/60 dark:bg-slate-800/40">
+              {([
+                { id: "url", label: "Havola (URL)", icon: "lock" },
+                { id: "file", label: "Fayl yuklash", icon: "upload" },
+              ] as const).map((m) => {
+                const Icon = Icons[m.icon];
+                const active = mode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => { setMode(m.id); setError(null); }}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                      active
+                        ? "bg-linear-to-r from-indigo-500 to-cyan-400 text-white shadow-sm"
+                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {mode === "url" ? (
+              <>
+                <input
+                  type="url"
+                  value={audioUrl}
+                  onChange={(e) => setAudioUrl(e.target.value)}
+                  placeholder="https://.../qongiroq.mp3"
+                  className="w-full rounded-xl border border-slate-200/70 bg-white/60 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200"
+                />
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+                  <Icons.lock className="h-3.5 w-3.5" />
+                  Backend audioni shu havoladan yuklab oladi · MP3/WAV/M4A · maks. 20MB
+                </p>
+              </>
+            ) : (
+              <>
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300/70 bg-white/40 px-4 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-500/5 dark:border-slate-700/60 dark:bg-slate-800/30">
+                  <input
+                    type="file"
+                    accept="audio/*,.mp3,.wav,.m4a,.ogg"
+                    className="hidden"
+                    onChange={(e) => { setFile(e.target.files?.[0] ?? null); setError(null); }}
+                  />
+                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-400 text-white">
+                    <Icons.upload className="h-5 w-5" />
+                  </span>
+                  {file ? (
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                      {file.name}
+                      <span className="ml-2 font-normal text-slate-400">
+                        ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                      </span>
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                        Audio faylni tanlash uchun bosing
+                      </span>
+                      <span className="text-xs text-slate-400">MP3/WAV/M4A/OGG · maks. 20MB</span>
+                    </>
+                  )}
+                </label>
+                {file && (
+                  <button
+                    type="button"
+                    onClick={() => setFile(null)}
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-500 hover:underline"
+                  >
+                    <Icons.close className="h-3.5 w-3.5" /> Faylni olib tashlash
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           <button
@@ -707,7 +915,7 @@ export function UploadView() {
               <Icons.waveform className="h-6 w-6" />
             </div>
             <p className="mt-4">Natija shu yerda chiqadi.</p>
-            <p className="mt-1 text-xs">Menejerni tanlang, audio URL kiriting va tahlilni boshlang.</p>
+            <p className="mt-1 text-xs">Menejerni tanlang, audio havola yoki fayl bering va tahlilni boshlang.</p>
           </div>
         )}
       </Card>
@@ -800,6 +1008,9 @@ export function DeepAuditView() {
   }, []);
 
   const nameOf = (id: string) => names[id] || `${id.slice(0, 8)}…`;
+  // O'chirilgan operatorlarning qo'ng'iroqlarini ro'yxatdan chiqaramiz (dinamik).
+  const haveNames = Object.keys(names).length > 0;
+  const visibleCalls = haveNames ? calls.filter((c) => !c.manager_id || names[c.manager_id]) : calls;
 
   return (
     <div className="space-y-6">
@@ -816,11 +1027,11 @@ export function DeepAuditView() {
           <select
             value={selectedId ?? ""}
             onChange={(e) => setSelectedId(e.target.value || null)}
-            disabled={listLoading || calls.length === 0}
+            disabled={listLoading || visibleCalls.length === 0}
             className="w-full max-w-xs rounded-xl border border-slate-200/70 bg-white/60 px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-indigo-400 disabled:opacity-50 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200"
           >
-            {calls.length === 0 && <option value="">Qo&apos;ng&apos;iroqlar yo&apos;q</option>}
-            {calls.map((c) => (
+            {visibleCalls.length === 0 && <option value="">Qo&apos;ng&apos;iroqlar yo&apos;q</option>}
+            {visibleCalls.map((c) => (
               <option key={c.id} value={c.id}>
                 {nameOf(c.manager_id)} · {formatDateTime(c.created_at)} · KPI {Math.round(c.kpi_score)}
               </option>
@@ -858,6 +1069,9 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
   const [detail, setDetail] = useState<CallDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Audioning haqiqiy davomiyligi (metadata'dan) — backend duration noto'g'ri
+  // bo'lsa shuni ko'rsatamiz.
+  const [realDur, setRealDur] = useState<number | null>(null);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -893,6 +1107,8 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
   if (!detail) return <Empty text="Qo'ng'iroq topilmadi." />;
 
   const breakdown = detail.criteria_scores ?? [];
+  const shownDuration = realDur ?? detail.duration;
+  const nextSteps = detail.next_steps ?? [];
 
   return (
     <div className="space-y-6">
@@ -907,9 +1123,9 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
 
         {/* AI auditor xulosasi */}
         <Card className="p-6 lg:col-span-2">
-          <SectionTitle title="AI auditor xulosasi (ROP izohi)" subtitle={`Davomiylik · ${formatSeconds(detail.duration)}`} />
+          <SectionTitle title="AI auditor xulosasi (ROP izohi)" subtitle={`Davomiylik · ${formatSeconds(shownDuration)}`} />
           <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-            {detail.rop_comment || "Izoh berilmagan."}
+            {detail.summary || detail.rop_comment || "Izoh berilmagan."}
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <MiniStat label="Hissiyot" value={detail.sentiment || "—"} accent="violet" />
@@ -919,6 +1135,45 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
           </div>
         </Card>
       </div>
+
+      {/* Qayta eshitish — qo'ng'iroq audiosi */}
+      {detail.audio_url && (
+        <Card className="p-6">
+          <SectionTitle title="Qo'ng'iroqni qayta eshitish" subtitle="Audioni platforma ichida tinglang · tezlikni o'zgartiring" />
+          <AudioPlayer src={detail.audio_url} onDuration={setRealDur} />
+        </Card>
+      )}
+
+      {/* Boyitilgan tahlil bloklari — backend bersa ko'rinadi */}
+      {(detail.client_info || detail.final_agreement || nextSteps.length > 0) && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {detail.client_info && (
+            <Card className="p-6">
+              <SectionTitle title="Mijoz haqida ma'lumot" />
+              <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">{detail.client_info}</p>
+            </Card>
+          )}
+          {detail.final_agreement && (
+            <Card className="p-6">
+              <SectionTitle title="Oxirgi kelishuv" />
+              <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">{detail.final_agreement}</p>
+            </Card>
+          )}
+          {nextSteps.length > 0 && (
+            <Card className="p-6">
+              <SectionTitle title="Keyingi qadamlar" />
+              <ol className="space-y-2">
+                {nextSteps.map((step, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-linear-to-br from-indigo-500 to-cyan-400 text-[10px] font-bold text-white">{i + 1}</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </Card>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Mezonlar / konversiya bo'yicha tahlil */}
@@ -1050,12 +1305,16 @@ const CATEGORY_PALETTE = [
 
 export function CategoriesView() {
   const [cats, setCats] = useState<CriteriaCategory[]>([]);
+  const [criteria, setCriteria] = useState<Criterion[]>([]);
+  const [openCat, setOpenCat] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      setCats(deriveCategories(await listCriteria(signal)));
+      const list = await listCriteria(signal);
+      setCriteria(list);
+      setCats(deriveCategories(list));
       setError(null);
     } catch (e) {
       if ((e as Error)?.name !== "AbortError")
@@ -1107,7 +1366,7 @@ export function CategoriesView() {
           {cats.map((cat, i) => {
             const color = CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
             return (
-              <Card key={cat.name} hover className="p-6">
+              <Card key={cat.name} hover className="cursor-pointer p-6" onClick={() => setOpenCat(cat.name)}>
                 <div className="flex items-start justify-between">
                   <div className={`h-10 w-10 rounded-xl bg-linear-to-br ${color} shadow-md`} />
                   <div className="flex flex-col items-end gap-1">
@@ -1129,11 +1388,76 @@ export function CategoriesView() {
                     <div className={`h-full rounded-full bg-linear-to-r ${color}`} style={{ width: `${cat.weight}%` }} />
                   </div>
                 </div>
+                <p className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-500 dark:text-cyan-400">
+                  <Icons.scan className="h-3.5 w-3.5" /> Mezonlarni ko&apos;rish
+                </p>
               </Card>
             );
           })}
         </div>
       )}
+
+      {openCat && (
+        <CategoryCriteriaModal
+          category={openCat}
+          criteria={criteria.filter((c) => ((c.category && c.category.trim()) || "Boshqa mezonlar") === openCat)}
+          onClose={() => setOpenCat(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* Kategoriya ichidagi mezonlar ro'yxati (drill-down modal). */
+function CategoryCriteriaModal({
+  category,
+  criteria,
+  onClose,
+}: {
+  category: string;
+  criteria: Criterion[];
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-6" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-white/90 shadow-2xl backdrop-blur-xl dark:bg-slate-900/90 sm:rounded-3xl"
+      >
+        <div className="flex items-center justify-between border-b border-slate-200/60 px-6 py-4 dark:border-slate-700/50">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{category}</h3>
+            <p className="text-xs text-slate-400">{criteria.length} ta mezon · {criteria.filter((c) => c.is_active).length} aktiv</p>
+          </div>
+          <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-500/10 hover:text-slate-600 dark:hover:text-slate-200">
+            <Icons.close className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="space-y-3 overflow-y-auto p-6">
+          {criteria.length === 0 ? (
+            <p className="text-sm text-slate-400">Bu kategoriyada mezon yo&apos;q.</p>
+          ) : (
+            criteria.map((c) => (
+              <div key={c.id} className="rounded-xl border border-slate-200/60 bg-white/40 p-4 dark:border-slate-700/50 dark:bg-slate-800/30">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{c.title}</p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <CriterionTypeBadge type={c.type} />
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${c.is_active ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-slate-500/10 text-slate-400"}`}>
+                      {c.is_active ? "Aktiv" : "Nofaol"}
+                    </span>
+                  </div>
+                </div>
+                {c.description && <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{c.description}</p>}
+                <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-400">
+                  <span>Og&apos;irlik: <b className="text-slate-600 dark:text-slate-300">{c.weight ?? 0}</b></span>
+                  {(c.penalty_amount ?? 0) > 0 && <span>Jarima: <b className="text-rose-500">{formatUZS(c.penalty_amount)}</b></span>}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1144,6 +1468,7 @@ export function CriteriaView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Criterion | null>(null);
   const [busy, setBusy] = useState(false);
   const [toDelete, setToDelete] = useState<Criterion | null>(null);
 
@@ -1187,6 +1512,21 @@ export function CriteriaView() {
     }
   }
 
+  async function handleUpdate(input: NewCriterion) {
+    if (!editing) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await updateCriterion(editing.id, input);
+      setEditing(null);
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message || "Qoida saqlanmadi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleToggle(cr: Criterion) {
     setError(null);
     try {
@@ -1218,9 +1558,14 @@ export function CriteriaView() {
             title="Baholash qoidalari"
             subtitle="Aktiv qoidalarni AI auditor (Gemini) har tahlilda hisobga oladi"
             action={
-              <PillButton icon="ruler" accent="violet" onClick={() => setAdding((v) => !v)}>
-                {adding ? "Bekor qilish" : "Mezon qo'shish"}
-              </PillButton>
+              <div className="flex items-center gap-2">
+                <PillButton icon="layers" accent="cyan" variant="ghost" onClick={() => refresh()}>
+                  Yangilash
+                </PillButton>
+                <PillButton icon="ruler" accent="violet" onClick={() => { setEditing(null); setAdding((v) => !v); }}>
+                  {adding ? "Bekor qilish" : "Mezon qo'shish"}
+                </PillButton>
+              </div>
             }
           />
         </div>
@@ -1296,13 +1641,22 @@ export function CriteriaView() {
                       </button>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setToDelete(cr)}
-                        title="O'chirish"
-                        className="rounded-lg border border-rose-300/50 p-2 text-rose-500 transition hover:scale-[1.05] hover:bg-rose-500/10"
-                      >
-                        <Icons.close className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => { setAdding(false); setEditing(cr); }}
+                          title="Tahrirlash"
+                          className="rounded-lg border border-indigo-300/50 p-2 text-indigo-500 transition hover:scale-[1.05] hover:bg-indigo-500/10 dark:text-cyan-400"
+                        >
+                          <Icons.pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setToDelete(cr)}
+                          title="O'chirish"
+                          className="rounded-lg border border-rose-300/50 p-2 text-rose-500 transition hover:scale-[1.05] hover:bg-rose-500/10"
+                        >
+                          <Icons.close className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -1312,12 +1666,14 @@ export function CriteriaView() {
         </div>
       </Card>
 
-      {adding && (
+      {(adding || editing) && (
         <AddCriterionForm
+          key={editing?.id ?? "new"}
           busy={busy}
           categories={categoryNames(criteria)}
-          onSubmit={handleAdd}
-          onCancel={() => setAdding(false)}
+          initial={editing}
+          onSubmit={editing ? handleUpdate : handleAdd}
+          onCancel={() => { setAdding(false); setEditing(null); }}
         />
       )}
 
@@ -1356,21 +1712,24 @@ function CriterionTypeBadge({ type }: { type?: CriterionType | null }) {
 function AddCriterionForm({
   busy,
   categories,
+  initial,
   onSubmit,
   onCancel,
 }: {
   busy: boolean;
   categories: string[];
+  initial?: Criterion | null;
   onSubmit: (input: NewCriterion) => void;
   onCancel: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [type, setType] = useState<CriterionType>("Majburiy");
-  const [weight, setWeight] = useState("10");
-  const [penalty, setPenalty] = useState("0");
-  const [isActive, setIsActive] = useState(true);
+  const isEdit = !!initial;
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [category, setCategory] = useState(initial?.category ?? "");
+  const [type, setType] = useState<CriterionType>(initial?.type ?? "Majburiy");
+  const [weight, setWeight] = useState(String(initial?.weight ?? 10));
+  const [penalty, setPenalty] = useState(String(initial?.penalty_amount ?? 0));
+  const [isActive, setIsActive] = useState(initial?.is_active ?? true);
   const [err, setErr] = useState("");
 
   function submit(e: SyntheticEvent) {
@@ -1412,7 +1771,7 @@ function AddCriterionForm({
   return (
     <Card glow className="p-6">
       <SectionTitle
-        title="Yangi qoida qo'shish"
+        title={isEdit ? "Qoidani tahrirlash" : "Yangi qoida qo'shish"}
         subtitle="Backendga (/criteria) saqlanadi — aktiv bo'lsa Gemini keyingi tahlilda shu qoidaga qarab ishlaydi. Kategoriya «Mezon kategoriyalari» bo'limida avtomatik guruhlanadi."
       />
       <form onSubmit={submit} className="space-y-4" noValidate>
@@ -1513,7 +1872,7 @@ function AddCriterionForm({
             className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-violet-500 to-fuchsia-500 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.02] disabled:opacity-60"
           >
             {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Icons.check className="h-4 w-4" />}
-            Qo&apos;shish
+            {isEdit ? "Saqlash" : "Qo'shish"}
           </button>
         </div>
       </form>

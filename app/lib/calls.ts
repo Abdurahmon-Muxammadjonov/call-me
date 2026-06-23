@@ -74,6 +74,12 @@ export interface CallDetail extends CallRow {
   sentiment?: string | null;
   risk?: string | null;
   criteria_scores?: CriterionScore[];
+  /* Boyitilgan AI tahlil bloklari — backend bulardan birortasini bersa,
+   * chuqur tahlilda alohida kartalarda jonli ko'rinadi (bo'lmasa yashiriladi). */
+  summary?: string | null; // Xulosa (rop_comment'dan boyroq, ko'p qatorli)
+  client_info?: string | null; // Mijoz haqida ma'lumot
+  final_agreement?: string | null; // Oxirgi kelishuv
+  next_steps?: string[] | null; // Keyingi qadamlar (raqamlangan ro'yxat)
 }
 
 /* POST /api/analyze-call javobidagi audit bloki. */
@@ -161,13 +167,40 @@ export async function getCall(id: string, signal?: AbortSignal): Promise<CallDet
  * qiladi. Backend audioni yuklab olib, Gemini'ga yuboradi va natijani bazaga
  * yozadi. Javob konvertsiz (yuqori darajada) keladi. */
 export async function analyzeCall(
-  input: { audio_url: string; manager_id: string },
+  input: { audio_url: string; manager_id?: string },
   signal?: AbortSignal
 ): Promise<AnalyzeResult> {
+  const body: Record<string, string> = { audio_url: input.audio_url };
+  if (input.manager_id) body.manager_id = input.manager_id; // ixtiyoriy — bo'lmasa yubormaymiz
   const res = await fetch(`${API_BASE}/api/analyze-call/`, {
     method: "POST",
     headers: JSON_HEADERS,
-    body: JSON.stringify(input),
+    body: JSON.stringify(body),
+    signal,
+  });
+  const json = (await res.json()) as Partial<AnalyzeResult> & { success: boolean; error?: string };
+  if (!res.ok || !json.success) {
+    throw new Error(json.error || `HTTP ${res.status}`);
+  }
+  return json as unknown as AnalyzeResult;
+}
+
+/* POST /api/analyze-call (multipart/form-data) — audio FAYLNI to'g'ridan-to'g'ri
+ * yuklab tahlil qiladi (havola emas). Backend `audio` maydonini (multipart)
+ * qabul qilib, vaqtincha saqlab yoki to'g'ridan-to'g'ri Gemini'ga uzatishi kerak;
+ * qolgan oqim (skoring, bazaga yozish) URL variantidagi bilan bir xil. */
+export async function analyzeCallFile(
+  input: { file: File; manager_id?: string },
+  signal?: AbortSignal
+): Promise<AnalyzeResult> {
+  const form = new FormData();
+  form.append("audio", input.file);
+  if (input.manager_id) form.append("manager_id", input.manager_id); // ixtiyoriy
+  const res = await fetch(`${API_BASE}/api/analyze-call/`, {
+    method: "POST",
+    // Content-Type'ni qo'lda qo'ymaymiz — brauzer multipart boundary'ni o'zi qo'yadi.
+    headers: { Accept: "application/json" },
+    body: form,
     signal,
   });
   const json = (await res.json()) as Partial<AnalyzeResult> & { success: boolean; error?: string };
