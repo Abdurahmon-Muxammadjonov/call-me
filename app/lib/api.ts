@@ -46,3 +46,64 @@ export function formatDuration(totalSeconds: number): string {
   const rem = s % 60;
   return `${m}:${rem.toString().padStart(2, "0")}`;
 }
+
+/* ---------- Period-over-Period (kunlik/haftalik/oylik) ---------- */
+export interface PopMetric {
+  current: number;
+  previous: number;
+  change_pct: number;
+}
+export interface PopBlock {
+  calls: PopMetric;
+  duration_minutes: PopMetric;
+  avg_kpi: PopMetric;
+}
+export interface PopStats {
+  daily: PopBlock;
+  weekly: PopBlock;
+  monthly: PopBlock;
+  generated_at: string;
+}
+
+/* GET /analytics/pop — backenddagi calls_pop_stats() funksiyasi qaytaradigan
+ * dinamik PoP statistikasi. platformId berilsa (va 'live' bo'lmasa) filtrlaydi. */
+export async function fetchPopStats(platformId?: string | null, signal?: AbortSignal): Promise<PopStats> {
+  const qs = platformId && platformId !== "live" ? `?platform_id=${encodeURIComponent(platformId)}` : "";
+  const res = await fetch(`${API_BASE}/analytics/pop${qs}`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    signal,
+  });
+  if (!res.ok) throw new Error(`pop ${res.status}`);
+  const json = (await res.json()) as { success: boolean; data: PopStats };
+  if (!json.success) throw new Error("pop: success=false");
+  return json.data;
+}
+
+/* ---------- Kunlik tarix (hamma kunlar saqlanadi) ---------- */
+export interface ConversionDay {
+  date: string;
+  traffic_conversion: number;
+  sales_conversion: number;
+  calls: number;
+}
+
+/* GET /api/management/conversion-history — so'nggi `days` kun bo'yicha kunlik
+ * konversiya/qo'ng'iroqlar tarixi (har kun alohida saqlangan). */
+export async function fetchConversionHistory(
+  platformId?: string | null,
+  days = 14,
+  signal?: AbortSignal,
+): Promise<ConversionDay[]> {
+  const params = new URLSearchParams({ days: String(days) });
+  if (platformId && platformId !== "live") params.set("platform_id", platformId);
+  const res = await fetch(`${API_BASE}/api/management/conversion-history?${params.toString()}`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    signal,
+  });
+  if (!res.ok) throw new Error(`conversion-history ${res.status}`);
+  const json = (await res.json()) as { success: boolean; data: ConversionDay[] };
+  if (!json.success) throw new Error("conversion-history: success=false");
+  return json.data;
+}

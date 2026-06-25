@@ -14,10 +14,16 @@ import {
   AmoCrmView,
 } from "./views";
 import { CompanyView } from "./CompanyView";
+import { ManagementView } from "./ManagementView";
+import { ComparisonView } from "./ComparisonView";
+import { StaffManager } from "./StaffManager";
 import type { Session } from "../lib/auth";
 
 const TAB_META: Record<TabId, { title: string; subtitle: string }> = {
   overview: { title: "Umumiy ko'rinish", subtitle: "Call-center sifat auditi bo'yicha umumiy holat" },
+  management: { title: "Boshqaruv paneli", subtitle: "Uch darajali rahbariyat tahlili va platformalar" },
+  comparison: { title: "Solishtirish paneli", subtitle: "Kunlik, haftalik va oylik natijalar — davrlararo solishtirish" },
+  staff: { title: "Xodimlarni boshqarish", subtitle: "Barcha xodimlar — sozlamalar, smena va skriptlar" },
   recordings: { title: "Audio yozuvlar", subtitle: "Transkripsiya qilingan qo'ng'iroqlar jurnali" },
   upload: { title: "Audio yuklash", subtitle: "Tahlil uchun yangi qo'ng'iroqlarni yuklang" },
   "deep-audit": { title: "Chuqur tahlil", subtitle: "Bitta qo'ng'iroqning batafsil AI auditi" },
@@ -30,6 +36,9 @@ const TAB_META: Record<TabId, { title: string; subtitle: string }> = {
 function renderTab(tab: TabId) {
   switch (tab) {
     case "overview": return <OverviewView />;
+    case "management": return <ManagementView />;
+    case "comparison": return <ComparisonView />;
+    case "staff": return <StaffManager />;
     case "recordings": return <RecordingsView />;
     case "upload": return <UploadView />;
     case "deep-audit": return <DeepAuditView />;

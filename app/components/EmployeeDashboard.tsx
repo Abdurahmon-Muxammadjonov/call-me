@@ -28,6 +28,10 @@ import {
   type Penalty,
 } from "../lib/store";
 import type { Session } from "../lib/auth";
+import { useLiveProfile, useScripts, useShift, type ScriptItem } from "../lib/realtime";
+import { useManagerRealtime, type ManagerShift } from "../lib/useManagerRealtime";
+import { NotificationBell } from "./NotificationBell";
+import { StaffRealtimeLayer } from "./StaffRealtimeLayer";
 
 type EmpTab = "overview" | "calls" | "schedule" | "tips" | "penalties";
 
@@ -96,8 +100,18 @@ export function EmployeeDashboard({
     onLogout();
   }
 
-  const name = emp?.name ?? session.name;
+  // Name sync — two layers, instant wins:
+  //   • useManagerRealtime: Supabase Realtime, ~1s (when configured)
+  //   • useLiveProfile: REST polling fallback (~8s)
+  const polledName = useLiveProfile(session.employeeId, emp?.name ?? session.name);
+  const rt = useManagerRealtime(session.employeeId);
+  const name = rt.name ?? polledName;
   const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  // Realtime shift override → threaded into the schedule cards.
+  const liveShift: ManagerShift | null = rt.shift;
+  // Admin biriktirgan skriptlar — Tavsiyalar bo'limida jonli ko'rinadi
+  // (StaffManager bilan bitta manba; admin qo'shsa, shu yerda darhol chiqadi).
+  const scripts = useScripts(session.employeeId);
   // Real performance from the backend; the viewing employee is, by definition,
   // online right now (their heartbeat is running).
   const perf: EmpPerf = {
@@ -199,6 +213,7 @@ export function EmployeeDashboard({
               <Icons.clock className="h-4 w-4 text-indigo-500 dark:text-cyan-400" />
               <LiveClock className="font-semibold text-slate-700 dark:text-slate-200" />
             </div>
+            <NotificationBell userId={session.employeeId} />
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
           </header>
 
@@ -209,11 +224,11 @@ export function EmployeeDashboard({
               ) : (
                 <>
                   {tab === "overview" && (
-                    <Overview name={name} title={session.title} email={emp?.email ?? session.email} initials={initials} perf={perf} totalPenalty={totalPenalty} />
+                    <Overview name={name} title={session.title} email={emp?.email ?? session.email} initials={initials} perf={perf} totalPenalty={totalPenalty} userId={session.employeeId} shiftOverride={liveShift} />
                   )}
                   {tab === "calls" && <CallsTab calls={perf.recentCalls} onOpen={setSheetCall} />}
-                  {tab === "schedule" && <ScheduleTab />}
-                  {tab === "tips" && <TipsTab tips={perf.tips} />}
+                  {tab === "schedule" && <ScheduleTab userId={session.employeeId} override={liveShift} />}
+                  {tab === "tips" && <TipsTab scripts={scripts} fallback={perf.tips} />}
                   {tab === "penalties" && <PenaltiesTab penalties={perf.penalties} total={totalPenalty} />}
                 </>
               )}
@@ -234,6 +249,10 @@ export function EmployeeDashboard({
         onConfirm={handleLogout}
         onCancel={() => setConfirmOut(false)}
       />
+
+      {/* Real-time listeners: kick-out on credential change + shift banners.
+          Booting to login reuses the same logout path (presence cleanup). */}
+      <StaffRealtimeLayer session={session} onLogout={handleLogout} />
     </div>
   );
 }
@@ -246,6 +265,8 @@ function Overview({
   initials,
   perf,
   totalPenalty,
+  userId,
+  shiftOverride,
 }: {
   name: string;
   title: string;
@@ -253,6 +274,8 @@ function Overview({
   initials: string;
   perf: EmpPerf;
   totalPenalty: number;
+  userId: string | undefined;
+  shiftOverride: ManagerShift | null;
 }) {
   return (
     <div className="space-y-6">
@@ -274,7 +297,7 @@ function Overview({
         <StatTile icon="ruler" grad="from-rose-500 to-pink-500" value={String(totalPenalty)} label="Jami jarima ball" valueCls={totalPenalty < 0 ? "text-rose-500" : "text-emerald-500"} />
       </div>
 
-      <ScheduleTab compact />
+      <ScheduleTab userId={userId} override={shiftOverride} compact />
     </div>
   );
 }
@@ -344,19 +367,52 @@ function CallsTab({ calls, onOpen }: { calls: EmpCall[]; onOpen: (c: EmpCall) =>
   );
 }
 
-function TipsTab({ tips }: { tips: string[] }) {
+function TipsTab({ scripts, fallback }: { scripts: ScriptItem[]; fallback: string[] }) {
+  // Admin biriktirgan, yoqilgan skriptlar — bular tavsiyalar bo'lib ko'rinadi.
+  const assigned = scripts.filter((s) => s.enabled && s.title.trim());
   return (
-    <Card className="p-6">
-      <SectionTitle title="Qanday gapirish kerak" subtitle="Sizga moslashtirilgan nutq tavsiyalari" />
-      <ul className="space-y-2.5">
-        {tips.map((tip, i) => (
-          <li key={i} className="flex items-start gap-3 rounded-xl border border-slate-200/60 bg-white/40 px-4 py-2.5 text-sm text-slate-600 dark:border-slate-700/50 dark:bg-slate-800/30 dark:text-slate-300">
-            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-linear-to-br from-indigo-500 to-cyan-400 text-[10px] font-bold text-white">{i + 1}</span>
-            {tip}
-          </li>
-        ))}
-      </ul>
-    </Card>
+    <div className="space-y-5">
+      {/* Admin tomonidan biriktirilgan skriptlar (jonli) */}
+      <Card className="p-6">
+        <SectionTitle
+          title="Biriktirilgan skriptlar"
+          subtitle="Administrator siz uchun biriktirgan tavsiyalar — jonli yangilanadi"
+        />
+        {assigned.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200/60 bg-white/40 px-4 py-5 text-sm text-slate-500 dark:border-slate-700/50 dark:bg-slate-800/30 dark:text-slate-400">
+            <Icons.spark className="h-5 w-5 shrink-0 text-indigo-400" />
+            {"Hozircha skript biriktirilmagan."}
+          </div>
+        ) : (
+          <ul className="space-y-2.5">
+            {assigned.map((s, i) => (
+              <li
+                key={s.id}
+                className="flex items-start gap-3 rounded-xl border border-indigo-200/50 bg-indigo-500/5 px-4 py-2.5 text-sm text-slate-700 dark:border-indigo-400/20 dark:text-slate-200"
+              >
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-linear-to-br from-indigo-500 to-violet-500 text-[10px] font-bold text-white">
+                  {i + 1}
+                </span>
+                {s.title}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* Umumiy nutq tavsiyalari (standart) */}
+      <Card className="p-6">
+        <SectionTitle title="Qanday gapirish kerak" subtitle="Umumiy nutq tavsiyalari" />
+        <ul className="space-y-2.5">
+          {fallback.map((tip, i) => (
+            <li key={i} className="flex items-start gap-3 rounded-xl border border-slate-200/60 bg-white/40 px-4 py-2.5 text-sm text-slate-600 dark:border-slate-700/50 dark:bg-slate-800/30 dark:text-slate-300">
+              <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-linear-to-br from-indigo-500 to-cyan-400 text-[10px] font-bold text-white">{i + 1}</span>
+              {tip}
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </div>
   );
 }
 
@@ -390,9 +446,24 @@ function PenaltiesTab({ penalties, total }: { penalties: Penalty[]; total: numbe
 }
 
 /* ============================ SCHEDULE ============================ */
-function ScheduleTab({ compact = false }: { compact?: boolean }) {
-  const [start, setStart] = useState("09:00");
-  const [end, setEnd] = useState("18:00");
+function ScheduleTab({
+  userId,
+  override = null,
+  compact = false,
+}: {
+  userId: string | undefined;
+  override?: ManagerShift | null;
+  compact?: boolean;
+}) {
+  // Smena vaqti adminning Sozlamalaridan jonli keladi. Ikki qatlam:
+  //   • override → Supabase Realtime (sub-soniya, mavjud bo'lsa ustun turadi)
+  //   • useShift → REST polling fallback (~8s)
+  // Backend qiymat bermaguncha standart 09:00–18:00 ko'rsatiladi.
+  const polled = useShift(userId);
+  const live = override && (override.start || override.end) ? override : polled;
+  const start = live.start || "09:00";
+  const end = live.end || "18:00";
+  const adminSet = Boolean(live.start || live.end);
   const now = useNow();
 
   const toMin = (t: string) => {
@@ -439,17 +510,21 @@ function ScheduleTab({ compact = false }: { compact?: boolean }) {
         <LiveClock className="mt-1 text-4xl font-bold text-slate-800 dark:text-white" />
       </div>
 
-      {/* Time setters */}
+      {/* Smena vaqti — admin belgilaydi (read-only) */}
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ish boshlanishi</span>
-          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className={input} />
+          <input type="time" value={start} readOnly disabled className={`${input} cursor-default opacity-90`} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ish tugashi</span>
-          <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className={input} />
+          <input type="time" value={end} readOnly disabled className={`${input} cursor-default opacity-90`} />
         </label>
       </div>
+      <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
+        <Icons.lock className="h-3.5 w-3.5" />
+        {adminSet ? "Smena vaqti administrator tomonidan belgilangan." : "Standart smena — administrator hali belgilamagan."}
+      </p>
 
       {/* Progress */}
       <div className="mt-5">

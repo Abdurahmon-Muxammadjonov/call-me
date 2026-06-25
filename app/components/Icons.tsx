@@ -166,6 +166,73 @@ export const Icons = {
       <path d="M7 4.5v15l12-7.5-12-7.5Z" />
     </svg>
   ),
+  chevronDown: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  ),
+  building: (p: IconProps) => (
+    <svg {...base(p)}>
+      <rect x="4" y="3" width="16" height="18" rx="1.5" />
+      <path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2M10 21v-3h4v3" />
+    </svg>
+  ),
+  target: (p: IconProps) => (
+    <svg {...base(p)}>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="12" cy="12" r="0.6" fill="currentColor" />
+    </svg>
+  ),
+  trophy: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3" />
+      <path d="M12 13v4M9 21h6M10 21v-2h4v2" />
+    </svg>
+  ),
+  coins: (p: IconProps) => (
+    <svg {...base(p)}>
+      <ellipse cx="9" cy="7" rx="5" ry="2.5" />
+      <path d="M4 7v5c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V7" />
+      <path d="M14 11.5c2.4.3 5 1.3 5 2.8 0 1.4-2.2 2.5-5 2.5-1.2 0-2.3-.2-3.2-.5" />
+    </svg>
+  ),
+  funnel: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M3 5h18l-7 8v6l-4 2v-8L3 5Z" />
+    </svg>
+  ),
+  trendingUp: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M3 17 9 11l4 4 8-8" />
+      <path d="M17 4h4v4" />
+    </svg>
+  ),
+  plus: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  ),
+  trash: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M4 7h16M10 11v6M14 11v6" />
+      <path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3" />
+    </svg>
+  ),
+  eye: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  eyeOff: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M3 3l18 18" />
+      <path d="M10.6 10.6a3 3 0 0 0 4.2 4.2" />
+      <path d="M9.4 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3.1 3.9M6.1 6.1A16 16 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 3.1-.5" />
+    </svg>
+  ),
 } as const;
 
 export type IconKey = keyof typeof Icons;

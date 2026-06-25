@@ -3,6 +3,9 @@
 
 export type TabId =
   | "overview"
+  | "management"
+  | "comparison"
+  | "staff"
   | "recordings"
   | "upload"
   | "deep-audit"
@@ -30,6 +33,9 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "ASOSIY",
     items: [
       { id: "overview", label: "Umumiy ko'rinish", hint: "Boshqaruv paneli", icon: "grid", grad: "from-indigo-500 to-violet-500" },
+      { id: "management", label: "Boshqaruv paneli", hint: "Rahbariyat ko'rinishi", icon: "trendingUp", grad: "from-violet-500 to-fuchsia-500" },
+      { id: "comparison", label: "Solishtirish paneli", hint: "Kunlik/haftalik/oylik", icon: "trendingUp", grad: "from-amber-500 to-orange-500" },
+      { id: "staff", label: "Xodimlarni boshqarish", hint: "Barcha xodimlar", icon: "users", grad: "from-rose-500 to-pink-500" },
       { id: "recordings", label: "Audio yozuvlar", hint: "Transkripsiya jurnali", icon: "waveform", grad: "from-cyan-500 to-sky-500" },
       { id: "upload", label: "Audio yuklash", hint: "Yangi qo'ng'iroqlar", icon: "upload", grad: "from-emerald-500 to-teal-500" },
       { id: "deep-audit", label: "Chuqur tahlil", hint: "Advanced Deep Audit", icon: "scan", grad: "from-fuchsia-500 to-pink-500" },
