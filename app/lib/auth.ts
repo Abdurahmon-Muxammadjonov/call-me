@@ -107,39 +107,28 @@ export function useSession(): Session | null {
   return useSyncExternalStore(subscribeSession, getSessionSnapshot, getServerSessionSnapshot);
 }
 
-/* The two hardcoded directors who get the full company dashboard. */
-const DIRECTORS = [
-  { email: "abdurahmon@gmail.com", password: "123456", name: "Abdurahmon" },
-  { email: "asror@gmail.com", password: "1234567", name: "Asror" },
-];
-
 /* Returns a Session on success, or null on bad credentials.
  *
- * Directors are checked first against the hardcoded list. Everyone else is
- * verified against the backend POST /users/login endpoint, which checks the
- * scrypt-hashed password server-side. */
+ * ALL logins (directors included) are verified server-side via
+ * POST /users/login — the backend checks the scrypt-hashed password and returns
+ * the user's `role`. There are NO credentials in the frontend: a `role` of
+ * "director"/"admin" unlocks the full company dashboard, everyone else gets the
+ * employee view. (Hardcoded directors were removed — see PROMPT_BACKEND_AUTH.md.) */
 export async function authenticate(email: string, password: string): Promise<Session | null> {
-  const e = email.trim().toLowerCase();
-
-  const director = DIRECTORS.find((d) => d.email === e && d.password === password);
-  if (director) {
-    return { role: "director", email: director.email, name: director.name, title: "Senior Manager" };
-  }
-
   try {
     const emp = await authEmployee(email, password);
-    if (emp) {
-      return {
-        role: "employee",
-        email: emp.email,
-        name: emp.name,
-        title: emp.role,
-        employeeId: emp.id,
-      };
-    }
-  } catch {
-    // backend unreachable — fall through to failure
-  }
+    if (!emp) return null;
 
-  return null;
+    const isDirector = emp.role === "director" || emp.role === "admin";
+    return {
+      role: isDirector ? "director" : "employee",
+      email: emp.email,
+      name: emp.name,
+      title: isDirector ? "Rahbar" : emp.role || "Operator",
+      employeeId: emp.id,
+    };
+  } catch {
+    // backend unreachable — treat as a failed login
+    return null;
+  }
 }
