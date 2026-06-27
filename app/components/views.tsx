@@ -1909,7 +1909,7 @@ function loadAmoConfig(): AmoConfig {
 function sampleWebhookPayload(subdomain: string) {
   return {
     event: "call.analyzed",
-    source: "procell-ai-audit",
+    source: "salespulse-ai-audit",
     test: true,
     amocrm_subdomain: subdomain || null,
     call: {
@@ -2053,7 +2053,7 @@ export function AmoCrmView() {
               label="amoCRM subdomen"
               value={cfg.subdomain}
               onChange={(v) => update("subdomain", v)}
-              placeholder="procell.amocrm.ru"
+              placeholder="salespulse.amocrm.ru"
             />
           </FieldGroup>
 

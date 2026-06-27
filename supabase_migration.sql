@@ -1,5 +1,5 @@
 -- =====================================================================
--- Procell — Staff Manager / Realtime migration
+-- SalesPulse — Staff Manager / Realtime migration
 -- Supabase SQL Editor'da ishga tushiring (yuqoridan pastga).
 -- Idempotent: IF NOT EXISTS — bir necha marta xavfsiz ishlatsa bo'ladi.
 --

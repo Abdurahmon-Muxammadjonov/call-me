@@ -1,4 +1,4 @@
-# Backend prompt — Demo'ni tozalash + CRM ulanishiga tayyorlash
+ # Backend prompt — Demo'ni tozalash + CRM ulanishiga tayyorlash
 
 > Bu faylni Claude'ga (backend) bering. Frontend (SalesPulse) tayyor va hamma
 > joyda **jonli** ishlaydi — qo'ng'iroqlar, operatorlar, statistikalar backenddan

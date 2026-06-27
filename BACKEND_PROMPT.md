@@ -1,4 +1,4 @@
-# Procell backend — bajarilishi kerak bo'lgan ishlar (Claude uchun prompt)
+# SalesPulse backend — bajarilishi kerak bo'lgan ishlar (Claude uchun prompt)
 
 > Bu faylni **`/Users/macbook/procell-backend`** loyihasida ochilgan Claude'ga
 > to'liq nusxalab bering. Frontend (`/Users/macbook/prosell`) allaqachon shu
@@ -244,7 +244,7 @@ if (process.env.N8N_WEBHOOK_URL) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       event: 'call.analyzed',
-      source: 'procell-ai-audit',
+      source: 'salespulse-ai-audit',
       call: {
         call_id: callId,
         manager_name: manager.name,

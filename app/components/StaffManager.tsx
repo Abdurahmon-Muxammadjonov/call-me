@@ -416,7 +416,7 @@ function OperatorEditor({
                 setEmail(e.target.value);
                 clearErr("email");
               }}
-              placeholder="operator@procell.uz"
+              placeholder="operator@salespulse.uz"
             />
           </Field>
           <Field label="Parol" icon="lock" error={errors.password}>

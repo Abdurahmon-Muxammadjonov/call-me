@@ -159,7 +159,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
                   setEmail(e.target.value);
                   if (emailErr) setEmailErr("");
                 }}
-                placeholder="email@procell.uz"
+                placeholder="email@salespulse.uz"
                 autoComplete="email"
                 aria-invalid={Boolean(emailErr)}
                 className={`${inputBase} ${emailErr ? errBorder : okBorder}`}

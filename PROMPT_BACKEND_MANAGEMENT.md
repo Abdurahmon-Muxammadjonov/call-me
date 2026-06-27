@@ -23,7 +23,7 @@ Kerak: izolyatsiya qilingan biznes liniyalari ("Tor biznes uchun alohida platfor
 ### 1.1 `GET /api/management/platforms`
 ```json
 { "success": true, "data": [
-  { "id": "core",   "name": "Procell Core",   "tagline": "Asosiy call-center", "initials": "PC", "accent": "indigo" },
+  { "id": "core",   "name": "SalesPulse",   "tagline": "Asosiy call-center", "initials": "PC", "accent": "indigo" },
   { "id": "retail", "name": "Smart Retail",    "tagline": "Chakana savdo",     "initials": "SR", "accent": "cyan" }
 ] }
 ```
