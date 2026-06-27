@@ -3,10 +3,12 @@
 /* Real backend client — Express server (procell-backend) at :5001.
  * Routes: /users, /managers, /criteria, /api/analyze-call, /api/calls. */
 
-/* Backend manzili. Lokal ishlashda http://localhost:5001 (default).
- * Vercel/production'da NEXT_PUBLIC_API_BASE env-o'zgaruvchisini backendning
- * ommaviy HTTPS manziliga qo'ying (masalan https://procell-backend.up.railway.app). */
-export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001").replace(/\/+$/, "");
+/* Backend manzili. Default — Railway'dagi jonli backend, shuning uchun Vercelda
+ * qo'shimcha sozlamasiz ishlaydi. Boshqa manzilga (masalan lokal backend
+ * http://localhost:5001) yo'naltirish uchun NEXT_PUBLIC_API_BASE env'ini qo'ying. */
+export const API_BASE = (
+  process.env.NEXT_PUBLIC_API_BASE || "https://callmeback-production.up.railway.app"
+).replace(/\/+$/, "");
 
 export interface CallAnalytics {
   totalCalls: number;
