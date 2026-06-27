@@ -119,7 +119,8 @@ export function StaffManager() {
     const ctrl = new AbortController();
     (async () => {
       try {
-        const list = await listEmployees(ctrl.signal);
+        // Faqat xodimlar — direktor/admin "Xodimlar" ro'yxatida ko'rinmasin.
+        const list = await listEmployees(ctrl.signal, "user");
         setEmployees(list);
         setError(false);
       } catch {

@@ -115,9 +115,12 @@ async function parse<T>(res: Response): Promise<T> {
 
 const JSON_HEADERS = { "Content-Type": "application/json", Accept: "application/json" };
 
-/* GET /users — full employees list, live from the backend. */
-export async function listEmployees(signal?: AbortSignal): Promise<Employee[]> {
-  const res = await fetch(`${API_BASE}/users`, { headers: { Accept: "application/json" }, signal });
+/* GET /users — foydalanuvchilar ro'yxati, jonli backenddan.
+ * `role` berilsa, backend faqat o'sha rolni qaytaradi (masalan "user" →
+ * faqat xodimlar; direktor/admin chiqmaydi). Berilmasa — hamma rol. */
+export async function listEmployees(signal?: AbortSignal, role?: string): Promise<Employee[]> {
+  const qs = role ? `?role=${encodeURIComponent(role)}` : "";
+  const res = await fetch(`${API_BASE}/users${qs}`, { headers: { Accept: "application/json" }, signal });
   const users = await parse<BackendUser[]>(res);
   return users.map(toEmployee);
 }
