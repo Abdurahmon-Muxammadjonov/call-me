@@ -18,7 +18,7 @@ import { authenticate, type Session } from "../lib/auth";
  *      "server unreachable".
  * ===================================================================== */
 
-const MIN_PASSWORD = 8;
+const MIN_PASSWORD = 6;
 // Simple shape check only — the backend is the source of truth.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -186,7 +186,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
                   setPassword(e.target.value);
                   if (passErr) setPassErr("");
                 }}
-                placeholder="Kamida 8 ta belgi"
+                placeholder={`Kamida ${MIN_PASSWORD} ta belgi`}
                 autoComplete="current-password"
                 aria-invalid={Boolean(passErr)}
                 className={`${inputBase} pr-12 ${passErr ? errBorder : okBorder}`}

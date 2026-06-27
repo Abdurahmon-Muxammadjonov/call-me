@@ -26,8 +26,23 @@ import type { ScriptItem, ShiftTimes } from "../lib/realtime";
  * PROMPT_BACKEND_STAFF.md); calls degrade gracefully until those exist.
  * ===================================================================== */
 
-const INPUT =
-  "w-full rounded-xl border border-slate-200/70 bg-white/70 px-4 py-3 text-[15px] text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-200";
+/* Inputs: split border so an error state can override the normal one cleanly. */
+const INPUT_BASE =
+  "w-full rounded-xl border bg-white/70 px-4 py-3 text-[15px] text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 focus:ring-2 dark:bg-slate-800/40 dark:text-slate-200";
+const INPUT_OK =
+  "border-slate-200/70 focus:border-indigo-400 focus:ring-indigo-400/20 dark:border-slate-700/60";
+const INPUT_ERR = "border-rose-400 focus:border-rose-400 focus:ring-rose-400/20";
+const INPUT = `${INPUT_BASE} ${INPUT_OK}`; // non-validated fields (phone, shift)
+
+/* Validation rules. */
+const MIN_PASSWORD = 6;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // "@" va domen bo'lishi shart
+
+interface FieldErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+}
 
 /* ---------- Best-effort REST helpers for the not-yet-core fields ---------- */
 async function fetchShift(id: string, signal?: AbortSignal): Promise<ShiftTimes> {
@@ -236,6 +251,7 @@ function OperatorEditor({
   const [scripts, setScripts] = useState<ScriptItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const tmpId = useRef(0);
   // The password loaded from the backend — used to skip a needless save (and
   // the kick-out it would trigger) when the admin didn't actually change it.
@@ -261,7 +277,32 @@ function OperatorEditor({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const canSave = name.trim() && email.trim() && (!isNew || password.trim());
+  const clearErr = (k: keyof FieldErrors) =>
+    setErrors((e) => (e[k] ? { ...e, [k]: undefined } : e));
+
+  /* ----- Validation: ism+familiya, email (@), parol (>= MIN) ----- */
+  function validate(): boolean {
+    const next: FieldErrors = {};
+
+    const n = name.trim();
+    if (!n) next.name = "Ism va familiyani kiriting.";
+    else if (n.split(/\s+/).length < 2) next.name = "Familiyani ham kiriting (ism + familiya).";
+
+    const em = email.trim();
+    if (!em) next.email = "Email kiriting.";
+    else if (!EMAIL_RE.test(em)) next.email = "Email noto'g'ri — «@» va domen bo'lishi kerak.";
+
+    // Yangi xodimda parol majburiy; tahrirda faqat o'zgartirilsa tekshiriladi.
+    if (isNew) {
+      if (!password.trim()) next.password = "Parol kiriting.";
+      else if (password.length < MIN_PASSWORD) next.password = `Parol kamida ${MIN_PASSWORD} ta belgi bo'lsin.`;
+    } else if (password && password !== initialPassword.current && password.length < MIN_PASSWORD) {
+      next.password = `Parol kamida ${MIN_PASSWORD} ta belgi bo'lsin.`;
+    }
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
 
   /* ----- Script row helpers ----- */
   function addScript() {
@@ -275,7 +316,8 @@ function OperatorEditor({
   }
 
   async function handleSave() {
-    if (!canSave || saving) return;
+    if (saving) return;
+    if (!validate()) return; // xatolar bo'lsa — so'rov yubormaymiz, inline ko'rsatamiz
     setSaving(true);
     try {
       const cleanScripts = scripts.filter((s) => s.title.trim());
@@ -351,23 +393,43 @@ function OperatorEditor({
 
         {/* Scrollable body */}
         <div className="flex-1 space-y-6 overflow-y-auto px-7 py-6">
-          <Field label="Ism familiya" icon="users">
-            <input className={INPUT} value={name} onChange={(e) => setName(e.target.value)} placeholder="Dilnoza Karimova" />
+          <Field label="Ism familiya" icon="users" error={errors.name}>
+            <input
+              className={`${INPUT_BASE} ${errors.name ? INPUT_ERR : INPUT_OK}`}
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                clearErr("name");
+              }}
+              placeholder="Dilnoza Karimova"
+            />
           </Field>
           <Field label="Telefon" icon="phone">
             <input className={INPUT} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+998 90 123 45 67" />
           </Field>
-          <Field label="Email" icon="mail">
-            <input className={INPUT} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="operator@procell.uz" />
+          <Field label="Email" icon="mail" error={errors.email}>
+            <input
+              className={`${INPUT_BASE} ${errors.email ? INPUT_ERR : INPUT_OK}`}
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearErr("email");
+              }}
+              placeholder="operator@procell.uz"
+            />
           </Field>
-          <Field label="Parol" icon="lock">
+          <Field label="Parol" icon="lock" error={errors.password}>
             <div className="relative">
               <input
-                className={`${INPUT} pr-12`}
+                className={`${INPUT_BASE} ${errors.password ? INPUT_ERR : INPUT_OK} pr-12`}
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Parol"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clearErr("password");
+                }}
+                placeholder={`Kamida ${MIN_PASSWORD} ta belgi`}
               />
               <button
                 type="button"
@@ -467,7 +529,7 @@ function OperatorEditor({
           </button>
           <button
             onClick={handleSave}
-            disabled={!canSave || saving}
+            disabled={saving}
             className="flex-1 rounded-xl bg-linear-to-r from-indigo-500 to-cyan-400 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-200 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? "Saqlanmoqda…" : "Saqlash"}
@@ -493,10 +555,12 @@ function OperatorEditor({
 function Field({
   label,
   icon,
+  error,
   children,
 }: {
   label: string;
   icon: keyof typeof Icons;
+  error?: string;
   children: ReactNode;
 }) {
   const Icon = Icons[icon];
@@ -506,6 +570,7 @@ function Field({
         <Icon className="h-4 w-4" /> {label}
       </label>
       {children}
+      {error && <p className="mt-1.5 text-xs font-medium text-rose-500">{error}</p>}
     </div>
   );
 }
