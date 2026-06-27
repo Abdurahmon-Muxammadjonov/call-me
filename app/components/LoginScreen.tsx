@@ -222,7 +222,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
         </form>
 
         <p className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
-          Procell © 2026 — Himoyalangan audit muhiti
+          SalesPulse © 2026 — Himoyalangan audit muhiti
         </p>
       </div>
     </div>

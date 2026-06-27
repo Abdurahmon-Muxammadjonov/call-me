@@ -6,7 +6,7 @@
  *   GET  /managers/:id/stats       → menejer bo'yicha yig'ma ko'rsatkichlar
  *   GET  /api/calls?manager_id&limit→ qo'ng'iroqlar jurnali
  *   GET  /api/calls/:id            → bitta qo'ng'iroq + conversions + lost_reasons
- *   POST /api/analyze-call         → audio_url'ni Gemini bilan tahlil qiladi
+ *   POST /api/analyze-call         → audio_url'ni AI auditor bilan tahlil qiladi
  *
  * Eslatma: ro'yxat/menejer endpointlari { success, data } konvertida; analyze
  * POST esa natijani yuqori darajada (call_id, manager, audit, kpi) qaytaradi. */
@@ -164,7 +164,7 @@ export async function getCall(id: string, signal?: AbortSignal): Promise<CallDet
 }
 
 /* POST /api/analyze-call — audio_url'ni tanlangan menejer nomidan tahlil
- * qiladi. Backend audioni yuklab olib, Gemini'ga yuboradi va natijani bazaga
+ * qiladi. Backend audioni yuklab olib, AI auditor'ga yuboradi va natijani bazaga
  * yozadi. Javob konvertsiz (yuqori darajada) keladi. */
 export async function analyzeCall(
   input: { audio_url: string; manager_id?: string },
@@ -187,7 +187,7 @@ export async function analyzeCall(
 
 /* POST /api/analyze-call (multipart/form-data) — audio FAYLNI to'g'ridan-to'g'ri
  * yuklab tahlil qiladi (havola emas). Backend `audio` maydonini (multipart)
- * qabul qilib, vaqtincha saqlab yoki to'g'ridan-to'g'ri Gemini'ga uzatishi kerak;
+ * qabul qilib, vaqtincha saqlab yoki to'g'ridan-to'g'ri AI auditor'ga uzatishi kerak;
  * qolgan oqim (skoring, bazaga yozish) URL variantidagi bilan bir xil. */
 export async function analyzeCallFile(
   input: { file: File; manager_id?: string },

@@ -10,7 +10,7 @@ import { useState, type SVGProps } from "react";
  *
  * Pure & presentational — receives a dynamic backend payload via props,
  * holds NO mock data, and does no fetching. Dark-mode parity is preserved
- * so it sits cleanly inside the Procell dashboard.
+ * so it sits cleanly inside the SalesPulse dashboard.
  * ===================================================================== */
 
 export type PeriodKey = "daily" | "weekly" | "monthly";

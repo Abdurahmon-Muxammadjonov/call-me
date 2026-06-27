@@ -55,7 +55,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <div className="leading-tight">
           <p className="bg-linear-to-r from-indigo-500 via-violet-500 to-cyan-400 bg-clip-text text-lg font-bold tracking-tight text-transparent">
-            Procell
+            SalesPulse
           </p>
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
             AI Audit Core

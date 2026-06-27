@@ -7,7 +7,7 @@
  *   PUT    /criteria/:id        → yangilash (partial)
  *   DELETE /criteria/:id        → o'chirish
  *
- * Backend (analyze-call) har tahlildan oldin AKTIV qoidalarni o'qib, Gemini
+ * Backend (analyze-call) har tahlildan oldin AKTIV qoidalarni o'qib, AI auditor
  * prompt'iga "dinamik qoidalar" sifatida qo'shadi. Shuning uchun bu yerda
  * qo'shilgan har bir yangi qoida keyingi qo'ng'iroq tahlilida darhol amal
  * qiladi. Javob { success, data } konvertida. */
@@ -77,8 +77,8 @@ export async function listCriteria(signal?: AbortSignal): Promise<Criterion[]> {
   return parse<Criterion[]>(res);
 }
 
-/* POST /criteria — yangi qoida qo'shadi. Backend uni Gemini auditor
- * prompt'iga (aktiv bo'lsa) qo'shgani uchun, Gemini shu qoidaga qarab ishlaydi. */
+/* POST /criteria — yangi qoida qo'shadi. Backend uni AI auditor auditor
+ * prompt'iga (aktiv bo'lsa) qo'shgani uchun, AI auditor shu qoidaga qarab ishlaydi. */
 export async function addCriterion(input: NewCriterion): Promise<Criterion> {
   const res = await fetch(`${API_BASE}/criteria`, {
     method: "POST",

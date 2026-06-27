@@ -3,7 +3,7 @@
 /* =====================================================================
  * Real-time state listeners — transport-agnostic.
  *
- * The product spec calls for Supabase Realtime subscriptions. The Procell
+ * The product spec calls for Supabase Realtime subscriptions. The SalesPulse
  * frontend currently has NO direct Supabase connection (it talks only to the
  * Express API at API_BASE), so this module implements the SAME listener
  * contract via lightweight REST polling today, behind a single `subscribe()`

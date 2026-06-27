@@ -45,9 +45,9 @@ export interface Platform {
  * to'ldiradi va almashtirgich avtomatik ko'p platformani ko'rsatadi. */
 const LIVE_PLATFORM: Platform = {
   id: "live",
-  name: "Procell Core",
+  name: "SalesPulse",
   tagline: "Jonli backend",
-  initials: "PC",
+  initials: "SP",
   accent: "indigo",
 };
 

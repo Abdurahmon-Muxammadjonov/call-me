@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Procell — AI Call Center Audit",
+  title: "SalesPulse — AI Call Center Audit",
   description:
-    "Procell: futuristic AI-powered call center quality auditing dashboard.",
+    "SalesPulse: futuristic AI-powered call center quality auditing dashboard.",
 };
 
 // Runs before paint to set the theme class, preventing a light/dark flash.

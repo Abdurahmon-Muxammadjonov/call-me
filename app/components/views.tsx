@@ -162,7 +162,7 @@ export function OverviewView() {
             if (s.key === "calls") return { ...s, value: totalCalls.toLocaleString(), delta: "Jonli" };
             if (s.key === "duration") return { ...s, value: formatDuration(Math.round(avgDuration)), delta: "Jonli" };
             if (s.key === "score") return { ...s, value: avgKpi ? avgKpi.toFixed(1) : "—", delta: "Jonli" };
-            // Gemini token xarajati — backend hali bu ko'rsatkichni bermaydi.
+            // AI auditor token xarajati — backend hali bu ko'rsatkichni bermaydi.
             if (s.key === "tokens") return { ...s, value: "—", delta: "Ulanmagan" };
             return s;
           })
@@ -767,7 +767,7 @@ export function UploadView() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
       <Card glow className="p-8 lg:col-span-3">
-        <SectionTitle title="Audio yuklash" subtitle="Qo'ng'iroqni AI auditor (Gemini) bilan tahlil qiling" />
+        <SectionTitle title="Audio yuklash" subtitle="Qo'ng'iroqni AI auditor (AI auditor) bilan tahlil qiling" />
 
         <form onSubmit={handleAnalyze} className="space-y-5">
           <div>
@@ -779,7 +779,7 @@ export function UploadView() {
               onChange={(e) => setManagerId(e.target.value)}
               className="w-full rounded-xl border border-slate-200/70 bg-white/60 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200"
             >
-              <option value="">— Menejersiz (test tahlil) —</option>
+              <option value="">— Menejer tanlanmagan —</option>
               {managers.map((m) => (
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
@@ -888,7 +888,7 @@ export function UploadView() {
           <div className="mt-6 rounded-2xl border border-indigo-400/30 bg-indigo-500/5 p-5">
             <p className="flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-cyan-400">
               <Icons.spark className="h-4 w-4 animate-pulse" />
-              Gemini 2.5 Flash transkripsiya va skoring matritsasini tahlil qilmoqda…
+              AI auditor transkripsiya va skoring matritsasini tahlil qilmoqda…
             </p>
             <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/50">
               <div className="h-full w-1/2 animate-pulse rounded-full bg-linear-to-r from-indigo-500 to-cyan-400" />
@@ -1556,7 +1556,7 @@ export function CriteriaView() {
         <div className="p-6">
           <SectionTitle
             title="Baholash qoidalari"
-            subtitle="Aktiv qoidalarni AI auditor (Gemini) har tahlilda hisobga oladi"
+            subtitle="Aktiv qoidalarni AI auditor (AI auditor) har tahlilda hisobga oladi"
             action={
               <div className="flex items-center gap-2">
                 <PillButton icon="layers" accent="cyan" variant="ghost" onClick={() => refresh()}>
@@ -1772,7 +1772,7 @@ function AddCriterionForm({
     <Card glow className="p-6">
       <SectionTitle
         title={isEdit ? "Qoidani tahrirlash" : "Yangi qoida qo'shish"}
-        subtitle="Backendga (/criteria) saqlanadi — aktiv bo'lsa Gemini keyingi tahlilda shu qoidaga qarab ishlaydi. Kategoriya «Mezon kategoriyalari» bo'limida avtomatik guruhlanadi."
+        subtitle="Backendga (/criteria) saqlanadi — aktiv bo'lsa AI auditor keyingi tahlilda shu qoidaga qarab ishlaydi. Kategoriya «Mezon kategoriyalari» bo'limida avtomatik guruhlanadi."
       />
       <form onSubmit={submit} className="space-y-4" noValidate>
         <div>
@@ -1785,7 +1785,7 @@ function AddCriterionForm({
           />
         </div>
         <div>
-          <label className={labelCls}>Tavsif * (Gemini shu matnga qarab baholaydi)</label>
+          <label className={labelCls}>Tavsif * (AI auditor shu matnga qarab baholaydi)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -1851,7 +1851,7 @@ function AddCriterionForm({
                 onChange={(e) => setIsActive(e.target.checked)}
                 className="h-4 w-4 accent-violet-500"
               />
-              Darhol aktiv (Gemini ishlatsin)
+              Darhol aktiv (AI auditor ishlatsin)
             </label>
           </div>
         </div>
@@ -1917,7 +1917,7 @@ function sampleWebhookPayload(subdomain: string) {
       kpi_score: 72,
       penalty_amount: 20000,
       bonus_amount: 0,
-      rop_comment: "Bu Procell paneldan yuborilgan test webhook. Ulanish ishlayapti.",
+      rop_comment: "Bu SalesPulse paneldan yuborilgan test webhook. Ulanish ishlayapti.",
       lost_reasons: [{ reason_text: "Test sababi", count: 1 }],
       audio_url: "https://example.com/test.mp3",
     },
@@ -2010,7 +2010,7 @@ export function AmoCrmView() {
           <p className="mb-4 text-xs font-bold uppercase tracking-wider text-slate-400">Avtomatik oqim — qanday ishlaydi</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <FlowStep n={1} icon="phone" accent="cyan" title="Qo'ng'iroq tugaydi" text="amoCRM telefoniyasi yozuvni (audio) va operatorni beradi." />
-            <FlowStep n={2} icon="spark" accent="violet" title="AI tahlil" text="n8n backendni chaqiradi — Gemini baholaydi va bazaga saqlaydi." />
+            <FlowStep n={2} icon="spark" accent="violet" title="AI tahlil" text="n8n backendni chaqiradi — AI auditor baholaydi va bazaga saqlaydi." />
             <FlowStep n={3} icon="check" accent="emerald" title="CRM'ga yoziladi" text="KPI, jarima va ROP izohi bitimga qaytib yoziladi." />
           </div>
         </div>
