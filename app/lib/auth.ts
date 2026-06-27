@@ -107,28 +107,26 @@ export function useSession(): Session | null {
   return useSyncExternalStore(subscribeSession, getSessionSnapshot, getServerSessionSnapshot);
 }
 
-/* Returns a Session on success, or null on bad credentials.
+/* Verifies credentials against the backend and returns a Session, or `null` when
+ * the backend rejects the email/password (HTTP 401/400). NETWORK/server errors
+ * are NOT swallowed — they propagate so the caller can show a distinct
+ * "server unreachable" message (vs. "wrong credentials").
  *
- * ALL logins (directors included) are verified server-side via
- * POST /users/login — the backend checks the scrypt-hashed password and returns
- * the user's `role`. There are NO credentials in the frontend: a `role` of
- * "director"/"admin" unlocks the full company dashboard, everyone else gets the
- * employee view. (Hardcoded directors were removed — see PROMPT_BACKEND_AUTH.md.) */
+ * ALL logins (directors included) are verified server-side via POST /users/login
+ * — the backend checks the scrypt-hashed password and returns the user's `role`.
+ * There are NO credentials in the frontend: a `role` of "director"/"admin"
+ * unlocks the full company dashboard, everyone else gets the employee view.
+ * (Hardcoded directors were removed — see PROMPT_BACKEND_AUTH.md.) */
 export async function authenticate(email: string, password: string): Promise<Session | null> {
-  try {
-    const emp = await authEmployee(email, password);
-    if (!emp) return null;
+  const emp = await authEmployee(email, password); // null on bad creds; throws on network
+  if (!emp) return null;
 
-    const isDirector = emp.role === "director" || emp.role === "admin";
-    return {
-      role: isDirector ? "director" : "employee",
-      email: emp.email,
-      name: emp.name,
-      title: isDirector ? "Rahbar" : emp.role || "Operator",
-      employeeId: emp.id,
-    };
-  } catch {
-    // backend unreachable — treat as a failed login
-    return null;
-  }
+  const isDirector = emp.role === "director" || emp.role === "admin";
+  return {
+    role: isDirector ? "director" : "employee",
+    email: emp.email,
+    name: emp.name,
+    title: isDirector ? "Rahbar" : emp.role || "Operator",
+    employeeId: emp.id,
+  };
 }
