@@ -142,8 +142,8 @@ export default function CrmSettingsPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">CRM Integratsiya</h1>
-          <p className="text-gray-600 mt-2">Webhook va API Key orqali CRM&apos;ga ulang</p>
+          <h1 className="text-3xl font-bold text-gray-900">PBX Integratsiya</h1>
+          <p className="text-gray-600 mt-2">PBX dan webhook URL va API Key orqali CRM&apos;ga ulang</p>
         </div>
 
         {/* Status Card */}
@@ -158,19 +158,19 @@ export default function CrmSettingsPage() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <form onSubmit={handleSubmit}>
             <FormField
-              label="Webhook URL"
+              label="Webhook URL (PBX dan)"
               name="webhook_url"
               type="url"
               value={formData.webhook_url}
               onChange={handleInputChange}
-              placeholder="https://example.com/webhook"
+              placeholder="https://your-pbx.com/webhook/abc123"
               error={errors.webhook_url}
               required
               disabled={submitting}
             />
 
             <FormField
-              label="API Key"
+              label="API Key (PBX dan)"
               name="api_key"
               type="password"
               value={formData.api_key}
@@ -182,7 +182,7 @@ export default function CrmSettingsPage() {
             />
 
             <div className="mt-6">
-              <SubmitButton label="Ulash" loading={submitting} disabled={submitting} />
+              <SubmitButton label="Save" loading={submitting} disabled={submitting} />
             </div>
           </form>
         </div>
