@@ -1885,12 +1885,11 @@ const AMOCRM_KEY = "procell-amocrm";
 
 interface AmoConfig {
   enabled: boolean;
-  subdomain: string;
   webhookUrl: string;
-  n8nUrl: string;
+  apiKey: string;
 }
 
-const DEFAULT_AMO: AmoConfig = { enabled: false, subdomain: "", webhookUrl: "", n8nUrl: "" };
+const DEFAULT_AMO: AmoConfig = { enabled: false, webhookUrl: "", apiKey: "" };
 
 // Konfiguratsiya brauzerda (localStorage) saqlanadi — backendda alohida
 // endpoint yo'q, shuning uchun bu sozlamalar mahalliy va qayta yuklashda saqlanadi.
@@ -1904,30 +1903,11 @@ function loadAmoConfig(): AmoConfig {
   }
 }
 
-/* n8n webhook'ga jo'natiladigan namuna payload — backend qo'ng'iroq tahlili
- * tugagach aynan shu shakldagi ma'lumotni yuboradi (prompt'ga qarang). */
-function sampleWebhookPayload(subdomain: string) {
-  return {
-    event: "call.analyzed",
-    source: "salespulse-ai-audit",
-    test: true,
-    amocrm_subdomain: subdomain || null,
-    call: {
-      manager_name: "Test Operator",
-      kpi_score: 72,
-      penalty_amount: 20000,
-      bonus_amount: 0,
-      rop_comment: "Bu SalesPulse paneldan yuborilgan test webhook. Ulanish ishlayapti.",
-      lost_reasons: [{ reason_text: "Test sababi", count: 1 }],
-      audio_url: "https://example.com/test.mp3",
-    },
-  };
-}
-
 type TestStatus = "idle" | "sending" | "ok" | "err";
 
 export function AmoCrmView() {
   const [cfg, setCfg] = useState<AmoConfig>(loadAmoConfig);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [test, setTest] = useState<{ status: TestStatus; msg: string }>({ status: "idle", msg: "" });
 
@@ -1937,47 +1917,93 @@ export function AmoCrmView() {
     setTest({ status: "idle", msg: "" });
   }
 
-  function save(e: SyntheticEvent) {
+  async function save(e: SyntheticEvent) {
     e.preventDefault();
+
+    const webhook = cfg.webhookUrl.trim();
+    const apiKey = cfg.apiKey.trim();
+
+    if (!/^https?:\/\/\S+$/i.test(webhook)) {
+      setTest({ status: "err", msg: "To'g'ri Webhook URL kiriting (http/https)." });
+      setSaved(false);
+      return;
+    }
+
+    if (!apiKey) {
+      setTest({ status: "err", msg: "API Key bo'sh bo'lmasligi kerak." });
+      setSaved(false);
+      return;
+    }
+
+    setSaving(true);
     try {
+      const res = await fetch(`${API_BASE}/crm/connect-simple`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          webhook_url: webhook,
+          api_key: apiKey,
+          enabled: cfg.enabled,
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
+      if (!res.ok || !json.success) {
+        setSaved(false);
+        setTest({ status: "err", msg: json.error || "Saqlashda backend xatolik qaytardi." });
+        return;
+      }
+
       localStorage.setItem(AMOCRM_KEY, JSON.stringify(cfg));
       setSaved(true);
     } catch {
-      /* localStorage mavjud emas — e'tiborsiz qoldiramiz */
+      setSaved(false);
+      setTest({ status: "err", msg: "Saqlashda tarmoq xatosi yoki backendga ulanib bo'lmadi." });
+    } finally {
+      setSaving(false);
     }
   }
 
-  // n8n webhook'iga haqiqiy POST jo'natadi — ulanish ishlayotganini tekshiradi.
+  // Test ulanish: so'rov to'g'ridan-to'g'ri backendga yuboriladi.
   async function sendTestWebhook() {
-    const url = cfg.webhookUrl.trim();
-    if (!/^https?:\/\/\S+$/i.test(url)) {
-      setTest({ status: "err", msg: "Avval to'g'ri n8n Webhook URL (http/https) kiriting." });
+    const webhook = cfg.webhookUrl.trim();
+    const apiKey = cfg.apiKey.trim();
+
+    if (!/^https?:\/\/\S+$/i.test(webhook)) {
+      setTest({ status: "err", msg: "Avval to'g'ri Webhook URL kiriting (http/https)." });
       return;
     }
+
+    if (!apiKey) {
+      setTest({ status: "err", msg: "Avval API Key kiriting." });
+      return;
+    }
+
     setTest({ status: "sending", msg: "" });
     try {
-      const res = await fetch(url, {
+      const res = await fetch(`${API_BASE}/crm/test-connection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sampleWebhookPayload(cfg.subdomain)),
+        body: JSON.stringify({ webhook_url: webhook, api_key: apiKey }),
       });
+      const json = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string; message?: string };
       if (!res.ok) {
-        setTest({ status: "err", msg: `Webhook ${res.status} qaytardi. n8n workflow faol (active) ekanini tekshiring.` });
+        setTest({ status: "err", msg: json.error || `Backend ${res.status} xatolik qaytardi.` });
         return;
       }
-      setTest({ status: "ok", msg: "Test payload yuborildi ✓ — n8n bajaruvlar (executions) ro'yxatini tekshiring." });
+      if (!json.success) {
+        setTest({ status: "err", msg: json.error || "Test ulanish muvaffaqiyatsiz tugadi." });
+        return;
+      }
+      setTest({ status: "ok", msg: json.message || "Test ulanish muvaffaqiyatli ✓" });
     } catch {
-      // Odatda CORS yoki tarmoq xatosi. So'rov ketgan bo'lishi mumkin, lekin
-      // brauzer javobni o'qiy olmaydi — foydalanuvchiga aniq aytamiz.
       setTest({
         status: "err",
-        msg: "So'rovni brauzerdan yuborib bo'lmadi (CORS yoki tarmoq). n8n webhook'da CORS ruxsat bering yoki backend orqali yuboring.",
+        msg: "Test so'rovi backendga yuborilmadi (tarmoq yoki server xatosi).",
       });
     }
   }
 
   const connected = cfg.enabled;
-  const ingestUrl = `${API_BASE}/api/analyze-call`;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -2047,46 +2073,21 @@ export function AmoCrmView() {
             </button>
           </div>
 
-          {/* 1-guruh: CRM hisob */}
-          <FieldGroup icon="plug" accent="sky" title="CRM hisob">
+          <FieldGroup icon="spark" accent="violet" title="PBX ulanish sozlamasi">
             <EditableField
-              label="amoCRM subdomen"
-              value={cfg.subdomain}
-              onChange={(v) => update("subdomain", v)}
-              placeholder="salespulse.amocrm.ru"
-            />
-          </FieldGroup>
-
-          {/* 2-guruh: n8n ulanishi */}
-          <FieldGroup icon="spark" accent="violet" title="n8n ulanishi (natijani CRM'ga qaytarish)">
-            <EditableField
-              label="n8n Webhook URL"
+              label="Webhook URL"
               value={cfg.webhookUrl}
               onChange={(v) => update("webhookUrl", v)}
-              placeholder="https://n8n.example.com/webhook/abc123"
+              placeholder="https://pbx.example.com/webhook/abc123"
               mono
             />
             <EditableField
-              label="n8n Workflow URL (ixtiyoriy)"
-              value={cfg.n8nUrl}
-              onChange={(v) => update("n8nUrl", v)}
-              placeholder="https://n8n.example.com/workflow/42"
-              mono
+              label="API Key"
+              value={cfg.apiKey}
+              onChange={(v) => update("apiKey", v)}
+              placeholder="********"
+              type="password"
             />
-          </FieldGroup>
-
-          {/* 3-guruh: Avtomatik tahlil endpointi (faqat o'qish + nusxalash) */}
-          <FieldGroup icon="scan" accent="cyan" title="Avtomatik tahlil endpointi (ingest)">
-            <CopyField
-              label="Backend ingest URL — amoCRM/n8n shu manzilga audio yuborsin"
-              value={ingestUrl}
-            />
-            <p className="text-xs leading-relaxed text-slate-400">
-              n8n shu manzilga <code className="rounded bg-slate-500/10 px-1 py-0.5 font-mono text-[11px]">POST</code>{" "}
-              <code className="rounded bg-slate-500/10 px-1 py-0.5 font-mono text-[11px]">{`{ audio_url, manager_id }`}</code>{" "}
-              yuborsa, qo&apos;ng&apos;iroq avtomatik tahlil qilinib, doimiy saqlanadi (transkripsiya
-              ham qoladi — ochib ketmaydi).
-            </p>
           </FieldGroup>
 
           {/* Tugmalar */}
@@ -2099,7 +2100,7 @@ export function AmoCrmView() {
             <button
               type="button"
               onClick={sendTestWebhook}
-              disabled={test.status === "sending"}
+              disabled={test.status === "sending" || saving}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:scale-[1.02] disabled:opacity-60 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
             >
               {test.status === "sending" ? (
@@ -2111,9 +2112,10 @@ export function AmoCrmView() {
             </button>
             <button
               type="submit"
+              disabled={saving || test.status === "sending"}
               className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-sky-500 to-cyan-400 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.02]"
             >
-              <Icons.check className="h-4 w-4" /> Sozlamalarni saqlash
+              {saving ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Icons.check className="h-4 w-4" />} Sozlamalarni saqlash
             </button>
           </div>
 
@@ -2131,9 +2133,9 @@ export function AmoCrmView() {
           )}
 
           <p className="rounded-xl border border-dashed border-slate-300/60 bg-slate-500/5 px-4 py-3 text-xs leading-relaxed text-slate-500 dark:border-slate-600/60 dark:text-slate-400">
-            <b>Eslatma:</b> Sozlamalar hozir brauzerda (localStorage) saqlanadi. To&apos;liq
-            avtomatlashtirish (amoCRM → n8n → backend → amoCRM) uchun backend va n8n
-            workflow sozlanishi kerak — <code className="font-mono">BACKEND_PROMPT.md</code> ga qarang.
+            <b>Eslatma:</b> Saqlash va test tugmalari backendga so&apos;rov yuboradi. Barqaror ishlashi uchun
+            backendda <code className="font-mono">POST /crm/connect-simple</code>, <code className="font-mono">POST /crm/test-connection</code>,
+            <code className="font-mono"> GET /crm/status</code> endpointlari bo&apos;lishi kerak.
           </p>
         </form>
       </Card>
@@ -2200,60 +2202,19 @@ function FieldGroup({
   );
 }
 
-/* Faqat o'qiladigan maydon + nusxalash tugmasi. */
-function CopyField({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* clipboard mavjud emas — e'tiborsiz */
-    }
-  }
-
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-        {label}
-      </label>
-      <div className="flex items-stretch gap-2">
-        <input
-          readOnly
-          value={value}
-          onFocus={(e) => e.currentTarget.select()}
-          className="w-full rounded-xl border border-slate-200/70 bg-slate-500/5 px-4 py-3 font-mono text-sm text-slate-600 outline-none dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-300"
-        />
-        <button
-          type="button"
-          onClick={copy}
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-3 text-sm font-semibold transition hover:scale-[1.02] ${
-            copied
-              ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-              : "border-slate-200/70 bg-white/50 text-slate-600 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
-          }`}
-        >
-          <Icons.check className="h-4 w-4" />
-          {copied ? "Nusxalandi" : "Nusxa"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function EditableField({
   label,
   value,
   onChange,
   placeholder,
+  type = "text",
   mono = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  type?: "text" | "password" | "url";
   mono?: boolean;
 }) {
   return (
@@ -2262,6 +2223,7 @@ function EditableField({
         {label}
       </label>
       <input
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
