@@ -28,3 +28,10 @@ export async function getStatus(): Promise<CrmStatus> {
 export async function connectSimple(payload: CrmConnectPayload): Promise<CrmConnectResponse> {
   return apiClient.post<CrmConnectResponse>('/crm/connect-simple', payload);
 }
+
+/**
+ * PBX ulanishini test qilish
+ */
+export async function testConnection(payload: CrmConnectPayload): Promise<CrmConnectResponse> {
+  return apiClient.post<CrmConnectResponse>('/crm/test-connection', payload);
+}
