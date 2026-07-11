@@ -7,7 +7,7 @@
  * qo'shimcha sozlamasiz ishlaydi. Boshqa manzilga (masalan lokal backend
  * http://localhost:5001) yo'naltirish uchun NEXT_PUBLIC_API_BASE env'ini qo'ying. */
 export const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE || "https://callmeback-production.up.railway.app"
+  process.env.NEXT_PUBLIC_API_BASE || "c"
 ).replace(/\/+$/, "");
 
 export interface CallAnalytics {
