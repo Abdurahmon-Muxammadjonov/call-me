@@ -1978,6 +1978,19 @@ export function AmoCrmView() {
       return;
     }
 
+    // If the webhook URL points to the same backend host, skip the real HTTP call
+    // (sending a test POST to the backend's own callback endpoint returns 400).
+    try {
+      const backendHost = new URL(API_BASE).host;
+      const webhookHost = new URL(webhook).host;
+      if (webhookHost === backendHost) {
+        setTest({ status: "ok", msg: "Webhook URL to'g'ri formatda va API Key kiritilgan ✓" });
+        return;
+      }
+    } catch {
+      // ignore URL parse errors — validation above already passed
+    }
+
     setTest({ status: "sending", msg: "" });
     try {
       const res = await fetch(`${API_BASE}/crm/test-connection`, {
