@@ -1,4 +1,4 @@
-import { apiClient } from '../api';
+import { apiClient } from './client';
 
 export interface CrmStatus {
   connected: boolean;
