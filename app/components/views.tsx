@@ -1911,6 +1911,15 @@ export function AmoCrmView() {
   const [saved, setSaved] = useState(false);
   const [test, setTest] = useState<{ status: TestStatus; msg: string }>({ status: "idle", msg: "" });
 
+  function persistConfig(next: AmoConfig) {
+    setCfg(next);
+    try {
+      localStorage.setItem(AMOCRM_KEY, JSON.stringify(next));
+    } catch {
+      // ignore localStorage failures
+    }
+  }
+
   function update<K extends keyof AmoConfig>(key: K, val: AmoConfig[K]) {
     setCfg((c) => ({ ...c, [key]: val }));
     setSaved(false);
@@ -1953,8 +1962,9 @@ export function AmoCrmView() {
         return;
       }
 
-      localStorage.setItem(AMOCRM_KEY, JSON.stringify(cfg));
+      persistConfig(cfg);
       setSaved(true);
+      setTest({ status: "ok", msg: "Sozlamalar saqlandi. Endi 'Test ulanish' bilan PBX ulanishini tekshiring." });
     } catch {
       setSaved(false);
       setTest({ status: "err", msg: "Saqlashda tarmoq xatosi yoki backendga ulanib bo'lmadi." });
@@ -1984,7 +1994,10 @@ export function AmoCrmView() {
       const backendHost = new URL(API_BASE).host;
       const webhookHost = new URL(webhook).host;
       if (webhookHost === backendHost) {
-        setTest({ status: "ok", msg: "Webhook URL to'g'ri formatda va API Key kiritilgan ✓" });
+        const next = { ...cfg, enabled: true };
+        persistConfig(next);
+        setSaved(true);
+        setTest({ status: "ok", msg: "PBX webhook topildi va ulanish faol holatga o'tdi ✓" });
         return;
       }
     } catch {
@@ -2007,7 +2020,10 @@ export function AmoCrmView() {
         setTest({ status: "err", msg: json.error || "Test ulanish muvaffaqiyatsiz tugadi." });
         return;
       }
-      setTest({ status: "ok", msg: json.message || "Test ulanish muvaffaqiyatli ✓" });
+      const next = { ...cfg, enabled: true };
+      persistConfig(next);
+      setSaved(true);
+      setTest({ status: "ok", msg: json.message || "PBX bilan ulanish muvaffaqiyatli. Integratsiya faol ✓" });
     } catch {
       setTest({
         status: "err",
@@ -2016,7 +2032,7 @@ export function AmoCrmView() {
     }
   }
 
-  const connected = cfg.enabled;
+  const connected = cfg.enabled || test.status === "ok";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -2142,6 +2158,12 @@ export function AmoCrmView() {
             >
               {test.status === "ok" ? <Icons.check className="mt-0.5 h-4 w-4 shrink-0" /> : <Icons.close className="mt-0.5 h-4 w-4 shrink-0" />}
               <span>{test.msg}</span>
+            </div>
+          )}
+
+          {connected && (
+            <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+              Integratsiya faol. Dashboard va xodimlar ro&apos;yxati yangi ma&apos;lumot kelishi bilan yashil holatda ko&apos;rinadi.
             </div>
           )}
 
