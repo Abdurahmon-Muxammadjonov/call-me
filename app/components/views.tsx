@@ -161,9 +161,9 @@ export function OverviewView() {
         setStats(
           [
             { label: "Jami qo'ng'iroq", key: "calls", value: totalCalls.toLocaleString(), delta: "Jonli", trend: "up", accent: "indigo", icon: "phone", spark: [10, 20, 15, 25, 30, 22, 25] },
-            { label: "O'rtacha davomiyligi", key: "duration", value: formatDuration(Math.round(avgDuration)), delta: "Jonli", trend: "up", accent: "violet", icon: "timer", spark: [12, 18, 16, 24, 28, 20, 26] },
-            { label: "O'rtacha KPI", key: "score", value: avgKpi ? avgKpi.toFixed(1) : "—", delta: "Jonli", trend: "up", accent: "emerald", icon: "trending", spark: [8, 14, 12, 20, 25, 18, 22] },
-            { label: "AI auditori", key: "tokens", value: "—", delta: "Ulanmagan", trend: "down", accent: "cyan", icon: "sparkles", spark: [0, 0, 0, 0, 0, 0, 0] },
+            { label: "O'rtacha davomiyligi", key: "duration", value: formatDuration(Math.round(avgDuration)), delta: "Jonli", trend: "up", accent: "violet", icon: "clock", spark: [12, 18, 16, 24, 28, 20, 26] },
+            { label: "O'rtacha KPI", key: "score", value: avgKpi ? avgKpi.toFixed(1) : "—", delta: "Jonli", trend: "up", accent: "emerald", icon: "spark", spark: [8, 14, 12, 20, 25, 18, 22] },
+            { label: "AI auditori", key: "tokens", value: "—", delta: "Ulanmagan", trend: "down", accent: "cyan", icon: "shield", spark: [0, 0, 0, 0, 0, 0, 0] },
           ]
         );
 
