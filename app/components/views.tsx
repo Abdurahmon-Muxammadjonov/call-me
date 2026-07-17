@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent, type ReactNode } from "react";
 import { Icons, type IconKey } from "./Icons";
 import { fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
+import { getStatus as getCrmStatus } from "../lib/api/crm";
 import {
   listManagers,
   getManagerStats,
@@ -1910,6 +1911,29 @@ export function AmoCrmView() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [test, setTest] = useState<{ status: TestStatus; msg: string }>({ status: "idle", msg: "" });
+  const [backendConnected, setBackendConnected] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true);
+
+  const refreshBackendStatus = useCallback(async () => {
+    try {
+      setStatusLoading(true);
+      const status = await getCrmStatus();
+      setBackendConnected(Boolean(status.connected));
+      return Boolean(status.connected);
+    } catch {
+      setBackendConnected(false);
+      return false;
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      void refreshBackendStatus();
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [refreshBackendStatus]);
 
   function persistConfig(next: AmoConfig) {
     setCfg(next);
@@ -1964,7 +1988,8 @@ export function AmoCrmView() {
 
       persistConfig(cfg);
       setSaved(true);
-      setTest({ status: "ok", msg: "Sozlamalar saqlandi. Endi 'Test ulanish' bilan PBX ulanishini tekshiring." });
+      const active = await refreshBackendStatus();
+      setTest({ status: "ok", msg: active ? "Sozlamalar saqlandi va integratsiya faol holatda." : "Sozlamalar saqlandi. Endi 'Test ulanish' bilan PBX ulanishini tekshiring." });
     } catch {
       setSaved(false);
       setTest({ status: "err", msg: "Saqlashda tarmoq xatosi yoki backendga ulanib bo'lmadi." });
@@ -1997,7 +2022,8 @@ export function AmoCrmView() {
         const next = { ...cfg, enabled: true };
         persistConfig(next);
         setSaved(true);
-        setTest({ status: "ok", msg: "PBX webhook topildi va ulanish faol holatga o'tdi ✓" });
+        const active = await refreshBackendStatus();
+        setTest({ status: "ok", msg: active ? "PBX webhook topildi va integratsiya faol holatga o'tdi ✓" : "PBX webhook topildi. Backend status tasdig'ini kutmoqda." });
         return;
       }
     } catch {
@@ -2023,7 +2049,8 @@ export function AmoCrmView() {
       const next = { ...cfg, enabled: true };
       persistConfig(next);
       setSaved(true);
-      setTest({ status: "ok", msg: json.message || "PBX bilan ulanish muvaffaqiyatli. Integratsiya faol ✓" });
+      const active = await refreshBackendStatus();
+      setTest({ status: "ok", msg: active ? json.message || "PBX bilan ulanish muvaffaqiyatli. Integratsiya faol ✓" : json.message || "PBX bilan ulanish muvaffaqiyatli. Backend status tasdig'i kutilmoqda." });
     } catch {
       setTest({
         status: "err",
@@ -2032,7 +2059,7 @@ export function AmoCrmView() {
     }
   }
 
-  const connected = cfg.enabled || test.status === "ok";
+  const connected = backendConnected || (cfg.enabled && test.status === "ok");
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -2055,8 +2082,8 @@ export function AmoCrmView() {
                 : "bg-slate-500/10 text-slate-500 ring-slate-500/30"
             }`}
           >
-            <span className={`h-2 w-2 rounded-full bg-current ${connected ? "animate-pulse" : ""}`} />
-            {connected ? "Integratsiya faol" : "O'chirilgan"}
+            <span className={`h-2 w-2 rounded-full bg-current ${connected ? "animate-pulse" : statusLoading ? "animate-pulse opacity-70" : ""}`} />
+            {statusLoading ? "Holat tekshirilmoqda" : connected ? "Integratsiya faol" : "O'chirilgan"}
           </span>
         </div>
 
