@@ -150,9 +150,9 @@ export function ComparisonView() {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    setError(false);
     Promise.all([fetchPopStats(null, ctrl.signal), fetchConversionHistory(null, 30, ctrl.signal)])
       .then(([p, h]) => {
+        setError(false);
         setPop(p);
         setHistory(h);
       })

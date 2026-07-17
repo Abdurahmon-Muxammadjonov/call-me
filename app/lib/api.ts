@@ -29,8 +29,9 @@ interface AnalyzeCallResponse {
 
 /* GET /api/analyze-call/ — used to populate the director dashboard widgets
  * with live data. Throws on network/HTTP error so the caller can fall back. */
-export async function fetchCallAnalytics(signal?: AbortSignal): Promise<CallAnalytics> {
-  const res = await fetch(`${API_BASE}/api/analyze-call/`, {
+export async function fetchCallAnalytics(signal?: AbortSignal, platformId?: string | null): Promise<CallAnalytics> {
+  const qs = platformId && platformId !== "live" ? `?platform_id=${encodeURIComponent(platformId)}` : "";
+  const res = await fetch(`${API_BASE}/api/analyze-call/${qs}`, {
     method: "GET",
     headers: { Accept: "application/json" },
     signal,

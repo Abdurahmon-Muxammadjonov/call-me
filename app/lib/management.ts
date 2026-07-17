@@ -283,27 +283,37 @@ function buildFunnel(
 /* ---------- Seller status mapping ---------- */
 const STATUS_MAP: Record<string, { status: SellerKPI["status"]; role: string }> = {
   active: { status: "online", role: "Faol menejer" },
+  online: { status: "online", role: "Faol menejer" },
   on_leave: { status: "away", role: "Ta'tilda" },
+  away: { status: "away", role: "Ta'tilda" },
+  break: { status: "away", role: "Tanaffusda" },
   flagged: { status: "away", role: "Bayroqli" },
   inactive: { status: "offline", role: "Faol emas" },
+  offline: { status: "offline", role: "Faol emas" },
 };
+
+function resolveSellerStatus(raw: string | undefined | null): SellerKPI["status"] {
+  const key = (raw ?? "").toLowerCase();
+  if (key === "active" || key === "online") return "online";
+  if (key === "on_leave" || key === "away" || key === "break" || key === "flagged") return "away";
+  return "offline";
+}
 
 /* ============================================================
  * MAIN AGGREGATOR — bitta marta hammasini jonli yig'adi.
  * ============================================================ */
 export async function fetchManagementData(
-  _platformId: PlatformId,
+  platformId: PlatformId,
   signal?: AbortSignal
 ): Promise<PlatformData> {
-  // _platformId backend platforma filtrini bergach query'ga uzatiladi.
   const [analytics, managers, calls] = await Promise.all([
-    fetchCallAnalytics(signal).catch(() => null),
-    listManagers(signal).catch(() => []),
-    listCalls({ limit: 1000 }, signal).catch(() => [] as CallRow[]),
+    fetchCallAnalytics(signal, platformId).catch(() => null),
+    listManagers(signal, platformId).catch(() => []),
+    listCalls({ limit: 1000, platformId }, signal).catch(() => [] as CallRow[]),
   ]);
 
   const stats = await Promise.all(
-    managers.map((m) => getManagerStats(m.id, signal).catch(() => null))
+    managers.map((m) => getManagerStats(m.id, signal, platformId).catch(() => null))
   );
 
   // Voronka bosqich nisbatlari — so'nggi qo'ng'iroqlardan namuna olib o'rtachalaymiz.
@@ -358,7 +368,7 @@ export async function fetchManagementData(
   const timeBuckets = buildTimeBuckets(calls);
 
   /* ----- General (Umumiy) ----- */
-  const activeCount = managers.filter((m) => m.status === "active").length;
+  const activeCount = managers.filter((m) => resolveSellerStatus(m.status) === "online").length;
   const todayCalls = days[0].count;
   const avgKpiToday = days[0].count ? days[0].kpiSum / days[0].count : 0;
   const avgKpiYest = days[1].count ? days[1].kpiSum / days[1].count : 0;
@@ -471,12 +481,13 @@ export async function fetchManagementData(
   const sellers: SellerKPI[] = managers
     .map((m, i) => {
       const st = stats[i];
-      const map = STATUS_MAP[m.status] ?? { status: "offline" as const, role: "Menejer" };
+      const key = (m.status ?? "").toLowerCase();
+      const map = STATUS_MAP[key] ?? { status: resolveSellerStatus(m.status), role: "Menejer" };
       return {
         id: m.id,
         name: m.name,
-        role: map.role,
-        status: map.status,
+        role: m.role ?? map.role,
+        status: resolveSellerStatus(m.status),
         calls: st?.total_calls ?? 0,
         avgDuration: formatSeconds(st?.avg_duration_sec ?? 0),
         score: Math.round(st?.avg_kpi_score ?? 0),

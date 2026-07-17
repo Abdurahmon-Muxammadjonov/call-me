@@ -16,7 +16,8 @@ import { API_BASE } from "./api";
 export interface Manager {
   id: string;
   name: string;
-  status: "active" | "inactive" | "on_leave" | "flagged";
+  status: string;
+  role?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -122,6 +123,13 @@ interface ApiEnvelope<T> {
 
 const JSON_HEADERS = { "Content-Type": "application/json", Accept: "application/json" };
 
+function withPlatform(path: string, platformId?: string | null): string {
+  const p = platformId && platformId !== "live" ? platformId : null;
+  if (!p) return path;
+  const sep = path.includes("?") ? "&" : "?";
+  return `${path}${sep}platform_id=${encodeURIComponent(p)}`;
+}
+
 async function parse<T>(res: Response): Promise<T> {
   const json = (await res.json()) as ApiEnvelope<T>;
   if (!res.ok || !json.success) {
@@ -132,24 +140,31 @@ async function parse<T>(res: Response): Promise<T> {
 
 /* ---------- Managers ---------- */
 
-export async function listManagers(signal?: AbortSignal): Promise<Manager[]> {
-  const res = await fetch(`${API_BASE}/managers`, { headers: { Accept: "application/json" }, signal });
+export async function listManagers(signal?: AbortSignal, platformId?: string | null): Promise<Manager[]> {
+  const res = await fetch(withPlatform(`${API_BASE}/managers`, platformId), {
+    headers: { Accept: "application/json" },
+    signal,
+  });
   return parse<Manager[]>(res);
 }
 
-export async function getManagerStats(id: string, signal?: AbortSignal): Promise<ManagerStats> {
-  const res = await fetch(`${API_BASE}/managers/${id}/stats`, { headers: { Accept: "application/json" }, signal });
+export async function getManagerStats(id: string, signal?: AbortSignal, platformId?: string | null): Promise<ManagerStats> {
+  const res = await fetch(withPlatform(`${API_BASE}/managers/${id}/stats`, platformId), {
+    headers: { Accept: "application/json" },
+    signal,
+  });
   return parse<ManagerStats>(res);
 }
 
 /* ---------- Calls ---------- */
 
 export async function listCalls(
-  opts: { managerId?: string; limit?: number } = {},
+  opts: { managerId?: string; limit?: number; platformId?: string | null } = {},
   signal?: AbortSignal
 ): Promise<CallRow[]> {
   const params = new URLSearchParams();
   if (opts.managerId) params.set("manager_id", opts.managerId);
+  if (opts.platformId && opts.platformId !== "live") params.set("platform_id", opts.platformId);
   params.set("limit", String(opts.limit ?? 50));
   const res = await fetch(`${API_BASE}/api/calls/?${params.toString()}`, {
     headers: { Accept: "application/json" },
