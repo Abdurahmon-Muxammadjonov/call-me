@@ -15,6 +15,12 @@ export interface CrmConnectResponse {
   error?: string;
 }
 
+export interface CrmTestResponse {
+  success: boolean;
+  message?: string;  // "PBX sync qilindi: 5 xodim, 24 audio"
+  error?: string;
+}
+
 /**
  * CRM connection status'ini olish
  */
@@ -30,8 +36,8 @@ export async function connectSimple(payload: CrmConnectPayload): Promise<CrmConn
 }
 
 /**
- * PBX ulanishini test qilish
+ * PBX ulanishini test qilish va sync qilish
  */
-export async function testConnection(payload: CrmConnectPayload): Promise<CrmConnectResponse> {
-  return apiClient.post<CrmConnectResponse>('/crm/test-connection', payload);
+export async function testConnection(payload: CrmConnectPayload): Promise<CrmTestResponse> {
+  return apiClient.post<CrmTestResponse>('/crm/test-connection', payload);
 }

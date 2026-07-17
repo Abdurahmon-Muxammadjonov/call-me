@@ -139,7 +139,7 @@ export default function CrmSettingsPage() {
   };
 
   /**
-   * Handle test connection
+   * Handle test connection (sync managers + calls)
    */
   const handleTestConnection = async () => {
     if (!validateForm()) {
@@ -154,7 +154,11 @@ export default function CrmSettingsPage() {
       });
 
       if (response.success) {
-        addToast('PBX ulanish muvaffaqiyatli', 'success');
+        // Show detailed sync message if available
+        addToast(
+          response.message || 'PBX ulanish muvaffaqiyatli',
+          'success'
+        );
       } else {
         addToast(response.error || 'Ulanishda xatolik', 'error');
       }
