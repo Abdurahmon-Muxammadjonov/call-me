@@ -136,6 +136,7 @@ export function OverviewView() {
   const [recent, setRecent] = useState<CallRow[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const fetchData = (ctrl: AbortController) => {
     (async () => {
@@ -215,24 +216,23 @@ export function OverviewView() {
     return () => ctrl.abort();
   }, []);
 
-  /* PBX sync bo'lganda dashboardga qaytib kelinganda, yangi ma'lumot
-     avtomatik yuklanishi kerak. Sync summary localStorage'dan o'chirilganda
-     re-fetch yuqoriga ko'tariladi. */
+  /* reloadKey o'zgarsa (polling yoki sync'dan), yangi data yuklonadi. */
   useEffect(() => {
-    const checkAndRefresh = () => {
-      const summary = localStorage.getItem("prosell-crm-sync-summary");
-      if (summary) {
-        // Sync bo'lgan — yangi ma'lumot yuklash kerak
-        const ctrl = new AbortController();
-        setLive("loading");
-        setDataLoaded(false);
-        fetchData(ctrl);
-        return () => ctrl.abort();
-      }
-    };
+    const ctrl = new AbortController();
+    (async () => {
+      setLive("loading");
+      setDataLoaded(false);
+      fetchData(ctrl);
+    })();
+    return () => ctrl.abort();
+  }, [reloadKey]);
 
-    const timer = setInterval(checkAndRefresh, 500);
-    checkAndRefresh(); // Darhol tekshir
+  /* Polling: har 30 sekundda yangi qo'ng'iroqlar bor-yo'qligini tekshir.
+     Yangi data kelsa avtomatik refresh bo'ladi. */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setReloadKey((k) => k + 1);
+    }, 30000); // 30 sek
 
     return () => clearInterval(timer);
   }, []);
