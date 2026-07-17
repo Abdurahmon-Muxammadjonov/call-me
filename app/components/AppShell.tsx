@@ -19,6 +19,25 @@ import { ComparisonView } from "./ComparisonView";
 import { StaffManager } from "./StaffManager";
 import type { Session } from "../lib/auth";
 
+const DASHBOARD_TARGET_KEY = "prosell-dashboard-target-tab";
+
+function getInitialTab(): TabId {
+  if (typeof window === "undefined") return "overview";
+  const saved = window.localStorage.getItem(DASHBOARD_TARGET_KEY);
+  if (saved === "management" || saved === "overview" || saved === "comparison" || saved === "staff" || saved === "recordings" || saved === "upload" || saved === "deep-audit" || saved === "operators" || saved === "categories" || saved === "criteria" || saved === "amocrm") {
+    return saved;
+  }
+  return "overview";
+}
+
+function consumeInitialTab(): TabId {
+  const initial = getInitialTab();
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(DASHBOARD_TARGET_KEY);
+  }
+  return initial;
+}
+
 const TAB_META: Record<TabId, { title: string; subtitle: string }> = {
   overview: { title: "Umumiy ko'rinish", subtitle: "Call-center sifat auditi bo'yicha umumiy holat" },
   management: { title: "Boshqaruv paneli", subtitle: "Uch darajali rahbariyat tahlili va platformalar" },
@@ -61,7 +80,7 @@ export function AppShell({
   onLogout: () => void;
 }) {
   const initials = session.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useState<TabId>(consumeInitialTab);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
 

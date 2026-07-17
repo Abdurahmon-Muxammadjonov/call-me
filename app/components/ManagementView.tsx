@@ -42,6 +42,29 @@ import {
 
 type ManagementTab = "general" | "strategic" | "rop";
 
+interface CrmSyncSummary {
+  managersSynced: number;
+  callsSynced: number;
+  managerNames: string[];
+  message: string;
+}
+
+const CRM_SYNC_SUMMARY_KEY = "prosell-crm-sync-summary";
+
+function consumeSyncSummary(): CrmSyncSummary | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(CRM_SYNC_SUMMARY_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CrmSyncSummary;
+    window.localStorage.removeItem(CRM_SYNC_SUMMARY_KEY);
+    return parsed;
+  } catch {
+    window.localStorage.removeItem(CRM_SYNC_SUMMARY_KEY);
+    return null;
+  }
+}
+
 const TABS: { id: ManagementTab; label: string; sub: string; icon: keyof typeof Icons }[] = [
   { id: "general", label: "Umumiy", sub: "Operatsion holat", icon: "grid" },
   { id: "strategic", label: "Yirik ma'lumotlar", sub: "Strategik makro trendlar", icon: "trendingUp" },
@@ -49,11 +72,13 @@ const TABS: { id: ManagementTab; label: string; sub: string; icon: keyof typeof 
 ];
 
 export function ManagementView() {
+  const initialSyncSummary = consumeSyncSummary();
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [platformId, setPlatformId] = useState<PlatformId | null>(null);
-  const [tab, setTab] = useState<ManagementTab>("general");
+  const [tab, setTab] = useState<ManagementTab>(initialSyncSummary ? "rop" : "general");
   const [data, setData] = useState<PlatformData | null>(null);
   const [status, setStatus] = useState<"loading" | "online" | "offline">("loading");
+  const [syncSummary] = useState<CrmSyncSummary | null>(initialSyncSummary);
   // Bumped to force a re-fetch on manual retry.
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -117,6 +142,25 @@ export function ManagementView() {
 
       {data && (
         <>
+          {syncSummary && (
+            <Card className="border border-emerald-200/70 bg-emerald-50/80 p-5 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">PBX sync muvaffaqiyatli</p>
+                  <p className="mt-1 text-sm text-emerald-800/80 dark:text-emerald-200/80">{syncSummary.message}</p>
+                </div>
+                <div className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  {syncSummary.managersSynced} xodim · {syncSummary.callsSynced} audio
+                </div>
+              </div>
+              {syncSummary.managerNames.length > 0 && (
+                <p className="mt-3 text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                  Xodimlar: {syncSummary.managerNames.join(", ")}
+                </p>
+              )}
+            </Card>
+          )}
+
           {/* 2. Period analytics */}
           <PeriodAnalytics comparison={data.comparison} timeBuckets={data.timeBuckets} />
 

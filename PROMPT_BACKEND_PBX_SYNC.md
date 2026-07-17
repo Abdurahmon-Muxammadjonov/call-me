@@ -2,7 +2,7 @@
 
 **Loyiha:** Express + Supabase backend (procell-backend, :5001)
 
-**Maqsad:** Frontend CRM settings'dan admin webhook URL + API key qo'yib "Test ulash" tugmasini bosaganda, webhook'ga test POST yuborilsin va agar 200 bo'lsa xodimlar + audiolar avtomatik sync qilinsin.
+**Maqsad:** Frontend CRM settings'dan admin webhook URL + API key qo'yib "Test ulash" tugmasini bosganda, o'sha API URL'ga request borsin; agar route topilmasa `404` bilan muammo sababi qaytsin, agar ma'lumot kelsa xodimlar + audiolar avtomatik sync qilinib dashboardda darhol ko'rinsin.
 
 ---
 
@@ -11,7 +11,14 @@
 ```typescript
 POST /crm/test-connection
 body: { webhook_url: string, api_key: string }
-response: { success: boolean, message?: string, error?: string }
+response: {
+  success: boolean,
+  message?: string,
+  error?: string,
+  managers_synced?: number,
+  calls_synced?: number,
+  manager_names?: string[]
+}
 ```
 
 Frontend frontend toast'da success yoki error xabarini ko'rsatadi.
@@ -48,6 +55,13 @@ app.post('/crm/test-connection', async (req, res) => {
         timeout: 15000, // 15 sekund
       });
 
+      if (testRes.status === 404) {
+        return res.status(404).json({
+          success: false,
+          error: 'Webhook route topilmadi (404). URL noto\'g\'ri yoki backendda route yo\'q.',
+        });
+      }
+
       if (!testRes.ok) {
         return res.status(400).json({
           success: false,
@@ -56,6 +70,13 @@ app.post('/crm/test-connection', async (req, res) => {
       }
 
       pbxResponse = await testRes.json();
+
+      if (!pbxResponse || ((!Array.isArray(pbxResponse.managers) || pbxResponse.managers.length === 0) && (!Array.isArray(pbxResponse.calls) || pbxResponse.calls.length === 0))) {
+        return res.status(404).json({
+          success: false,
+          error: 'Webhook ishladi, lekin hech qanday managers yoki calls ma\'lumoti kelmadi. PBX response formatini tekshiring.',
+        });
+      }
     } catch (fetchErr: any) {
       return res.status(400).json({
         success: false,
@@ -128,6 +149,9 @@ app.post('/crm/test-connection', async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `PBX sync qilindi: ${managersCount} xodim, ${callsCount} audio`,
+      managers_synced: managersCount,
+      calls_synced: callsCount,
+      manager_names: Array.isArray(pbxResponse.managers) ? pbxResponse.managers.map((m: any) => m.name).filter(Boolean) : [],
     });
   } catch (error: any) {
     console.error('test-connection error:', error);
@@ -275,4 +299,4 @@ const handleTestConnection = async () => {
 - Success: "PBX sync qilindi: N xodim, M audio"
 - Error: aniq xato sababi
 
-**Result:** Admin webhook ulasa, avtomatik barcha xodimlar + audiolar sync bo'ladi, Management panel'da hammasi jonli chiqadi ✅
+**Result:** Admin webhook ulasa, request o'sha URL'ga boradi; `404` bo'lsa sababi aniq ko'rinadi, ma'lumot kelsa sync bo'ladi va dashboardda xodimlar soni hamda ismlari darhol ko'rinadi ✅

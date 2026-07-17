@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { getStatus, connectSimple, testConnection, CrmStatus } from '@/app/lib/api/crm';
 import { FormField } from '@/app/components/ui/FormField';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
@@ -15,6 +16,9 @@ interface ToastMessage {
   type: ToastType;
 }
 
+const DASHBOARD_TARGET_KEY = 'prosell-dashboard-target-tab';
+const CRM_SYNC_SUMMARY_KEY = 'prosell-crm-sync-summary';
+
 /**
  * Validate webhook URL format
  */
@@ -28,6 +32,7 @@ function isValidUrl(url: string): boolean {
 }
 
 export default function CrmSettingsPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     webhook_url: '',
     api_key: '',
@@ -40,6 +45,21 @@ export default function CrmSettingsPage() {
   const [testing, setTesting] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const formatTestError = (error: unknown) => {
+    if (typeof error === 'object' && error && 'status' in error) {
+      const status = Number((error as { status?: number }).status || 0);
+      const message = String((error as { message?: string }).message || 'Ulanishda xatolik');
+      if (status === 404) {
+        return '404: webhook URL topilmadi yoki backend route mavjud emas. URL va backend route ni tekshiring.';
+      }
+      if (status === 401 || status === 403) {
+        return 'API key noto‘g‘ri yoki webhook ruxsat bermadi.';
+      }
+      return message;
+    }
+    return error instanceof Error ? error.message : 'Ulanishda xatolik';
+  };
 
   /**
    * Add toast notification
@@ -154,17 +174,32 @@ export default function CrmSettingsPage() {
       });
 
       if (response.success) {
-        // Show detailed sync message if available
-        addToast(
-          response.message || 'PBX ulanish muvaffaqiyatli',
-          'success'
-        );
+        const updatedStatus = await getStatus().catch(() => null);
+        if (updatedStatus) {
+          setStatus(updatedStatus);
+          setIsEnabled(updatedStatus.connected);
+        }
+
+        const summary = {
+          managersSynced: response.managers_synced ?? 0,
+          callsSynced: response.calls_synced ?? 0,
+          managerNames: response.manager_names ?? [],
+          message: response.message || 'PBX ulanish muvaffaqiyatli',
+        };
+
+        localStorage.setItem(CRM_SYNC_SUMMARY_KEY, JSON.stringify(summary));
+        localStorage.setItem(DASHBOARD_TARGET_KEY, 'management');
+
+        addToast(summary.message, 'success');
+
+        setTimeout(() => {
+          router.push('/');
+        }, 900);
       } else {
         addToast(response.error || 'Ulanishda xatolik', 'error');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Ulanishda xatolik';
-      addToast(errorMessage, 'error');
+      addToast(formatTestError(error), 'error');
     } finally {
       setTesting(false);
     }
@@ -262,6 +297,9 @@ export default function CrmSettingsPage() {
               <SubmitButton label="Sozlamalarni saqlash" loading={submitting} disabled={submitting || testing} />
             </div>
           </form>
+          <p className="mt-4 text-xs text-gray-500">
+            Test muvaffaqiyatli bo‘lsa, dashboard avtomatik ochiladi va xodimlar soni hamda ismlari darhol ko‘rinadi.
+          </p>
         </div>
 
         {/* Toast Container */}

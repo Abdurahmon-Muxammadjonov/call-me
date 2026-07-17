@@ -17,8 +17,12 @@ export interface CrmConnectResponse {
 
 export interface CrmTestResponse {
   success: boolean;
-  message?: string;  // "PBX sync qilindi: 5 xodim, 24 audio"
+  message?: string;
   error?: string;
+  managers_synced?: number;
+  calls_synced?: number;
+  manager_names?: string[];
+  dashboard_ready?: boolean;
 }
 
 /**
