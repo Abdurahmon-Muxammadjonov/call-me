@@ -129,15 +129,15 @@ interface LostBar { label: string; count: number; pct: number }
 export function OverviewView() {
   // Hammasi backenddan jonli: KPI cardlar, top operatorlar, yo'qotish sabablari
   // va so'nggi faollik. Demo qiymat yo'q — ma'lumot bo'lmasa bo'sh holat.
-  const [stats, setStats] = useState<StatItem[]>(STATS);
+  const [stats, setStats] = useState<StatItem[]>([]);
   const [live, setLive] = useState<"loading" | "online" | "offline">("loading");
   const [leaders, setLeaders] = useState<ManagerStats[]>([]);
   const [lost, setLost] = useState<LostBar[]>([]);
   const [recent, setRecent] = useState<CallRow[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
+  const fetchData = (ctrl: AbortController) => {
     (async () => {
       // Qo'ng'iroqlar jurnali — KPI o'rtachasi va so'nggi faollik shu yerdan.
       try {
@@ -159,14 +159,12 @@ export function OverviewView() {
           : 0;
 
         setStats(
-          STATS.map((s) => {
-            if (s.key === "calls") return { ...s, value: totalCalls.toLocaleString(), delta: "Jonli" };
-            if (s.key === "duration") return { ...s, value: formatDuration(Math.round(avgDuration)), delta: "Jonli" };
-            if (s.key === "score") return { ...s, value: avgKpi ? avgKpi.toFixed(1) : "—", delta: "Jonli" };
-            // AI auditor token xarajati — backend hali bu ko'rsatkichni bermaydi.
-            if (s.key === "tokens") return { ...s, value: "—", delta: "Ulanmagan" };
-            return s;
-          })
+          [
+            { label: "Jami qo'ng'iroq", key: "calls", value: totalCalls.toLocaleString(), delta: "Jonli", trend: "up", accent: "indigo", icon: "phone", spark: [10, 20, 15, 25, 30, 22, 25] },
+            { label: "O'rtacha davomiyligi", key: "duration", value: formatDuration(Math.round(avgDuration)), delta: "Jonli", trend: "up", accent: "violet", icon: "timer", spark: [12, 18, 16, 24, 28, 20, 26] },
+            { label: "O'rtacha KPI", key: "score", value: avgKpi ? avgKpi.toFixed(1) : "—", delta: "Jonli", trend: "up", accent: "emerald", icon: "trending", spark: [8, 14, 12, 20, 25, 18, 22] },
+            { label: "AI auditori", key: "tokens", value: "—", delta: "Ulanmagan", trend: "down", accent: "cyan", icon: "sparkles", spark: [0, 0, 0, 0, 0, 0, 0] },
+          ]
         );
 
         // Yo'qotish sabablari taqsimoti (analytics.lostReasonsSummary).
@@ -184,9 +182,13 @@ export function OverviewView() {
               }))
           );
         }
+        setDataLoaded(true);
         setLive("online");
       } catch (e) {
-        if ((e as Error)?.name !== "AbortError") setLive("offline");
+        if ((e as Error)?.name !== "AbortError") {
+          setLive("offline");
+          setDataLoaded(false);
+        }
       }
 
       // Top operatorlar — har menejer bo'yicha yig'ma statistika.
@@ -205,10 +207,60 @@ export function OverviewView() {
         /* leaderboard ixtiyoriy — xato bo'lsa bo'sh qoladi */
       }
     })();
+  };
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchData(ctrl);
     return () => ctrl.abort();
   }, []);
 
+  /* PBX sync bo'lganda dashboardga qaytib kelinganda, yangi ma'lumot
+     avtomatik yuklanishi kerak. Sync summary localStorage'dan o'chirilganda
+     re-fetch yuqoriga ko'tariladi. */
+  useEffect(() => {
+    const checkAndRefresh = () => {
+      const summary = localStorage.getItem("prosell-crm-sync-summary");
+      if (summary) {
+        // Sync bo'lgan — yangi ma'lumot yuklash kerak
+        const ctrl = new AbortController();
+        setLive("loading");
+        setDataLoaded(false);
+        fetchData(ctrl);
+        return () => ctrl.abort();
+      }
+    };
+
+    const timer = setInterval(checkAndRefresh, 500);
+    checkAndRefresh(); // Darhol tekshir
+
+    return () => clearInterval(timer);
+  }, []);
+
   const nameOf = (id: string) => names[id] || `${id.slice(0, 8)}…`;
+
+  /* Bo'sh holat: data hali yuklonmagan bo'lsa, skeletonlarni ko'rsatamiz */
+  if (!dataLoaded) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 text-xs font-medium">
+          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset bg-slate-500/10 text-slate-500 ring-slate-500/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+            Backend bilan ulanmoqda...
+          </span>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-40 rounded-xl border border-slate-200/30 bg-white/40 animate-pulse dark:border-slate-700/30 dark:bg-slate-800/30" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="h-64 rounded-xl border border-slate-200/30 bg-white/40 animate-pulse lg:col-span-2 dark:border-slate-700/30 dark:bg-slate-800/30" />
+          <div className="h-64 rounded-xl border border-slate-200/30 bg-white/40 animate-pulse dark:border-slate-700/30 dark:bg-slate-800/30" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
