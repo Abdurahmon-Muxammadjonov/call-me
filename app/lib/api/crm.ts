@@ -4,6 +4,14 @@ export interface CrmStatus {
   connected: boolean;
 }
 
+interface CrmStatusWrappedResponse {
+  success?: boolean;
+  data?: {
+    connected?: boolean;
+  };
+  connected?: boolean;
+}
+
 export interface CrmConnectPayload {
   webhook_url: string;
   api_key: string;
@@ -29,7 +37,11 @@ export interface CrmTestResponse {
  * CRM connection status'ini olish
  */
 export async function getStatus(): Promise<CrmStatus> {
-  return apiClient.get<CrmStatus>('/crm/status');
+  const response = await apiClient.get<CrmStatusWrappedResponse>('/crm/status');
+  const connected = typeof response.connected === 'boolean'
+    ? response.connected
+    : Boolean(response.data?.connected);
+  return { connected };
 }
 
 /**
