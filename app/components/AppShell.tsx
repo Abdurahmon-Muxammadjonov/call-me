@@ -13,10 +13,10 @@ import {
   CriteriaView,
   AmoCrmView,
 } from "./views";
-import { CompanyView } from "./CompanyView";
 import { ManagementView } from "./ManagementView";
 import { ComparisonView } from "./ComparisonView";
 import { StaffManager } from "./StaffManager";
+import { ManagersDashboard } from "./ManagersDashboard";
 import type { Session } from "../lib/auth";
 
 const DASHBOARD_TARGET_KEY = "prosell-dashboard-target-tab";
@@ -61,7 +61,7 @@ function renderTab(tab: TabId) {
     case "recordings": return <RecordingsView />;
     case "upload": return <UploadView />;
     case "deep-audit": return <DeepAuditView />;
-    case "operators": return <CompanyView />;
+    case "operators": return <ManagersDashboard />;
     case "categories": return <CategoriesView />;
     case "criteria": return <CriteriaView />;
     case "amocrm": return <AmoCrmView />;
