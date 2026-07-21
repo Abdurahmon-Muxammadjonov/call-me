@@ -19,6 +19,23 @@ interface ManagersDashboardResponse {
   error?: string;
 }
 
+type ApiLikeError = {
+  message?: string;
+  status?: number;
+};
+
+function toDashboardError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object") {
+    const err = error as ApiLikeError;
+    if (err.status === 404) return "Menejerlar endpoint topilmadi (404).";
+    if (err.status === 500) return "Server ichki xatosi (500). Keyinroq urinib ko'ring.";
+    if (typeof err.status === "number" && err.message) return `${err.message} (${err.status})`;
+    if (err.message) return err.message;
+  }
+  return "Yuklab bo'lmadi";
+}
+
 function normalizeStatus(status: string): "online" | "offline" | "away" {
   const s = status.toLowerCase();
   if (s === "active" || s === "online") return "online";
@@ -78,8 +95,7 @@ export function ManagersDashboard() {
       setManagers([]);
       setStats({ total: 0, active: 0 });
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Yuklab bo'lmadi";
-      setError(message);
+      setError(toDashboardError(e));
       setManagers([]);
       setStats({ total: 0, active: 0 });
     } finally {
