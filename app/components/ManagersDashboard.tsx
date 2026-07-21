@@ -24,16 +24,56 @@ type ApiLikeError = {
   status?: number;
 };
 
+function mapStatusMessage(status: number): string {
+  if (status === 400) return "Noto'g'ri so'rov (400). Parametrlarni tekshiring.";
+  if (status === 401) return "Avtorizatsiya talab qilinadi (401).";
+  if (status === 403) return "Ruxsat yo'q (403).";
+  if (status === 404) return "Menejerlar endpoint topilmadi (404).";
+  if (status === 408) return "So'rov vaqti tugadi (408).";
+  if (status === 409) return "Ma'lumotlar konflikti (409).";
+  if (status === 422) return "Yuborilgan ma'lumot formatida xato bor (422).";
+  if (status === 429) return "So'rovlar soni limitdan oshdi (429). Biroz kutib qayta urinib ko'ring.";
+  if (status === 500) return "Server ichki xatosi (500).";
+  if (status === 502) return "Gateway xatosi (502).";
+  if (status === 503) return "Server vaqtincha mavjud emas (503).";
+  if (status === 504) return "Server javobi kechikdi (504 timeout).";
+  return `API xatolik (${status}).`;
+}
+
+function mapNetworkMessage(rawMessage?: string): string | null {
+  if (!rawMessage) return null;
+  const msg = rawMessage.toLowerCase();
+  if (msg.includes("econnreset")) return "Ulanish uzilib qoldi (ECONNRESET).";
+  if (msg.includes("etimedout") || msg.includes("timeout")) return "So'rov vaqti tugadi (timeout).";
+  if (msg.includes("failed to fetch") || msg.includes("networkerror") || msg.includes("fetch failed")) {
+    return "Tarmoq xatosi: serverga ulanib bo'lmadi.";
+  }
+  if (msg.includes("socket hang up")) return "Ulanish kutilmaganda yopildi (socket hang up).";
+  return null;
+}
+
 function toDashboardError(error: unknown): string {
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) {
+    return mapNetworkMessage(error.message) ?? error.message;
+  }
+
   if (error && typeof error === "object") {
     const err = error as ApiLikeError;
-    if (err.status === 404) return "Menejerlar endpoint topilmadi (404).";
-    if (err.status === 500) return "Server ichki xatosi (500). Keyinroq urinib ko'ring.";
-    if (typeof err.status === "number" && err.message) return `${err.message} (${err.status})`;
-    if (err.message) return err.message;
+    const networkMapped = mapNetworkMessage(err.message);
+    if (networkMapped) return networkMapped;
+
+    if (typeof err.status === "number") {
+      const base = mapStatusMessage(err.status);
+      if (err.message && !err.message.toLowerCase().includes(String(err.status))) {
+        return `${base} Tafsilot: ${err.message}`;
+      }
+      return base;
+    }
+
+    if (err.message) return `So'rov xatosi: ${err.message}`;
   }
-  return "Yuklab bo'lmadi";
+
+  return "Noma'lum xato: ma'lumotni yuklab bo'lmadi.";
 }
 
 function normalizeStatus(status: string): "online" | "offline" | "away" {
