@@ -3,7 +3,7 @@
  * Uses existing API_BASE from api.ts
  */
 
-import { API_BASE } from '../api';
+import { apiUrl } from '../api';
 
 export interface ApiError {
   message: string;
@@ -101,7 +101,7 @@ async function parseErrorBody(res: Response): Promise<string> {
 
 export const apiClient = {
   async get<T>(endpoint: string, options?: RetryableOptions): Promise<T> {
-    const res = await fetchWithTimeoutAndRetry(`${API_BASE}${endpoint}`, {
+    const res = await fetchWithTimeoutAndRetry(apiUrl(endpoint), {
       method: 'GET',
       headers: {
         Accept: 'application/json',
@@ -126,7 +126,7 @@ export const apiClient = {
   },
 
   async post<T, B = unknown>(endpoint: string, body?: B, options?: RetryableOptions): Promise<T> {
-    const res = await fetchWithTimeoutAndRetry(`${API_BASE}${endpoint}`, {
+    const res = await fetchWithTimeoutAndRetry(apiUrl(endpoint), {
       method: 'POST',
       headers: {
         Accept: 'application/json',

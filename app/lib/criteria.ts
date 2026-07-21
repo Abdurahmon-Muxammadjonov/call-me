@@ -12,7 +12,7 @@
  * qo'shilgan har bir yangi qoida keyingi qo'ng'iroq tahlilida darhol amal
  * qiladi. Javob { success, data } konvertida. */
 
-import { API_BASE } from "./api";
+import { apiUrl } from "./api";
 
 /* Mezon turi — baholashga qanday ta'sir qiladi. */
 export type CriterionType = "Majburiy" | "Jarima" | "Bonus";
@@ -73,14 +73,14 @@ async function parse<T>(res: Response): Promise<T> {
 
 /* GET /criteria — barcha qoidalar, backenddan jonli. */
 export async function listCriteria(signal?: AbortSignal): Promise<Criterion[]> {
-  const res = await fetch(`${API_BASE}/criteria`, { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl("/criteria"), { headers: { Accept: "application/json" }, signal });
   return parse<Criterion[]>(res);
 }
 
 /* POST /criteria — yangi qoida qo'shadi. Backend uni AI auditor auditor
  * prompt'iga (aktiv bo'lsa) qo'shgani uchun, AI auditor shu qoidaga qarab ishlaydi. */
 export async function addCriterion(input: NewCriterion): Promise<Criterion> {
-  const res = await fetch(`${API_BASE}/criteria`, {
+  const res = await fetch(apiUrl("/criteria"), {
     method: "POST",
     headers: JSON_HEADERS,
     body: JSON.stringify({
@@ -105,7 +105,7 @@ export async function updateCriterion(
   id: string,
   patch: Partial<NewCriterion>
 ): Promise<Criterion> {
-  const res = await fetch(`${API_BASE}/criteria/${id}`, {
+  const res = await fetch(apiUrl(`/criteria/${id}`), {
     method: "PUT",
     headers: JSON_HEADERS,
     body: JSON.stringify(patch),
@@ -115,7 +115,7 @@ export async function updateCriterion(
 
 /* DELETE /criteria/:id */
 export async function deleteCriterion(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/criteria/${id}`, {
+  const res = await fetch(apiUrl(`/criteria/${id}`), {
     method: "DELETE",
     headers: { Accept: "application/json" },
   });

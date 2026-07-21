@@ -2,7 +2,7 @@
 
 /* Employee store — now backed by the real backend (Express + Supabase).
  *
- * The backend mounts a full users CRUD at  http://localhost:5001/users :
+ * The backend mounts a full users CRUD at /users :
  *   GET    /users        → list
  *   POST   /users        → create  { name, email, age?, phone?, role? }
  *   GET    /users/:id     → read
@@ -15,7 +15,7 @@
  * yet — those fields are returned as empty placeholders until the backend
  * exposes them. Identity (name/email/role/phone) is 100% dynamic from here. */
 
-import { API_BASE } from "./api";
+import { apiUrl } from "./api";
 
 export interface Penalty {
   reason: string;
@@ -120,14 +120,14 @@ const JSON_HEADERS = { "Content-Type": "application/json", Accept: "application/
  * faqat xodimlar; direktor/admin chiqmaydi). Berilmasa — hamma rol. */
 export async function listEmployees(signal?: AbortSignal, role?: string): Promise<Employee[]> {
   const qs = role ? `?role=${encodeURIComponent(role)}` : "";
-  const res = await fetch(`${API_BASE}/users${qs}`, { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl(`/users${qs}`), { headers: { Accept: "application/json" }, signal });
   const users = await parse<BackendUser[]>(res);
   return users.map(toEmployee);
 }
 
 /* GET /users/:id */
 export async function getEmployee(id: string, signal?: AbortSignal): Promise<Employee | null> {
-  const res = await fetch(`${API_BASE}/users/${id}`, { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl(`/users/${id}`), { headers: { Accept: "application/json" }, signal });
   if (res.status === 404) return null;
   const user = await parse<BackendUser>(res);
   return toEmployee(user);
@@ -135,7 +135,7 @@ export async function getEmployee(id: string, signal?: AbortSignal): Promise<Emp
 
 /* POST /users — create a new employee in the backend. */
 export async function addEmployee(input: NewEmployee): Promise<Employee> {
-  const res = await fetch(`${API_BASE}/users`, {
+  const res = await fetch(apiUrl("/users"), {
     method: "POST",
     headers: JSON_HEADERS,
     body: JSON.stringify({
@@ -155,7 +155,7 @@ export async function updateEmployee(
   id: string,
   patch: Partial<Pick<Employee, "name" | "email" | "phone" | "role">>
 ): Promise<Employee> {
-  const res = await fetch(`${API_BASE}/users/${id}`, {
+  const res = await fetch(apiUrl(`/users/${id}`), {
     method: "PUT",
     headers: JSON_HEADERS,
     body: JSON.stringify(patch),
@@ -166,7 +166,7 @@ export async function updateEmployee(
 
 /* DELETE /users/:id */
 export async function deleteEmployee(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/users/${id}`, {
+  const res = await fetch(apiUrl(`/users/${id}`), {
     method: "DELETE",
     headers: { Accept: "application/json" },
   });
@@ -177,7 +177,7 @@ export async function deleteEmployee(id: string): Promise<void> {
 
 /* GET /users/presence → onlayn foydalanuvchi id'lari. */
 export async function fetchOnlineIds(signal?: AbortSignal): Promise<string[]> {
-  const res = await fetch(`${API_BASE}/users/presence`, {
+  const res = await fetch(apiUrl("/users/presence"), {
     headers: { Accept: "application/json" },
     signal,
   });
@@ -187,7 +187,7 @@ export async function fetchOnlineIds(signal?: AbortSignal): Promise<string[]> {
 /* Heartbeat — xodim sahifasi davriy chaqiradi (onlayn ekanini bildiradi). */
 export async function pingPresence(id: string): Promise<void> {
   try {
-    await fetch(`${API_BASE}/users/${id}/ping`, { method: "POST", headers: { Accept: "application/json" } });
+    await fetch(apiUrl(`/users/${id}/ping`), { method: "POST", headers: { Accept: "application/json" } });
   } catch {
     /* ignore — presence is best-effort */
   }
@@ -196,7 +196,7 @@ export async function pingPresence(id: string): Promise<void> {
 /* Chiqishda darhol offline qilish. */
 export async function goOffline(id: string): Promise<void> {
   try {
-    await fetch(`${API_BASE}/users/${id}/offline`, { method: "POST", headers: { Accept: "application/json" } });
+    await fetch(apiUrl(`/users/${id}/offline`), { method: "POST", headers: { Accept: "application/json" } });
   } catch {
     /* ignore */
   }
@@ -205,7 +205,7 @@ export async function goOffline(id: string): Promise<void> {
 /* Employee login — POST /users/login verifies the password (scrypt hash)
  * server-side and returns the user without the hash. */
 export async function authEmployee(email: string, password: string): Promise<Employee | null> {
-  const res = await fetch(`${API_BASE}/users/login`, {
+  const res = await fetch(apiUrl("/users/login"), {
     method: "POST",
     headers: JSON_HEADERS,
     body: JSON.stringify({ email: email.trim().toLowerCase(), password }),

@@ -11,7 +11,7 @@
  * Eslatma: ro'yxat/menejer endpointlari { success, data } konvertida; analyze
  * POST esa natijani yuqori darajada (call_id, manager, audit, kpi) qaytaradi. */
 
-import { API_BASE } from "./api";
+import { apiUrl } from "./api";
 
 export interface Manager {
   id: string;
@@ -141,7 +141,7 @@ async function parse<T>(res: Response): Promise<T> {
 /* ---------- Managers ---------- */
 
 export async function listManagers(signal?: AbortSignal, platformId?: string | null): Promise<Manager[]> {
-  const res = await fetch(withPlatform(`${API_BASE}/managers`, platformId), {
+  const res = await fetch(withPlatform(apiUrl("/managers"), platformId), {
     headers: { Accept: "application/json" },
     signal,
   });
@@ -149,7 +149,7 @@ export async function listManagers(signal?: AbortSignal, platformId?: string | n
 }
 
 export async function getManagerStats(id: string, signal?: AbortSignal, platformId?: string | null): Promise<ManagerStats> {
-  const res = await fetch(withPlatform(`${API_BASE}/managers/${id}/stats`, platformId), {
+  const res = await fetch(withPlatform(apiUrl(`/managers/${id}/stats`), platformId), {
     headers: { Accept: "application/json" },
     signal,
   });
@@ -166,7 +166,7 @@ export async function listCalls(
   if (opts.managerId) params.set("manager_id", opts.managerId);
   if (opts.platformId && opts.platformId !== "live") params.set("platform_id", opts.platformId);
   params.set("limit", String(opts.limit ?? 50));
-  const res = await fetch(`${API_BASE}/api/calls/?${params.toString()}`, {
+  const res = await fetch(apiUrl(`/api/calls/?${params.toString()}`), {
     headers: { Accept: "application/json" },
     signal,
   });
@@ -174,7 +174,7 @@ export async function listCalls(
 }
 
 export async function getCall(id: string, signal?: AbortSignal): Promise<CallDetail> {
-  const res = await fetch(`${API_BASE}/api/calls/${id}`, { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl(`/api/calls/${id}`), { headers: { Accept: "application/json" }, signal });
   return parse<CallDetail>(res);
 }
 
@@ -187,7 +187,7 @@ export async function analyzeCall(
 ): Promise<AnalyzeResult> {
   const body: Record<string, string> = { audio_url: input.audio_url };
   if (input.manager_id) body.manager_id = input.manager_id; // ixtiyoriy — bo'lmasa yubormaymiz
-  const res = await fetch(`${API_BASE}/api/analyze-call/`, {
+  const res = await fetch(apiUrl("/api/analyze-call/"), {
     method: "POST",
     headers: JSON_HEADERS,
     body: JSON.stringify(body),
@@ -211,7 +211,7 @@ export async function analyzeCallFile(
   const form = new FormData();
   form.append("audio", input.file);
   if (input.manager_id) form.append("manager_id", input.manager_id); // ixtiyoriy
-  const res = await fetch(`${API_BASE}/api/analyze-call/`, {
+  const res = await fetch(apiUrl("/api/analyze-call/"), {
     method: "POST",
     // Content-Type'ni qo'lda qo'ymaymiz — brauzer multipart boundary'ni o'zi qo'yadi.
     headers: { Accept: "application/json" },

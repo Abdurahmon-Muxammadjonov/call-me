@@ -19,7 +19,7 @@
  * ===================================================================== */
 
 import { useEffect, useRef, useState } from "react";
-import { API_BASE } from "./api";
+import { apiUrl } from "./api";
 
 /* ---------- Generic polling seam ----------
  * Calls `fetcher` immediately, then every `intervalMs`. Returns an unsubscribe.
@@ -62,7 +62,7 @@ function subscribe<T>(
 }
 
 async function getJson<T>(path: string, signal: AbortSignal): Promise<T | null> {
-  const res = await fetch(`${API_BASE}${path}`, { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl(path), { headers: { Accept: "application/json" }, signal });
   if (res.status === 404) return null; // endpoint/row not present yet → graceful
   const json = (await res.json()) as { success?: boolean; data?: T };
   if (!res.ok || json?.success === false) return null;
@@ -201,7 +201,7 @@ export function useNotifications(userId: string | undefined): NotificationsState
     setAckIds(new Set(items.map((n) => n.id)));
     // …and persist server-side (best-effort; ignored if endpoint absent).
     if (!userId) return;
-    void fetch(`${API_BASE}/manager-notifications/read`, {
+    void fetch(apiUrl("/manager-notifications/read"), {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ user_id: userId }),

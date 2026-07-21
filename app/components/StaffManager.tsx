@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icons } from "./Icons";
 import { SectionTitle, PillButton, Skeleton, ConfirmModal } from "./ui";
-import { API_BASE } from "../lib/api";
+import { apiUrl } from "../lib/api";
 import {
   listEmployees,
   addEmployee,
@@ -47,7 +47,7 @@ interface FieldErrors {
 /* ---------- Best-effort REST helpers for the not-yet-core fields ---------- */
 async function fetchShift(id: string, signal?: AbortSignal): Promise<ShiftTimes> {
   try {
-    const res = await fetch(`${API_BASE}/users/${id}/shift`, { headers: { Accept: "application/json" }, signal });
+    const res = await fetch(apiUrl(`/users/${id}/shift`), { headers: { Accept: "application/json" }, signal });
     if (!res.ok) return { start: "", end: "" };
     const json = (await res.json()) as { data?: ShiftTimes };
     return { start: json.data?.start ?? "", end: json.data?.end ?? "" };
@@ -61,7 +61,7 @@ async function fetchShift(id: string, signal?: AbortSignal): Promise<ShiftTimes>
  * See PROMPT_BACKEND_STAFF.md §2.1 (note the security trade-off of exposing it). */
 async function fetchCredentials(id: string, signal?: AbortSignal): Promise<string> {
   try {
-    const res = await fetch(`${API_BASE}/users/${id}/credentials`, { headers: { Accept: "application/json" }, signal });
+    const res = await fetch(apiUrl(`/users/${id}/credentials`), { headers: { Accept: "application/json" }, signal });
     if (!res.ok) return "";
     const json = (await res.json()) as { data?: { password?: string } };
     return json.data?.password ?? "";
@@ -72,7 +72,7 @@ async function fetchCredentials(id: string, signal?: AbortSignal): Promise<strin
 
 async function fetchScripts(id: string, signal?: AbortSignal): Promise<ScriptItem[]> {
   try {
-    const res = await fetch(`${API_BASE}/users/${id}/scripts`, { headers: { Accept: "application/json" }, signal });
+    const res = await fetch(apiUrl(`/users/${id}/scripts`), { headers: { Accept: "application/json" }, signal });
     if (!res.ok) return [];
     const json = (await res.json()) as { data?: ScriptItem[] };
     return json.data ?? [];
@@ -91,7 +91,7 @@ async function persistExtras(
   const calls: Promise<unknown>[] = [];
   if (payload.password) {
     calls.push(
-      fetch(`${API_BASE}/users/${id}/credentials`, {
+      fetch(apiUrl(`/users/${id}/credentials`), {
         method: "PUT",
         headers: JSON_HEADERS,
         body: JSON.stringify({ password: payload.password }),
@@ -100,7 +100,7 @@ async function persistExtras(
   }
   if (payload.shift) {
     calls.push(
-      fetch(`${API_BASE}/users/${id}/shift`, {
+      fetch(apiUrl(`/users/${id}/shift`), {
         method: "PUT",
         headers: JSON_HEADERS,
         body: JSON.stringify(payload.shift),
@@ -109,7 +109,7 @@ async function persistExtras(
   }
   if (payload.scripts) {
     calls.push(
-      fetch(`${API_BASE}/users/${id}/scripts`, {
+      fetch(apiUrl(`/users/${id}/scripts`), {
         method: "PUT",
         headers: JSON_HEADERS,
         body: JSON.stringify({ scripts: payload.scripts }),

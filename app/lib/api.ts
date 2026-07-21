@@ -1,14 +1,22 @@
 "use client";
 
-/* Real backend client — Express server (procell-backend) at :5001.
- * Routes: /users, /managers, /criteria, /api/analyze-call, /api/calls. */
+/* Real backend client — all frontend requests must go through
+ * NEXT_PUBLIC_API_URL (Railway production URL in hosting env). */
+const RAW_API_URL = (process.env.NEXT_PUBLIC_API_URL || "").trim();
+export const API_BASE = RAW_API_URL.replace(/\/+$/, "");
 
-/* Backend manzili. Default — Railway'dagi jonli backend, shuning uchun Vercelda
- * qo'shimcha sozlamasiz ishlaydi. Boshqa manzilga (masalan lokal backend
- * http://localhost:5001) yo'naltirish uchun NEXT_PUBLIC_API_BASE env'ini qo'ying. */
-export const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE || "https://callmeback-production.up.railway.app"
-).replace(/\/+$/, "");
+export function getApiBaseOrThrow(): string {
+  if (!API_BASE) {
+    throw new Error("Backend URL sozlanmagan. NEXT_PUBLIC_API_URL ni sozlang.");
+  }
+  return API_BASE;
+}
+
+export function apiUrl(path: string): string {
+  const base = getApiBaseOrThrow();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
+}
 
 export interface CallAnalytics {
   totalCalls: number;
@@ -31,7 +39,7 @@ interface AnalyzeCallResponse {
  * with live data. Throws on network/HTTP error so the caller can fall back. */
 export async function fetchCallAnalytics(signal?: AbortSignal, platformId?: string | null): Promise<CallAnalytics> {
   const qs = platformId && platformId !== "live" ? `?platform_id=${encodeURIComponent(platformId)}` : "";
-  const res = await fetch(`${API_BASE}/api/analyze-call/${qs}`, {
+  const res = await fetch(apiUrl(`/api/analyze-call/${qs}`), {
     method: "GET",
     headers: { Accept: "application/json" },
     signal,
@@ -72,7 +80,7 @@ export interface PopStats {
  * dinamik PoP statistikasi. platformId berilsa (va 'live' bo'lmasa) filtrlaydi. */
 export async function fetchPopStats(platformId?: string | null, signal?: AbortSignal): Promise<PopStats> {
   const qs = platformId && platformId !== "live" ? `?platform_id=${encodeURIComponent(platformId)}` : "";
-  const res = await fetch(`${API_BASE}/analytics/pop${qs}`, {
+  const res = await fetch(apiUrl(`/analytics/pop${qs}`), {
     method: "GET",
     headers: { Accept: "application/json" },
     signal,
@@ -100,7 +108,7 @@ export async function fetchConversionHistory(
 ): Promise<ConversionDay[]> {
   const params = new URLSearchParams({ days: String(days) });
   if (platformId && platformId !== "live") params.set("platform_id", platformId);
-  const res = await fetch(`${API_BASE}/api/management/conversion-history?${params.toString()}`, {
+  const res = await fetch(apiUrl(`/api/management/conversion-history?${params.toString()}`), {
     method: "GET",
     headers: { Accept: "application/json" },
     signal,

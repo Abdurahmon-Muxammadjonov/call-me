@@ -36,16 +36,16 @@ Backendda bajarilishi kerak bo'lgan ishlar `BACKEND_PROMPT.md` da yozilgan.
 
 ## Deploy on Vercel
 
-**Muhim:** Frontend backendga `NEXT_PUBLIC_API_BASE` env-o'zgaruvchisi orqali ulanadi.
-Lokal ishlashda u `http://localhost:5001` (default). Production'da quyidagilar shart:
+**Muhim:** Frontend backendga `NEXT_PUBLIC_API_URL` env-o'zgaruvchisi orqali ulanadi.
+Production'da Railway URL qo'yilishi shart:
 
 1. **Backendni ommaviy joyga deploy qiling** (Railway / Render / Fly / VPS) va **HTTPS** manzil oling.
    Vercel HTTPS bo'lgani uchun backend ham HTTPS bo'lishi kerak (aks holda brauzer "mixed content" deb bloklaydi).
 2. Vercel loyiha sozlamalarida env qo'ying:
    ```
-   NEXT_PUBLIC_API_BASE=https://<backend-ommaviy-manzili>
+   NEXT_PUBLIC_API_URL=https://callmeback-production.up.railway.app
    ```
 3. Backend CORS frontend domenini ruxsat berishi kerak (hozir `cors()` hammaga ochiq — yetarli).
 4. Supabase allaqachon bulutda — DB tomoni tayyor.
 
-`NEXT_PUBLIC_API_BASE` qo'yilmasa, deploy'dagi sayt `localhost:5001` ni qidiradi va backend "oflayn" ko'rinadi.
+`NEXT_PUBLIC_API_URL` qo'yilmasa, frontend aniq xato qaytaradi: `Backend URL sozlanmagan`.
