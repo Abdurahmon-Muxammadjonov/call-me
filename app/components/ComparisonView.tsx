@@ -10,6 +10,8 @@ import {
   type ConversionDay,
 } from "../lib/api";
 
+const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta urinib ko'ring.";
+
 /* =====================================================================
  * "Solishtirish paneli" — alohida nav bo'limi.
  *
@@ -179,10 +181,7 @@ export function ComparisonView() {
 
       {error && (
         <Card className="p-5">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Ma&apos;lumot yuklanmadi. Backend (/analytics/pop) ulanganini va{" "}
-            <code>calls_pop_stats</code> funksiyasi yaratilganini tekshiring.
-          </p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{BACKEND_UNREACHABLE_MESSAGE}</p>
         </Card>
       )}
 

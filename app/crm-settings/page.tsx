@@ -8,6 +8,8 @@ import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import { SubmitButton } from '@/app/components/ui/SubmitButton';
 import Toast from '../components/Toast';
 
+const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta urinib ko'ring.";
+
 type ToastType = 'success' | 'error' | 'info';
 
 interface ToastMessage {
@@ -46,21 +48,6 @@ export default function CrmSettingsPage() {
   const [isEnabled, setIsEnabled] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const formatTestError = (error: unknown) => {
-    if (typeof error === 'object' && error && 'status' in error) {
-      const status = Number((error as { status?: number }).status || 0);
-      const message = String((error as { message?: string }).message || 'Ulanishda xatolik');
-      if (status === 404) {
-        return '404: webhook URL topilmadi yoki backend route mavjud emas. URL va backend route ni tekshiring.';
-      }
-      if (status === 401 || status === 403) {
-        return 'API key noto‘g‘ri yoki webhook ruxsat bermadi.';
-      }
-      return message;
-    }
-    return error instanceof Error ? error.message : 'Ulanishda xatolik';
-  };
-
   /**
    * Add toast notification
    */
@@ -85,7 +72,7 @@ export default function CrmSettingsPage() {
         setIsEnabled(data.connected);
       } catch (error) {
         console.error('Failed to fetch CRM status:', error);
-        addToast('PBX statusni olishda xatolik', 'error');
+        addToast(BACKEND_UNREACHABLE_MESSAGE, 'error');
       } finally {
         setLoadingStatus(false);
       }
@@ -151,7 +138,7 @@ export default function CrmSettingsPage() {
         addToast(response.error || 'Saqlashda xatolik', 'error');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Saqlashda xatolik';
+      const errorMessage = error instanceof Error ? error.message : BACKEND_UNREACHABLE_MESSAGE;
       addToast(errorMessage, 'error');
     } finally {
       setSubmitting(false);
@@ -198,8 +185,8 @@ export default function CrmSettingsPage() {
       } else {
         addToast(response.error || 'Ulanishda xatolik', 'error');
       }
-    } catch (error) {
-      addToast(formatTestError(error), 'error');
+    } catch {
+      addToast(BACKEND_UNREACHABLE_MESSAGE, 'error');
     } finally {
       setTesting(false);
     }

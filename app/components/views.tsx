@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent, type ReactNode } from "react";
 import { Icons, type IconKey } from "./Icons";
-import { fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
+import { fetchBackendHealth, fetchBackendRoot, fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
 import {
   getStatus as getCrmStatus,
   connectSimple as saveCrmConnection,
@@ -130,6 +130,8 @@ const LOST_PALETTE = [
 
 interface LostBar { label: string; count: number; pct: number }
 
+const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta urinib ko'ring.";
+
 export function OverviewView() {
   // Hammasi backenddan jonli: KPI cardlar, top operatorlar, yo'qotish sabablari
   // va so'nggi faollik. Demo qiymat yo'q — ma'lumot bo'lmasa bo'sh holat.
@@ -140,12 +142,18 @@ export function OverviewView() {
   const [recent, setRecent] = useState<CallRow[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const fetchData = (ctrl: AbortController) => {
     (async () => {
       // Qo'ng'iroqlar jurnali — KPI o'rtachasi va so'nggi faollik shu yerdan.
       try {
+        await Promise.all([
+          fetchBackendRoot(ctrl.signal).catch(() => null),
+          fetchBackendHealth(ctrl.signal).catch(() => null),
+        ]);
+
         const [calls, mgrs, analytics] = await Promise.all([
           listCalls({ limit: 100 }, ctrl.signal),
           listManagers(ctrl.signal),
@@ -189,10 +197,12 @@ export function OverviewView() {
         }
         setDataLoaded(true);
         setLive("online");
+        setLoadError(false);
       } catch (e) {
         if ((e as Error)?.name !== "AbortError") {
           setLive("offline");
           setDataLoaded(false);
+          setLoadError(true);
         }
       }
 
@@ -247,6 +257,11 @@ export function OverviewView() {
   if (!dataLoaded) {
     return (
       <div className="space-y-6">
+        {loadError && (
+          <Card className="p-5">
+            <p className="text-sm text-rose-600 dark:text-rose-400">{BACKEND_UNREACHABLE_MESSAGE}</p>
+          </Card>
+        )}
         <div className="flex items-center gap-2 text-xs font-medium">
           <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset bg-slate-500/10 text-slate-500 ring-slate-500/30">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
@@ -394,7 +409,7 @@ export function RecordingsView() {
         setError(null);
       } catch (e) {
         if ((e as Error)?.name !== "AbortError")
-          setError("Qo'ng'iroqlar jurnalini olishda xatolik. Backend (:5001) ishlayotganini tekshiring.");
+          setError(BACKEND_UNREACHABLE_MESSAGE);
       } finally {
         setLoading(false);
       }
@@ -549,7 +564,7 @@ function CallDetailModal({ id, managerName, onClose }: { id: string; managerName
         setDetail(await getCall(id, ctrl.signal));
         setError(null);
       } catch (e) {
-        if ((e as Error)?.name !== "AbortError") setError("Qo'ng'iroq tafsilotini olishda xatolik.");
+        if ((e as Error)?.name !== "AbortError") setError(BACKEND_UNREACHABLE_MESSAGE);
       } finally {
         setLoading(false);
       }
@@ -1056,7 +1071,7 @@ export function DeepAuditView() {
         setError(null);
       } catch (e) {
         if ((e as Error)?.name !== "AbortError")
-          setError("Qo'ng'iroqlar ro'yxatini olishda xatolik. Backend (:5001) ishlayotganini tekshiring.");
+          setError(BACKEND_UNREACHABLE_MESSAGE);
       } finally {
         setListLoading(false);
       }
@@ -1137,7 +1152,7 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
         setDetail(await getCall(id, ctrl.signal));
         setError(null);
       } catch (e) {
-        if ((e as Error)?.name !== "AbortError") setError("Qo'ng'iroq tafsilotini olishda xatolik.");
+        if ((e as Error)?.name !== "AbortError") setError(BACKEND_UNREACHABLE_MESSAGE);
       } finally {
         setLoading(false);
       }
@@ -1375,7 +1390,7 @@ export function CategoriesView() {
       setError(null);
     } catch (e) {
       if ((e as Error)?.name !== "AbortError")
-        setError("Kategoriyalarni olishda xatolik. Backend (:5001) va `criteria` jadvali tayyorligini tekshiring.");
+        setError(BACKEND_UNREACHABLE_MESSAGE);
     }
   }, []);
 
@@ -1535,7 +1550,7 @@ export function CriteriaView() {
       setError(null);
     } catch (e) {
       if ((e as Error)?.name !== "AbortError")
-        setError("Qoidalarni backenddan olishda xatolik. Server (:5001) ishlayotganini tekshiring.");
+        setError(BACKEND_UNREACHABLE_MESSAGE);
     }
   }, []);
 
@@ -1547,7 +1562,7 @@ export function CriteriaView() {
         setError(null);
       } catch (e) {
         if ((e as Error)?.name !== "AbortError")
-          setError("Qoidalarni backenddan olishda xatolik. Server (:5001) ishlayotganini tekshiring.");
+          setError(BACKEND_UNREACHABLE_MESSAGE);
       } finally {
         setLoading(false);
       }
@@ -2247,7 +2262,7 @@ export function AmoCrmView() {
           <p className="rounded-xl border border-dashed border-slate-300/60 bg-slate-500/5 px-4 py-3 text-xs leading-relaxed text-slate-500 dark:border-slate-600/60 dark:text-slate-400">
             <b>Eslatma:</b> Saqlash va test tugmalari backendga so&apos;rov yuboradi. Barqaror ishlashi uchun
             backendda <code className="font-mono">POST /crm/connect-simple</code>, <code className="font-mono">POST /crm/test-connection</code>,
-            <code className="font-mono"> GET /crm/status</code> endpointlari bo&apos;lishi kerak.
+            <code className="font-mono"> GET /crm/webhook/pbx</code> endpointlari bo&apos;lishi kerak.
           </p>
         </form>
       </Card>

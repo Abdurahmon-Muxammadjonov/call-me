@@ -11,6 +11,7 @@
  * Eslatma: ro'yxat/menejer endpointlari { success, data } konvertida; analyze
  * POST esa natijani yuqori darajada (call_id, manager, audit, kpi) qaytaradi. */
 
+import { apiClient } from "./api/client";
 import { apiUrl } from "./api";
 
 export interface Manager {
@@ -114,13 +115,6 @@ export interface AnalyzeResult {
   };
 }
 
-interface ApiEnvelope<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
 const JSON_HEADERS = { "Content-Type": "application/json", Accept: "application/json" };
 
 function withPlatform(path: string, platformId?: string | null): string {
@@ -130,30 +124,22 @@ function withPlatform(path: string, platformId?: string | null): string {
   return `${path}${sep}platform_id=${encodeURIComponent(p)}`;
 }
 
-async function parse<T>(res: Response): Promise<T> {
-  const json = (await res.json()) as ApiEnvelope<T>;
-  if (!res.ok || !json.success) {
-    throw new Error(json.error || json.message || `HTTP ${res.status}`);
+async function unwrapData<T>(promise: Promise<{ success?: boolean; data?: T; error?: string; message?: string }>): Promise<T> {
+  const response = await promise;
+  if (response.success === false) {
+    throw new Error(response.error || response.message || "API error");
   }
-  return json.data as T;
+  return response.data as T;
 }
 
 /* ---------- Managers ---------- */
 
 export async function listManagers(signal?: AbortSignal, platformId?: string | null): Promise<Manager[]> {
-  const res = await fetch(withPlatform(apiUrl("/managers"), platformId), {
-    headers: { Accept: "application/json" },
-    signal,
-  });
-  return parse<Manager[]>(res);
+  return unwrapData<Manager[]>(apiClient.get<{ success?: boolean; data?: Manager[]; error?: string; message?: string }>(withPlatform("/managers", platformId), { signal }));
 }
 
 export async function getManagerStats(id: string, signal?: AbortSignal, platformId?: string | null): Promise<ManagerStats> {
-  const res = await fetch(withPlatform(apiUrl(`/managers/${id}/stats`), platformId), {
-    headers: { Accept: "application/json" },
-    signal,
-  });
-  return parse<ManagerStats>(res);
+  return unwrapData<ManagerStats>(apiClient.get<{ success?: boolean; data?: ManagerStats; error?: string; message?: string }>(withPlatform(`/managers/${id}/stats`, platformId), { signal }));
 }
 
 /* ---------- Calls ---------- */
@@ -166,16 +152,11 @@ export async function listCalls(
   if (opts.managerId) params.set("manager_id", opts.managerId);
   if (opts.platformId && opts.platformId !== "live") params.set("platform_id", opts.platformId);
   params.set("limit", String(opts.limit ?? 50));
-  const res = await fetch(apiUrl(`/api/calls/?${params.toString()}`), {
-    headers: { Accept: "application/json" },
-    signal,
-  });
-  return parse<CallRow[]>(res);
+  return unwrapData<CallRow[]>(apiClient.get<{ success?: boolean; data?: CallRow[]; error?: string; message?: string }>(`/api/calls?${params.toString()}`, { signal }));
 }
 
 export async function getCall(id: string, signal?: AbortSignal): Promise<CallDetail> {
-  const res = await fetch(apiUrl(`/api/calls/${id}`), { headers: { Accept: "application/json" }, signal });
-  return parse<CallDetail>(res);
+  return unwrapData<CallDetail>(apiClient.get<{ success?: boolean; data?: CallDetail; error?: string; message?: string }>(`/api/calls/${id}`, { signal }));
 }
 
 /* POST /api/analyze-call — audio_url'ni tanlangan menejer nomidan tahlil
@@ -187,7 +168,7 @@ export async function analyzeCall(
 ): Promise<AnalyzeResult> {
   const body: Record<string, string> = { audio_url: input.audio_url };
   if (input.manager_id) body.manager_id = input.manager_id; // ixtiyoriy — bo'lmasa yubormaymiz
-  const res = await fetch(apiUrl("/api/analyze-call/"), {
+  const res = await fetch(apiUrl("/api/analyze-call"), {
     method: "POST",
     headers: JSON_HEADERS,
     body: JSON.stringify(body),
@@ -211,7 +192,7 @@ export async function analyzeCallFile(
   const form = new FormData();
   form.append("audio", input.file);
   if (input.manager_id) form.append("manager_id", input.manager_id); // ixtiyoriy
-  const res = await fetch(apiUrl("/api/analyze-call/"), {
+  const res = await fetch(apiUrl("/api/analyze-call"), {
     method: "POST",
     // Content-Type'ni qo'lda qo'ymaymiz — brauzer multipart boundary'ni o'zi qo'yadi.
     headers: { Accept: "application/json" },

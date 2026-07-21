@@ -6,6 +6,7 @@ export interface CrmStatus {
 
 interface CrmStatusWrappedResponse {
   success?: boolean;
+  status?: number;
   data?: {
     connected?: boolean;
   };
@@ -37,9 +38,11 @@ export interface CrmTestResponse {
  * CRM connection status'ini olish
  */
 export async function getStatus(): Promise<CrmStatus> {
-  const response = await apiClient.get<CrmStatusWrappedResponse>('/crm/status');
+  const response = await apiClient.get<CrmStatusWrappedResponse>('/crm/webhook/pbx');
   const connected = typeof response.connected === 'boolean'
     ? response.connected
+    : typeof response.status === 'number'
+    ? response.status === 1
     : Boolean(response.data?.connected);
   return { connected };
 }

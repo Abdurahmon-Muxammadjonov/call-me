@@ -30,6 +30,8 @@ import {
   type FunnelStage,
 } from "../lib/management";
 
+const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta urinib ko'ring.";
+
 /* =====================================================================
  * Boshqaruv paneli — Apple-clean executive workspace.
  *   1. Sub-platform (tenant) switcher
@@ -213,7 +215,7 @@ function OfflineState({ onRetry }: { onRetry: () => void }) {
           {"Backendga ulanib bo'lmadi"}
         </p>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {"Jonli ko'rsatkichlarni yuklab bo'lmadi. Server ishlayotganini tekshiring."}
+          {BACKEND_UNREACHABLE_MESSAGE}
         </p>
       </div>
       <PillButton icon="scan" onClick={onRetry}>
