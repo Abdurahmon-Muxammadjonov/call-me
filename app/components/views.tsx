@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent, type ReactNode } from "react";
 import { Icons, type IconKey } from "./Icons";
 import { fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
-import { getStatus as getCrmStatus } from "../lib/api/crm";
+import {
+  getStatus as getCrmStatus,
+  connectSimple as saveCrmConnection,
+  testConnection as testCrmConnection,
+} from "../lib/api/crm";
 import {
   listManagers,
   getManagerStats,
@@ -2022,17 +2026,11 @@ export function AmoCrmView() {
 
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/crm/connect-simple`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          webhook_url: webhook,
-          api_key: apiKey,
-          enabled: cfg.enabled,
-        }),
+      const json = await saveCrmConnection({
+        webhook_url: webhook,
+        api_key: apiKey,
       });
-      const json = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string };
-      if (!res.ok || !json.success) {
+      if (!json.success) {
         setSaved(false);
         setTest({ status: "err", msg: json.error || "Saqlashda backend xatolik qaytardi." });
         return;
@@ -2084,16 +2082,7 @@ export function AmoCrmView() {
 
     setTest({ status: "sending", msg: "" });
     try {
-      const res = await fetch(`${API_BASE}/crm/test-connection`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhook_url: webhook, api_key: apiKey }),
-      });
-      const json = (await res.json().catch(() => ({}))) as { success?: boolean; error?: string; message?: string };
-      if (!res.ok) {
-        setTest({ status: "err", msg: json.error || `Backend ${res.status} xatolik qaytardi.` });
-        return;
-      }
+      const json = await testCrmConnection({ webhook_url: webhook, api_key: apiKey });
       if (!json.success) {
         setTest({ status: "err", msg: json.error || "Test ulanish muvaffaqiyatsiz tugadi." });
         return;
