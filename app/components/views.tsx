@@ -2025,6 +2025,7 @@ export function AmoCrmView() {
     }
 
     setSaving(true);
+    setTest({ status: "sending", msg: "Ma'lumotlar yuklanmoqda, kuting..." });
     try {
       const json = await saveCrmConnection({
         webhook_url: webhook,
@@ -2080,7 +2081,7 @@ export function AmoCrmView() {
       // ignore URL parse errors — validation above already passed
     }
 
-    setTest({ status: "sending", msg: "" });
+    setTest({ status: "sending", msg: "Ma'lumotlar yuklanmoqda, kuting..." });
     try {
       const json = await testCrmConnection({ webhook_url: webhook, api_key: apiKey });
       if (!json.success) {
@@ -2216,15 +2217,23 @@ export function AmoCrmView() {
             </button>
           </div>
 
-          {test.status !== "idle" && test.status !== "sending" && (
+          {test.status !== "idle" && (
             <div
               className={`flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium ${
                 test.status === "ok"
                   ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                  : test.status === "sending"
+                  ? "border-sky-400/40 bg-sky-500/10 text-sky-700 dark:text-sky-300"
                   : "border-rose-400/40 bg-rose-500/10 text-rose-600 dark:text-rose-400"
               }`}
             >
-              {test.status === "ok" ? <Icons.check className="mt-0.5 h-4 w-4 shrink-0" /> : <Icons.close className="mt-0.5 h-4 w-4 shrink-0" />}
+              {test.status === "ok" ? (
+                <Icons.check className="mt-0.5 h-4 w-4 shrink-0" />
+              ) : test.status === "sending" ? (
+                <span className="mt-0.5 h-4 w-4 animate-spin rounded-full border-2 border-sky-500/40 border-t-sky-600" />
+              ) : (
+                <Icons.close className="mt-0.5 h-4 w-4 shrink-0" />
+              )}
               <span>{test.msg}</span>
             </div>
           )}

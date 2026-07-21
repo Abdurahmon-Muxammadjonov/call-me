@@ -10,9 +10,9 @@ export interface ApiError {
   status?: number;
 }
 
-const REQUEST_TIMEOUT_MS = 120_000;
-const MAX_RETRIES = 2;
-const RETRY_DELAYS_MS = [700, 1600];
+const REQUEST_TIMEOUT_MS = 300_000;
+const MAX_RETRIES = 3;
+const RETRY_DELAYS_MS = [2000, 4000, 8000];
 
 type RetryableOptions = Omit<RequestInit, 'signal'> & {
   signal?: AbortSignal | null;
@@ -69,7 +69,12 @@ async function fetchWithTimeoutAndRetry(url: string, options: RetryableOptions):
     const timer = setTimeout(() => timeoutController.abort(), timeoutMs);
     try {
       const signal = mergeAbortSignals(options.signal, timeoutController.signal);
-      const res = await fetch(url, { ...options, signal });
+      const res = await fetch(url, {
+        cache: 'no-store',
+        keepalive: true,
+        ...options,
+        signal,
+      });
       clearTimeout(timer);
       return res;
     } catch (error) {
@@ -99,7 +104,11 @@ export const apiClient = {
     const res = await fetchWithTimeoutAndRetry(`${API_BASE}${endpoint}`, {
       method: 'GET',
       headers: {
+        Accept: 'application/json',
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'X-Client-Connection': 'keep-alive',
         ...options?.headers,
       },
       ...options,
@@ -120,7 +129,11 @@ export const apiClient = {
     const res = await fetchWithTimeoutAndRetry(`${API_BASE}${endpoint}`, {
       method: 'POST',
       headers: {
+        Accept: 'application/json',
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'X-Client-Connection': 'keep-alive',
         ...options?.headers,
       },
       body: body ? JSON.stringify(body) : undefined,
