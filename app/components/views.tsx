@@ -153,7 +153,7 @@ export function OverviewView() {
 
         const [calls, mgrs, analytics] = await Promise.all([
           listCalls({ limit: 100 }, ctrl.signal),
-          listManagers(ctrl.signal),
+          listManagers(ctrl.signal).catch(() => [] as Manager[]),
           fetchCallAnalytics(ctrl.signal).catch(() => null),
         ]);
 

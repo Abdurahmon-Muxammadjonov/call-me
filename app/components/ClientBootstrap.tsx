@@ -16,7 +16,7 @@ export function ClientBootstrap() {
     const checkHealth = async () => {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
+        const timeout = setTimeout(() => controller.abort(), 15000);
 
         const result = await fetchBackendHealthWithFallback(controller.signal);
         clearTimeout(timeout);

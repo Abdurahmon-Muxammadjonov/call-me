@@ -116,7 +116,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
 
       {/* Backend/network error toast */}
       {formErr && (
-        <div key={errKey} className="absolute left-1/2 top-6 z-20 -translate-x-1/2 animate-toast-in" role="alert">
+        <div key={`toast-${errKey}`} className="absolute left-1/2 top-6 z-20 -translate-x-1/2 animate-toast-in" role="alert">
           <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-500/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_40px_-10px_rgba(244,63,94,0.7)] backdrop-blur-md">
             <Icons.close className="h-4 w-4 shrink-0" />
             {formErr}
@@ -125,7 +125,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
       )}
 
       <div
-        key={errKey}
+        key={`card-${errKey}`}
         className={`glass glow-ring relative z-10 w-full max-w-md rounded-3xl p-8 shadow-2xl sm:p-10 ${
           formErr ? "animate-shake" : "animate-slide-up"
         }`}
