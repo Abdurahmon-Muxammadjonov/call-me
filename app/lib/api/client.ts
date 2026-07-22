@@ -106,9 +106,6 @@ export const apiClient = {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        'X-Client-Connection': 'keep-alive',
         ...options?.headers,
       },
       ...options,
@@ -131,9 +128,6 @@ export const apiClient = {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        'X-Client-Connection': 'keep-alive',
         ...options?.headers,
       },
       body: body ? JSON.stringify(body) : undefined,
