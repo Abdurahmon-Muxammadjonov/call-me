@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent, type ReactNode } from "react";
 import { Icons, type IconKey } from "./Icons";
-import { fetchBackendHealth, fetchBackendRoot, fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
+import { fetchBackendHealth, fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
 import {
   getStatus as getCrmStatus,
   connectSimple as saveCrmConnection,
@@ -149,10 +149,7 @@ export function OverviewView() {
     (async () => {
       // Qo'ng'iroqlar jurnali — KPI o'rtachasi va so'nggi faollik shu yerdan.
       try {
-        await Promise.all([
-          fetchBackendRoot(ctrl.signal).catch(() => null),
-          fetchBackendHealth(ctrl.signal).catch(() => null),
-        ]);
+        await fetchBackendHealth(ctrl.signal).catch(() => null);
 
         const [calls, mgrs, analytics] = await Promise.all([
           listCalls({ limit: 100 }, ctrl.signal),

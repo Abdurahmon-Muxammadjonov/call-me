@@ -9,11 +9,10 @@ import {
   type PopBlock,
   type ConversionDay,
 } from "../lib/api";
-
-const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta urinib ko'ring.";
+import { AnalyticsErrorUI, categorizeError, type AnalyticsError } from "./AnalyticsErrorUI";
 
 /* =====================================================================
- * "Solishtirish paneli" — alohida nav bo'limi.
+ * Solishtirish paneli — alohida nav bo'limi.
  *
  * Kunlik / Haftalik / Oylik natijalar oldingi davr bilan YONMA-YON
  * solishtiriladi (jonli /analytics/pop). Pastda — har kunlik tarix
@@ -148,21 +147,36 @@ function HistoryCard({ days }: { days: ConversionDay[] }) {
 export function ComparisonView() {
   const [pop, setPop] = useState<PopStats | null>(null);
   const [history, setHistory] = useState<ConversionDay[] | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<AnalyticsError | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const handleRetry = () => {
+    setReloadKey((k) => k + 1);
+  };
 
   useEffect(() => {
     const ctrl = new AbortController();
+
     Promise.all([fetchPopStats(null, ctrl.signal), fetchConversionHistory(null, 30, ctrl.signal)])
       .then(([p, h]) => {
-        setError(false);
-        setPop(p);
-        setHistory(h);
+        if (!ctrl.signal.aborted) {
+          setError(null);
+          setPop(p);
+          setHistory(h);
+          setIsLoading(false);
+        }
       })
-      .catch(() => {
-        if (!ctrl.signal.aborted) setError(true);
+      .catch((err) => {
+        if (!ctrl.signal.aborted) {
+          const analyticsError = categorizeError(err);
+          setError(analyticsError);
+          setIsLoading(false);
+        }
       });
+
     return () => ctrl.abort();
-  }, []);
+  }, [reloadKey]);
 
   return (
     <div className="animate-slide-up space-y-6">
@@ -171,7 +185,7 @@ export function ComparisonView() {
         subtitle="Kunlik, haftalik va oylik natijalar — oldingi davr bilan yonma-yon"
       />
 
-      {!pop && !error && (
+      {isLoading && !pop && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Skeleton className="h-56" />
           <Skeleton className="h-56" />
@@ -179,11 +193,7 @@ export function ComparisonView() {
         </div>
       )}
 
-      {error && (
-        <Card className="p-5">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">{BACKEND_UNREACHABLE_MESSAGE}</p>
-        </Card>
-      )}
+      {error && <AnalyticsErrorUI error={error} onRetry={handleRetry} />}
 
       {pop && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
