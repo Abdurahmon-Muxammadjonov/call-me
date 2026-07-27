@@ -152,10 +152,13 @@ export function AppShell({
                     const active = activeTab === item.id;
                     const navKeys = NAV_LABEL_KEYS[item.id];
                     return (
-                      <li key={item.id}>
+                      <li key={item.id} className="relative">
+                        {active && (
+                          <span className="absolute -left-4 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-600 dark:bg-blue-400" />
+                        )}
                         <button
                           onClick={() => selectTab(item.id)}
-                          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${
+                          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
                             active
                               ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
                               : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
@@ -163,7 +166,6 @@ export function AppShell({
                         >
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="flex-1 text-left">{t(navKeys.label)}</span>
-                          {active && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600 dark:bg-blue-400" />}
                         </button>
                       </li>
                     );

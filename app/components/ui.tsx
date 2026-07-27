@@ -42,11 +42,14 @@ export const accentGrad: Record<Accent, string> = {
   violet: "from-amber-500 to-amber-600",
 };
 
+/* A faint accent-tinted ambient shadow, layered on top of Card's own
+ * elevation — a subtle premium touch so each stat tile's shadow echoes its
+ * icon color instead of being perfectly neutral gray. */
 export const accentGlow: Record<Accent, string> = {
-  indigo: "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]",
-  cyan: "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]",
-  emerald: "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]",
-  violet: "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]",
+  indigo: "shadow-[0_10px_24px_-16px_rgba(37,99,235,0.35)]",
+  cyan: "shadow-[0_10px_24px_-16px_rgba(13,148,136,0.35)]",
+  emerald: "shadow-[0_10px_24px_-16px_rgba(5,150,105,0.35)]",
+  violet: "shadow-[0_10px_24px_-16px_rgba(217,119,6,0.35)]",
 };
 
 /* ---------- Brand logo ---------- */
@@ -87,10 +90,10 @@ export function Card({
   return (
     <div
       onClick={onClick}
-      className={`glass rounded-2xl ${glow ? "glow-ring" : ""} ${
+      className={`glass rounded-xl ${glow ? "glow-ring" : ""} ${
         onClick ? "cursor-pointer" : ""
       } ${
-        hover ? "transition-all duration-300 hover:shadow-lg" : ""
+        hover ? "glass-hover transition-[box-shadow,transform] duration-200" : ""
       } ${className}`}
     >
       {children}
@@ -317,8 +320,8 @@ export function PillButton({
       onClick={onClick}
       className={
         variant === "solid"
-          ? `inline-flex items-center gap-2 rounded-xl bg-linear-to-r ${accentGrad[accent]} px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg`
-          : "inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 hover:bg-white/80 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800/70"
+          ? `inline-flex items-center gap-2 rounded-lg bg-linear-to-b ${accentGrad[accent]} px-4 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgb(0,0,0,0.05),0_4px_10px_-4px_rgb(0,0,0,0.25)] transition-shadow duration-150 hover:shadow-[0_1px_2px_rgb(0,0,0,0.05),0_6px_16px_-4px_rgb(0,0,0,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900`
+          : "inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors duration-150 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:focus-visible:ring-offset-slate-900"
       }
     >
       {Icon && <Icon className="h-4 w-4" />}

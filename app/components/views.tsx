@@ -85,7 +85,7 @@ function StatCard({ stat }: { stat: StatItem }) {
     <Card hover className={`p-5 ${accentGlow[accent]}`}>
       <div className="flex items-start justify-between">
         <div
-          className={`grid h-11 w-11 place-items-center rounded-xl bg-linear-to-br ${accentGrad[accent]} text-white shadow-md`}
+          className={`grid h-11 w-11 place-items-center rounded-lg bg-linear-to-b ${accentGrad[accent]} text-white shadow-[0_1px_2px_rgb(0,0,0,0.06),0_4px_8px_-2px_rgb(0,0,0,0.15)]`}
         >
           <Icon className="h-5 w-5" />
         </div>

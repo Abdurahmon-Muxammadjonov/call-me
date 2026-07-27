@@ -94,9 +94,9 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
   }
 
   const inputBase =
-    "w-full rounded-xl border bg-white/70 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition-all duration-300 placeholder:text-slate-400 focus:ring-2 dark:bg-slate-800/50 dark:text-slate-100";
+    "w-full rounded-lg border bg-white py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition-colors duration-150 placeholder:text-slate-400 focus:ring-2 dark:bg-slate-900 dark:text-slate-100";
   const okBorder =
-    "border-slate-200/70 focus:border-indigo-400 focus:ring-indigo-400/30 dark:border-slate-700/60 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/30";
+    "border-slate-200/70 focus:border-blue-500 focus:ring-blue-500/20 dark:border-slate-700/60 dark:focus:border-blue-400 dark:focus:ring-blue-400/20";
   const errBorder = "border-rose-400 focus:border-rose-400 focus:ring-rose-400/30";
 
   return (
@@ -117,7 +117,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
 
       <div
         key={`card-${errKey}`}
-        className={`glass glow-ring relative z-10 w-full max-w-md rounded-3xl p-8 shadow-2xl sm:p-10 ${
+        className={`glass glow-ring relative z-10 w-full max-w-md rounded-2xl p-8 sm:p-10 ${
           formErr ? "animate-shake" : "animate-slide-up"
         }`}
       >
@@ -140,7 +140,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
             <div className="group relative">
               <Icons.mail
                 className={`absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 transition-colors ${
-                  emailErr ? "text-rose-400" : "text-slate-400 group-focus-within:text-indigo-500"
+                  emailErr ? "text-rose-400" : "text-slate-400 group-focus-within:text-blue-600"
                 }`}
               />
               <input
@@ -167,7 +167,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
             <div className="group relative">
               <Icons.lock
                 className={`absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 transition-colors ${
-                  passErr ? "text-rose-400" : "text-slate-400 group-focus-within:text-indigo-500"
+                  passErr ? "text-rose-400" : "text-slate-400 group-focus-within:text-blue-600"
                 }`}
               />
               <input
@@ -185,7 +185,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
               <button
                 type="button"
                 onClick={() => setShowPass((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-xs font-semibold text-slate-400 transition-colors hover:text-indigo-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-xs font-semibold text-slate-400 transition-colors hover:text-blue-600"
               >
                 {showPass ? t("login.hide") : t("login.show")}
               </button>
@@ -196,7 +196,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
           <button
             type="submit"
             disabled={loading}
-            className="group relative mt-2 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md transition-colors duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-70"
+            className="group relative mt-2 flex w-full items-center justify-center gap-2 overflow-hidden rounded-lg bg-linear-to-b from-blue-600 to-blue-700 py-3.5 text-sm font-bold text-white shadow-[0_1px_2px_rgb(0,0,0,0.05),0_8px_16px_-6px_rgb(37,99,235,0.4)] transition-shadow duration-150 hover:shadow-[0_1px_2px_rgb(0,0,0,0.05),0_10px_20px_-6px_rgb(37,99,235,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? (
               <>
