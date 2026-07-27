@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Icons, type IconKey } from "./Icons";
+import { LOCALES, setLocale, useLocale, useT, type Locale } from "../lib/i18n";
 
 /* ---------- Shared 1s clock ----------
  * A single ticking source the whole app subscribes to. useSyncExternalStore is
@@ -38,10 +39,10 @@ export const accentGrad: Record<Accent, string> = {
 };
 
 export const accentGlow: Record<Accent, string> = {
-  indigo: "shadow-[0_0_24px_-6px_rgba(99,102,241,0.55)]",
-  cyan: "shadow-[0_0_24px_-6px_rgba(34,211,238,0.55)]",
-  emerald: "shadow-[0_0_24px_-6px_rgba(52,211,153,0.55)]",
-  violet: "shadow-[0_0_24px_-6px_rgba(139,92,246,0.55)]",
+  indigo: "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]",
+  cyan: "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]",
+  emerald: "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]",
+  violet: "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]",
 };
 
 /* ---------- Brand logo ---------- */
@@ -196,6 +197,7 @@ export function ScoreBar({ score }: { score: number }) {
 
 /* ---------- Status badge ---------- */
 export function StatusBadge({ status }: { status: string }) {
+  const locale = useLocale();
   const map: Record<string, string> = {
     analyzed:
       "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/30",
@@ -208,15 +210,27 @@ export function StatusBadge({ status }: { status: string }) {
     away: "bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-amber-500/30",
     offline: "bg-slate-500/10 text-slate-500 dark:text-slate-400 ring-slate-500/30",
   };
-  const labels: Record<string, string> = {
-    analyzed: "Tahlil qilindi",
-    processing: "Jarayonda",
-    queued: "Navbatda",
-    failed: "Xatolik",
-    online: "Onlayn",
-    away: "Band",
-    offline: "Oflayn",
+  const labels: Record<string, Record<string, string>> = {
+    uz: {
+      analyzed: "Tahlil qilindi",
+      processing: "Jarayonda",
+      queued: "Navbatda",
+      failed: "Xatolik",
+      online: "Onlayn",
+      away: "Band",
+      offline: "Oflayn",
+    },
+    ru: {
+      analyzed: "Проанализировано",
+      processing: "В процессе",
+      queued: "В очереди",
+      failed: "Ошибка",
+      online: "Онлайн",
+      away: "Занят",
+      offline: "Офлайн",
+    },
   };
+  const localeLabels = labels[locale] ?? labels.uz ?? {};
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
@@ -224,7 +238,7 @@ export function StatusBadge({ status }: { status: string }) {
       }`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {labels[status] ?? status}
+      {localeLabels[status] ?? status}
     </span>
   );
 }
@@ -237,10 +251,11 @@ export function ThemeToggle({
   isDark: boolean;
   onToggle: () => void;
 }) {
+  const t = useT();
   return (
     <button
       onClick={onToggle}
-      aria-label="Mavzuni almashtirish"
+      aria-label={t("theme.toggle")}
       className="group relative flex h-9 w-16 items-center rounded-full border border-slate-200/70 bg-slate-100/80 p-1 transition-all duration-300 dark:border-slate-700/60 dark:bg-slate-800/60"
     >
       <span
@@ -252,6 +267,29 @@ export function ThemeToggle({
       >
         {isDark ? <Icons.moon className="h-4 w-4" /> : <Icons.sun className="h-4 w-4" />}
       </span>
+    </button>
+  );
+}
+
+/* ---------- Language switch ---------- */
+export function LocaleToggle({ className = "" }: { className?: string }) {
+  const locale = useLocale();
+  const t = useT();
+
+  function cycle() {
+    const idx = LOCALES.findIndex((l) => l.value === locale);
+    const next = LOCALES[(idx + 1) % LOCALES.length] as { value: Locale; label: string };
+    setLocale(next.value);
+  }
+
+  return (
+    <button
+      onClick={cycle}
+      aria-label={t("locale.toggle")}
+      title={t("locale.toggle")}
+      className={`inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-slate-200/70 bg-slate-100/80 px-3 text-xs font-bold uppercase tracking-wide text-slate-600 transition-all duration-300 hover:bg-slate-200/70 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800 ${className}`}
+    >
+      {locale}
     </button>
   );
 }

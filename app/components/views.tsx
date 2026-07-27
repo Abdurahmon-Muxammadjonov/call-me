@@ -53,6 +53,8 @@ import {
   type Accent,
 } from "./ui";
 import { STATS } from "../lib/data";
+import { getSupabase } from "../lib/supabase";
+import { useT } from "../lib/i18n";
 
 /* Relaxed shape so live values (computed from the backend) can replace the
  * template values without TS narrowing each card to its literal accent/trend. */
@@ -135,6 +137,7 @@ const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta uri
 export function OverviewView() {
   // Hammasi backenddan jonli: KPI cardlar, top operatorlar, yo'qotish sabablari
   // va so'nggi faollik. Demo qiymat yo'q — ma'lumot bo'lmasa bo'sh holat.
+  const t = useT();
   const [stats, setStats] = useState<StatItem[]>([]);
   const [live, setLive] = useState<"loading" | "online" | "offline">("loading");
   const [leaders, setLeaders] = useState<ManagerStats[]>([]);
@@ -170,10 +173,10 @@ export function OverviewView() {
 
         setStats(
           [
-            { label: "Jami qo'ng'iroq", key: "calls", value: totalCalls.toLocaleString(), delta: "Jonli", trend: "up", accent: "indigo", icon: "phone", spark: [10, 20, 15, 25, 30, 22, 25] },
-            { label: "O'rtacha davomiyligi", key: "duration", value: formatDuration(Math.round(avgDuration)), delta: "Jonli", trend: "up", accent: "violet", icon: "clock", spark: [12, 18, 16, 24, 28, 20, 26] },
-            { label: "O'rtacha KPI", key: "score", value: avgKpi ? avgKpi.toFixed(1) : "—", delta: "Jonli", trend: "up", accent: "emerald", icon: "spark", spark: [8, 14, 12, 20, 25, 18, 22] },
-            { label: "AI auditori", key: "tokens", value: "—", delta: "Ulanmagan", trend: "down", accent: "cyan", icon: "shield", spark: [0, 0, 0, 0, 0, 0, 0] },
+            { label: t("overview.stat.calls"), key: "calls", value: totalCalls.toLocaleString(), delta: t("overview.stat.live"), trend: "up", accent: "indigo", icon: "phone", spark: [10, 20, 15, 25, 30, 22, 25] },
+            { label: t("overview.stat.duration"), key: "duration", value: formatDuration(Math.round(avgDuration)), delta: t("overview.stat.live"), trend: "up", accent: "violet", icon: "clock", spark: [12, 18, 16, 24, 28, 20, 26] },
+            { label: t("overview.stat.score"), key: "score", value: avgKpi ? avgKpi.toFixed(1) : "—", delta: t("overview.stat.live"), trend: "up", accent: "emerald", icon: "spark", spark: [8, 14, 12, 20, 25, 18, 22] },
+            { label: t("overview.stat.ai"), key: "tokens", value: "—", delta: t("overview.stat.disconnected"), trend: "down", accent: "cyan", icon: "shield", spark: [0, 0, 0, 0, 0, 0, 0] },
           ]
         );
 
@@ -238,17 +241,32 @@ export function OverviewView() {
     return () => ctrl.abort();
   }, [reloadKey]);
 
-  /* Polling: har 30 sekundda yangi qo'ng'iroqlar bor-yo'qligini tekshir.
-     Yangi data kelsa avtomatik refresh bo'ladi. */
+  /* Realtime: pollingsiz — Supabase'dagi `calls`/`managers` jadvallariga
+     yozuv qo'shilsa/o'zgarsa/o'chirilsa shu zahoti reloadKey bosiladi va
+     yangi ma'lumot backend'dan (jonli hisoblangan analytics bilan birga)
+     qayta olinadi. Analytics/leaderboard server tomonida agregatsiya
+     qilinadigani uchun har bir eventni to'liq refetch'ga tarjima qilamiz —
+     lekin bu endi ZERO interval, faqat haqiqiy o'zgarish bo'lganda ishlaydi. */
   useEffect(() => {
-    const timer = setInterval(() => {
-      setReloadKey((k) => k + 1);
-    }, 30000); // 30 sek
+    const supabase = getSupabase();
+    if (!supabase) return; // Realtime sozlanmagan — polling qo'shilmaydi, sahifa bir martalik yuklanish bilan qoladi.
 
-    return () => clearInterval(timer);
+    const channel = supabase
+      .channel("overview-calls-managers")
+      .on("postgres_changes", { event: "*", schema: "public", table: "calls" }, () => {
+        setReloadKey((k) => k + 1);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "managers" }, () => {
+        setReloadKey((k) => k + 1);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const nameOf = (id: string) => names[id] || `${id.slice(0, 8)}…`;
+  const nameOf = (id: string | null | undefined) => (id && names[id]) || (id ? `${id.slice(0, 8)}…` : "—");
 
   /* Bo'sh holat: data hali yuklonmagan bo'lsa, skeletonlarni ko'rsatamiz */
   if (!dataLoaded) {
@@ -256,13 +274,13 @@ export function OverviewView() {
       <div className="space-y-6">
         {loadError && (
           <Card className="p-5">
-            <p className="text-sm text-rose-600 dark:text-rose-400">{BACKEND_UNREACHABLE_MESSAGE}</p>
+            <p className="text-sm text-rose-600 dark:text-rose-400">{t("overview.backendUnreachable")}</p>
           </Card>
         )}
         <div className="flex items-center gap-2 text-xs font-medium">
           <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset bg-slate-500/10 text-slate-500 ring-slate-500/30">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-            Backend bilan ulanmoqda...
+            {t("overview.live.connecting")}
           </span>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -292,10 +310,10 @@ export function OverviewView() {
         >
           <span className={`h-1.5 w-1.5 rounded-full bg-current ${live === "online" ? "animate-pulse" : ""}`} />
           {live === "online"
-            ? "Backend ulangan · jonli ma'lumot"
+            ? t("overview.live.online")
             : live === "offline"
-            ? "Backend oflayn"
-            : "Backend bilan ulanmoqda..."}
+            ? t("overview.live.offline")
+            : t("overview.live.connecting")}
         </span>
       </div>
 
@@ -304,9 +322,9 @@ export function OverviewView() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Top operatorlar (leaderboard) */}
         <Card className="p-6 lg:col-span-2">
-          <SectionTitle title="Top operatorlar" subtitle="O'rtacha KPI baho bo'yicha (jonli)" />
+          <SectionTitle title={t("overview.topOperators")} subtitle={t("overview.topOperatorsSubtitle")} />
           {leaders.length === 0 ? (
-            <Empty text="Hozircha statistika yo'q — birinchi qo'ng'iroq tahlilidan keyin paydo bo'ladi." />
+            <Empty text={t("overview.emptyLeaders")} />
           ) : (
             <ul className="space-y-3">
               {leaders.map((l, i) => (
@@ -333,9 +351,9 @@ export function OverviewView() {
 
         {/* Yo'qotish sabablari taqsimoti */}
         <Card className="p-6">
-          <SectionTitle title="Yo'qotish sabablari" subtitle="Eng ko'p uchragan (jonli)" />
+          <SectionTitle title={t("overview.lostReasons")} subtitle={t("overview.lostReasonsSubtitle")} />
           {lost.length === 0 ? (
-            <Empty text="Yo'qotish sabablari hali aniqlanmagan." />
+            <Empty text={t("overview.emptyLost")} />
           ) : (
             <div className="space-y-5">
               {lost.map((d, i) => (
@@ -359,9 +377,9 @@ export function OverviewView() {
 
       {/* So'nggi faollik */}
       <Card className="p-6">
-        <SectionTitle title="So'nggi faollik" subtitle="Eng oxirgi tahlil qilingan qo'ng'iroqlar" />
+        <SectionTitle title={t("overview.recentActivity")} subtitle={t("overview.recentActivitySubtitle")} />
         {recent.length === 0 ? (
-          <Empty text="Hali tahlil qilingan qo'ng'iroqlar yo'q." />
+          <Empty text={t("overview.emptyRecent")} />
         ) : (
           <ul className="space-y-4">
             {recent.map((c) => (
@@ -414,7 +432,7 @@ export function RecordingsView() {
     return () => ctrl.abort();
   }, []);
 
-  const nameOf = (id: string) => managers[id] || `${id.slice(0, 8)}…`;
+  const nameOf = (id: string | null | undefined) => (id && managers[id]) || (id ? `${id.slice(0, 8)}…` : "—");
   // O'chirilgan operatorlarning qo'ng'iroqlarini ko'rsatmaymiz: menejerlar
   // ro'yxati bo'lsa, faqat mavjud (yoki menejersiz/test) qo'ng'iroqlar qoladi.
   // Dinamik — operator o'chirilsa, uning yozuvlari avtomatik yo'qoladi.
@@ -1076,7 +1094,7 @@ export function DeepAuditView() {
     return () => ctrl.abort();
   }, []);
 
-  const nameOf = (id: string) => names[id] || `${id.slice(0, 8)}…`;
+  const nameOf = (id: string | null | undefined) => (id && names[id]) || (id ? `${id.slice(0, 8)}…` : "—");
   // O'chirilgan operatorlarning qo'ng'iroqlarini ro'yxatdan chiqaramiz (dinamik).
   const haveNames = Object.keys(names).length > 0;
   const visibleCalls = haveNames ? calls.filter((c) => !c.manager_id || names[c.manager_id]) : calls;

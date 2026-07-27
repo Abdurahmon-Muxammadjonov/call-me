@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, SectionTitle } from "./ui";
 import { apiClient } from "../lib/api/client";
+import { getSupabase } from "../lib/supabase";
+import { useT } from "../lib/i18n";
 
 export interface Manager {
   id: string;
@@ -84,6 +86,7 @@ function normalizeStatus(status: string): "online" | "offline" | "away" {
 }
 
 function StatusPill({ status }: { status: string }) {
+  const t = useT();
   const normalized = normalizeStatus(status);
   const classes =
     normalized === "online"
@@ -92,7 +95,12 @@ function StatusPill({ status }: { status: string }) {
       ? "bg-amber-500/10 text-amber-600 ring-amber-500/30 dark:text-amber-400"
       : "bg-slate-500/10 text-slate-500 ring-slate-500/30 dark:text-slate-400";
 
-  const label = normalized === "online" ? "online" : normalized === "away" ? "away" : "offline";
+  const label =
+    normalized === "online"
+      ? t("managers.status.online")
+      : normalized === "away"
+      ? t("managers.status.away")
+      : t("managers.status.offline");
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${classes}`}>
@@ -103,6 +111,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 export function ManagersDashboard() {
+  const t = useT();
   const [managers, setManagers] = useState<Manager[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,36 +153,49 @@ export function ManagersDashboard() {
   }, []);
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
+    const initTimer = window.setTimeout(() => {
       void fetchManagers();
     }, 0);
-    const interval = setInterval(() => {
-      void fetchManagers();
-    }, 30_000);
+    return () => window.clearTimeout(initTimer);
+  }, [fetchManagers]);
+
+  /* Realtime: pollingsiz — `managers` jadvalida o'zgarish bo'lganda shu
+     zahoti qayta yuklanadi (backend'dagi agregatsiya qilingan
+     /crm/dashboard/managers endpointi orqali). */
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel("managers-dashboard")
+      .on("postgres_changes", { event: "*", schema: "public", table: "managers" }, () => {
+        void fetchManagers();
+      })
+      .subscribe();
+
     return () => {
-      window.clearTimeout(t);
-      clearInterval(interval);
+      supabase.removeChannel(channel);
     };
   }, [fetchManagers]);
 
   const subtitle = useMemo(() => {
-    if (!updatedAt) return "Har 30 soniyada avtomatik yangilanadi";
-    return `Oxirgi yangilanish: ${updatedAt.toLocaleTimeString()}`;
-  }, [updatedAt]);
+    if (!updatedAt) return t("managers.live");
+    return `${new Intl.DateTimeFormat(undefined, { timeStyle: "medium" }).format(updatedAt)}`;
+  }, [updatedAt, t]);
 
   return (
     <div className="w-full space-y-4">
       <Card className="p-6">
         <SectionTitle
-          title="Menejerlar"
+          title={t("managers.title")}
           subtitle={subtitle}
           action={
             <div className="flex gap-2">
               <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/30 dark:text-emerald-300">
-                {stats.active} aktiv
+                {stats.active} {t("managers.active")}
               </span>
               <span className="inline-flex items-center rounded-full bg-slate-500/10 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-500/30 dark:text-slate-300">
-                {stats.total} umumiy
+                {stats.total} {t("managers.total")}
               </span>
             </div>
           }
@@ -183,12 +205,12 @@ export function ManagersDashboard() {
 
         {loading && (
           <p className="py-4 text-sm text-slate-500 dark:text-slate-400">
-            Ma&apos;lumotlar yuklanmoqda, kuting...
+            {t("managers.loading")}
           </p>
         )}
 
         {!loading && managers.length === 0 && !error && (
-          <p className="py-4 text-sm text-slate-500 dark:text-slate-400">Hech qanday menejer topilmadi</p>
+          <p className="py-4 text-sm text-slate-500 dark:text-slate-400">{t("managers.empty")}</p>
         )}
 
         {!loading && managers.length > 0 && (
@@ -209,9 +231,9 @@ export function ManagersDashboard() {
           <button
             onClick={() => void fetchManagers()}
             disabled={loading}
-            className="rounded-xl bg-linear-to-r from-sky-500 to-cyan-400 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-700 dark:hover:bg-slate-600"
           >
-            {loading ? "Yuklanmoqda..." : "Yangilash"}
+            {loading ? t("common.loading") : t("common.refresh")}
           </button>
         </div>
       </Card>

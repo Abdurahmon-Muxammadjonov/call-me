@@ -19,7 +19,9 @@ export const metadata: Metadata = {
     "SalesPulse: futuristic AI-powered call center quality auditing dashboard.",
 };
 
-// Runs before paint to set the theme class, preventing a light/dark flash.
+// Runs before paint to set the theme class + locale attribute, preventing a
+// light/dark and language flash (mirrors the same "set DOM before hydration,
+// read the DOM back as the source of truth" trick for both).
 const themeScript = `
 (function () {
   try {
@@ -27,6 +29,10 @@ const themeScript = `
     var dark = stored ? stored === 'dark'
       : window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.classList.toggle('dark', dark);
+  } catch (e) {}
+  try {
+    var loc = localStorage.getItem('procell-locale');
+    document.documentElement.setAttribute('data-locale', loc === 'ru' ? 'ru' : 'uz');
   } catch (e) {}
 })();
 `;

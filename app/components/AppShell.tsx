@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Icons } from "./Icons";
-import { Logo, ThemeToggle, ConfirmModal } from "./ui";
+import { Logo, ThemeToggle, LocaleToggle, ConfirmModal } from "./ui";
 import { NAV_SECTIONS, type TabId } from "../lib/data";
+import { useT, type DictKey } from "../lib/i18n";
 import {
   OverviewView,
   RecordingsView,
@@ -38,19 +39,38 @@ function consumeInitialTab(): TabId {
   return initial;
 }
 
-const TAB_META: Record<TabId, { title: string; subtitle: string }> = {
-  overview: { title: "Umumiy ko'rinish", subtitle: "Call-center sifat auditi bo'yicha umumiy holat" },
-  management: { title: "Boshqaruv paneli", subtitle: "Uch darajali rahbariyat tahlili va platformalar" },
-  comparison: { title: "Solishtirish paneli", subtitle: "Kunlik, haftalik va oylik natijalar — davrlararo solishtirish" },
-  staff: { title: "Xodimlarni boshqarish", subtitle: "Barcha xodimlar — sozlamalar, smena va skriptlar" },
-  recordings: { title: "Audio yozuvlar", subtitle: "Transkripsiya qilingan qo'ng'iroqlar jurnali" },
-  upload: { title: "Audio yuklash", subtitle: "Tahlil uchun yangi qo'ng'iroqlarni yuklang" },
-  "deep-audit": { title: "Chuqur tahlil", subtitle: "Bitta qo'ng'iroqning batafsil AI auditi" },
-  operators: { title: "Operatorlar", subtitle: "Jamoa boshqaruvi" },
-  categories: { title: "Mezon kategoriyalari", subtitle: "Baholash toifalari" },
-  criteria: { title: "Baholash mezonlari", subtitle: "Ballash qoidalari" },
-  amocrm: { title: "amoCRM ulanishi", subtitle: "CRM integratsiyasi" },
+const TAB_KEYS: Record<TabId, { title: DictKey; subtitle: DictKey }> = {
+  overview: { title: "tab.overview.title", subtitle: "tab.overview.subtitle" },
+  management: { title: "tab.management.title", subtitle: "tab.management.subtitle" },
+  comparison: { title: "tab.comparison.title", subtitle: "tab.comparison.subtitle" },
+  staff: { title: "tab.staff.title", subtitle: "tab.staff.subtitle" },
+  recordings: { title: "tab.recordings.title", subtitle: "tab.recordings.subtitle" },
+  upload: { title: "tab.upload.title", subtitle: "tab.upload.subtitle" },
+  "deep-audit": { title: "tab.deep-audit.title", subtitle: "tab.deep-audit.subtitle" },
+  operators: { title: "tab.operators.title", subtitle: "tab.operators.subtitle" },
+  categories: { title: "tab.categories.title", subtitle: "tab.categories.subtitle" },
+  criteria: { title: "tab.criteria.title", subtitle: "tab.criteria.subtitle" },
+  amocrm: { title: "tab.amocrm.title", subtitle: "tab.amocrm.subtitle" },
 };
+
+const NAV_LABEL_KEYS: Record<TabId, { label: DictKey; hint: DictKey }> = {
+  overview: { label: "nav.overview.label", hint: "nav.overview.hint" },
+  management: { label: "nav.management.label", hint: "nav.management.hint" },
+  comparison: { label: "nav.comparison.label", hint: "nav.comparison.hint" },
+  staff: { label: "nav.staff.label", hint: "nav.staff.hint" },
+  recordings: { label: "nav.recordings.label", hint: "nav.recordings.hint" },
+  upload: { label: "nav.upload.label", hint: "nav.upload.hint" },
+  "deep-audit": { label: "nav.deep-audit.label", hint: "nav.deep-audit.hint" },
+  operators: { label: "nav.operators.label", hint: "nav.operators.hint" },
+  categories: { label: "nav.categories.label", hint: "nav.categories.hint" },
+  criteria: { label: "nav.criteria.label", hint: "nav.criteria.hint" },
+  amocrm: { label: "nav.amocrm.label", hint: "nav.amocrm.hint" },
+};
+
+/* NAV_SECTIONS titles are "ASOSIY" (main) / "SOZLAMALAR" (settings) in that
+ * fixed order — mapped positionally since the section title itself isn't a
+ * stable key. */
+const NAV_SECTION_KEYS: DictKey[] = ["nav.section.main", "nav.section.settings"];
 
 function renderTab(tab: TabId) {
   switch (tab) {
@@ -79,12 +99,14 @@ export function AppShell({
   onToggleTheme: () => void;
   onLogout: () => void;
 }) {
+  const t = useT();
   const initials = session.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const [activeTab, setActiveTab] = useState<TabId>(consumeInitialTab);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
 
-  const meta = TAB_META[activeTab];
+  const metaKeys = TAB_KEYS[activeTab];
+  const meta = { title: t(metaKeys.title), subtitle: t(metaKeys.subtitle) };
 
   function selectTab(id: TabId) {
     setActiveTab(id);
@@ -125,15 +147,16 @@ export function AppShell({
           </div>
 
           <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-2">
-            {NAV_SECTIONS.map((section) => (
+            {NAV_SECTIONS.map((section, sIdx) => (
               <div key={section.title}>
                 <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                  {section.title}
+                  {t(NAV_SECTION_KEYS[sIdx] ?? "nav.section.main")}
                 </p>
                 <ul className="space-y-1">
                   {section.items.map((item) => {
                     const Icon = Icons[item.icon as keyof typeof Icons];
                     const active = activeTab === item.id;
+                    const navKeys = NAV_LABEL_KEYS[item.id];
                     return (
                       <li key={item.id}>
                         <button
@@ -153,7 +176,7 @@ export function AppShell({
                           >
                             <Icon className="h-4 w-4" />
                           </span>
-                          <span className="flex-1 text-left">{item.label}</span>
+                          <span className="flex-1 text-left">{t(navKeys.label)}</span>
                           {active && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]" />}
                         </button>
                       </li>
@@ -176,7 +199,7 @@ export function AppShell({
               </div>
               <button
                 onClick={() => setConfirmOut(true)}
-                title="Chiqish"
+                title={t("common.logout")}
                 className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-rose-500/10 hover:text-rose-500"
               >
                 <Icons.logout className="h-4 w-4" />
@@ -208,6 +231,7 @@ export function AppShell({
                 <Icons.bell className="h-4.5 w-4.5" />
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-cyan-400 ring-2 ring-white dark:ring-slate-950" />
               </button>
+              <LocaleToggle />
               <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
             </div>
           </header>
@@ -223,10 +247,10 @@ export function AppShell({
 
       <ConfirmModal
         open={confirmOut}
-        title="Akkaunddan chiqish"
-        message="Tizimdan chiqmoqchimisiz?"
-        confirmLabel="Ha, chiqish"
-        cancelLabel="Yo'q"
+        title={t("confirm.logout.title")}
+        message={t("confirm.logout.message")}
+        confirmLabel={t("confirm.logout.confirm")}
+        cancelLabel={t("common.no")}
         tone="danger"
         onConfirm={onLogout}
         onCancel={() => setConfirmOut(false)}
