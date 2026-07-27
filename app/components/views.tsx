@@ -693,7 +693,7 @@ function LabeledBar({ label, pct }: { label: string; pct: number }) {
         <span className="font-semibold text-slate-700 dark:text-slate-200">{v.toFixed(0)}%</span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/50">
-        <div className="h-full rounded-full bg-linear-to-r from-indigo-500 to-cyan-400" style={{ width: `${v}%` }} />
+        <div className="h-full rounded-full bg-blue-600" style={{ width: `${v}%` }} />
       </div>
     </div>
   );
@@ -757,7 +757,7 @@ function AudioPlayer({ src, onDuration }: { src: string; onDuration?: (sec: numb
       />
       <button
         onClick={toggle}
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-linear-to-br from-indigo-500 to-cyan-400 text-white shadow-md transition hover:scale-105"
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-blue-600 text-white shadow-md transition hover:scale-105"
         title={playing ? "Pauza" : "Eshitish"}
       >
         {playing ? (
@@ -892,7 +892,7 @@ export function UploadView() {
                     onClick={() => { setMode(m.id); setError(null); }}
                     className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                       active
-                        ? "bg-linear-to-r from-indigo-500 to-cyan-400 text-white shadow-sm"
+                        ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                     }`}
                   >
@@ -961,7 +961,7 @@ export function UploadView() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-3 text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-md transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {status === "analyzing" ? (
               <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> Tahlil qilinmoqda…</>
@@ -978,7 +978,7 @@ export function UploadView() {
               AI auditor transkripsiya va skoring matritsasini tahlil qilmoqda…
             </p>
             <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/50">
-              <div className="h-full w-1/2 animate-pulse rounded-full bg-linear-to-r from-indigo-500 to-cyan-400" />
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-blue-600" />
             </div>
             <p className="mt-2 text-xs text-slate-400">Audio hajmiga qarab bu 10–40 soniya olishi mumkin.</p>
           </div>
@@ -1252,7 +1252,7 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
               <ol className="space-y-2">
                 {nextSteps.map((step, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
-                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-linear-to-br from-indigo-500 to-cyan-400 text-[10px] font-bold text-white">{i + 1}</span>
+                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-blue-600 text-[10px] font-bold text-white">{i + 1}</span>
                     <span>{step}</span>
                   </li>
                 ))}
@@ -1718,7 +1718,7 @@ export function CriteriaView() {
                       <button
                         onClick={() => handleToggle(cr)}
                         title={cr.is_active ? "Nofaol qilish" : "Aktivlashtirish"}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition hover:scale-[1.05] ${
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition ${
                           cr.is_active
                             ? "bg-emerald-500/10 text-emerald-600 ring-emerald-500/30 dark:text-emerald-400"
                             : "bg-slate-500/10 text-slate-500 ring-slate-400/30 dark:text-slate-400"
@@ -1732,14 +1732,14 @@ export function CriteriaView() {
                         <button
                           onClick={() => { setAdding(false); setEditing(cr); }}
                           title="Tahrirlash"
-                          className="rounded-lg border border-indigo-300/50 p-2 text-indigo-500 transition hover:scale-[1.05] hover:bg-indigo-500/10 dark:text-cyan-400"
+                          className="rounded-lg border border-indigo-300/50 p-2 text-indigo-500 transition hover:bg-indigo-500/10 dark:text-cyan-400"
                         >
                           <Icons.pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => setToDelete(cr)}
                           title="O'chirish"
-                          className="rounded-lg border border-rose-300/50 p-2 text-rose-500 transition hover:scale-[1.05] hover:bg-rose-500/10"
+                          className="rounded-lg border border-rose-300/50 p-2 text-rose-500 transition hover:bg-rose-500/10"
                         >
                           <Icons.close className="h-3.5 w-3.5" />
                         </button>
@@ -1949,14 +1949,14 @@ function AddCriterionForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:scale-[1.02] dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
+            className="rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
           >
             Bekor qilish
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-violet-500 to-fuchsia-500 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.02] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-violet-500 to-fuchsia-500 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 disabled:opacity-60"
           >
             {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Icons.check className="h-4 w-4" />}
             {isEdit ? "Saqlash" : "Qo'shish"}
@@ -2137,8 +2137,8 @@ export function AmoCrmView() {
     <div className="mx-auto max-w-3xl space-y-6">
       {/* ===== Sarlavha + holat ===== */}
       <Card glow className="overflow-hidden">
-        <div className="flex flex-col items-center gap-4 bg-linear-to-br from-sky-500/10 via-cyan-400/5 to-transparent p-8 text-center">
-          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-linear-to-br from-sky-500 to-cyan-400 text-white shadow-[0_0_30px_-6px_rgba(34,211,238,0.7)]">
+        <div className="flex flex-col items-center gap-4 p-8 text-center">
+          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-teal-600 text-white shadow-sm">
             <Icons.plug className="h-7 w-7" />
           </div>
           <div>
@@ -2229,7 +2229,7 @@ export function AmoCrmView() {
               type="button"
               onClick={sendTestWebhook}
               disabled={test.status === "sending" || saving}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:scale-[1.02] disabled:opacity-60 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition disabled:opacity-60 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
             >
               {test.status === "sending" ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400/40 border-t-slate-500" />
@@ -2241,7 +2241,7 @@ export function AmoCrmView() {
             <button
               type="submit"
               disabled={saving || test.status === "sending"}
-              className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-sky-500 to-cyan-400 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.02]"
+              className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-sky-500 to-cyan-400 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300"
             >
               {saving ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Icons.check className="h-4 w-4" />} Sozlamalarni saqlash
             </button>

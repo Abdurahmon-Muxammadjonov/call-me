@@ -80,7 +80,7 @@ export function NotificationBell({ userId }: { userId: string | undefined }) {
               transition={{ type: "spring", stiffness: 600, damping: 24 }}
               className="absolute right-2 top-2 h-2.5 w-2.5"
             >
-              <span className="absolute inset-0 rounded-full bg-[#0a84ff] shadow-[0_0_8px_2px_rgba(10,132,255,0.8)] ring-2 ring-slate-900 dark:ring-slate-800" />
+              <span className="absolute inset-0 rounded-full bg-[#0a84ff] ring-2 ring-slate-900 dark:ring-slate-800" />
               {/* gentle ping halo */}
               <span className="absolute inset-0 animate-ping rounded-full bg-[#0a84ff]/70" />
             </motion.span>

@@ -100,13 +100,7 @@ export function LoginScreen({ onLogin }: { onLogin: (session: Session) => void }
   const errBorder = "border-rose-400 focus:border-rose-400 focus:ring-rose-400/30";
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-10 dark:bg-[#0a0e1a]">
-      {/* Understated ambient background — a single static wash, no motion */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-600/10" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-slate-400/10 blur-3xl dark:bg-slate-500/5" />
-      </div>
-
+    <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
       <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
         <LocaleToggle />
       </div>

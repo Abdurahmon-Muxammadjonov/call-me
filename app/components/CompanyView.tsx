@@ -282,14 +282,14 @@ function AddEmployeeForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:scale-[1.02] dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
+            className="rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
           >
             Bekor qilish
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.02] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 disabled:opacity-60"
           >
             {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <Icons.check className="h-4 w-4" />}
             Qo&apos;shish
@@ -378,13 +378,13 @@ function EmployeeCard({
             <button
               onClick={() => onRename(emp.id, name)}
               disabled={busy}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-linear-to-r from-emerald-500 to-teal-500 px-3 py-2 text-xs font-semibold text-white transition hover:scale-[1.02] disabled:opacity-60"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-linear-to-r from-emerald-500 to-teal-500 px-3 py-2 text-xs font-semibold text-white transition disabled:opacity-60"
             >
               <Icons.check className="h-3.5 w-3.5" /> Saqlash
             </button>
             <button
               onClick={onCancelEdit}
-              className="rounded-lg border border-slate-200/70 px-3 py-2 text-xs font-semibold text-slate-500 transition hover:scale-[1.02] dark:border-slate-700/60 dark:text-slate-400"
+              className="rounded-lg border border-slate-200/70 px-3 py-2 text-xs font-semibold text-slate-500 transition dark:border-slate-700/60 dark:text-slate-400"
             >
               Bekor
             </button>
@@ -393,14 +393,14 @@ function EmployeeCard({
           <>
             <button
               onClick={onEdit}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200/70 bg-white/50 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:scale-[1.02] hover:text-indigo-500 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200/70 bg-white/50 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:text-indigo-500 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
             >
               <Icons.ruler className="h-3.5 w-3.5" /> Ismni o&apos;zgartirish
             </button>
             <button
               onClick={onDelete}
               title="O'chirish"
-              className="rounded-lg border border-rose-300/50 px-3 py-2 text-xs font-semibold text-rose-500 transition hover:scale-[1.02] hover:bg-rose-500/10"
+              className="rounded-lg border border-rose-300/50 px-3 py-2 text-xs font-semibold text-rose-500 transition hover:bg-rose-500/10"
             >
               <Icons.close className="h-3.5 w-3.5" />
             </button>

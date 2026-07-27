@@ -130,12 +130,7 @@ export function EmployeeDashboard({
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-50 text-slate-800 dark:bg-[#060814] dark:text-slate-200">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-40 top-0 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-600/15" />
-        <div className="absolute -right-32 bottom-0 h-120 w-120 rounded-full bg-cyan-400/10 blur-3xl dark:bg-cyan-500/10" />
-      </div>
-
+    <div className="relative min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200">
       {mobileOpen && (
         <div onClick={() => setMobileOpen(false)} className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm lg:hidden" />
       )}
@@ -143,7 +138,7 @@ export function EmployeeDashboard({
       <div className="relative flex min-h-screen">
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200/60 bg-white/70 backdrop-blur-xl transition-transform duration-300 dark:border-slate-800/60 dark:bg-slate-950/60 lg:static lg:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900 lg:static lg:translate-x-0 ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -165,17 +160,15 @@ export function EmployeeDashboard({
                 <button
                   key={item.id}
                   onClick={() => select(item.id)}
-                  className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ${
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${
                     active
-                      ? "bg-linear-to-r from-indigo-500/15 to-cyan-400/10 text-indigo-600 shadow-sm ring-1 ring-indigo-500/20 dark:text-cyan-300 dark:ring-cyan-400/20"
-                      : "text-slate-500 hover:bg-slate-500/5 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                   }`}
                 >
-                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-linear-to-br transition-all duration-300 ${item.grad} ${active ? "text-white shadow-[0_0_16px_-4px_rgba(99,102,241,0.8)]" : "text-white/90 opacity-70 group-hover:opacity-100"}`}>
-                    <Icon className="h-4 w-4" />
-                  </span>
+                  <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 text-left">{item.label}</span>
-                  {active && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]" />}
+                  {active && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600 dark:bg-blue-400" />}
                 </button>
               );
             })}
@@ -183,7 +176,7 @@ export function EmployeeDashboard({
 
           <div className="border-t border-slate-200/60 p-4 dark:border-slate-800/60">
             <div className="flex items-center gap-3 rounded-xl bg-slate-500/5 p-3 dark:bg-slate-800/40">
-              <span className={`grid h-10 w-10 place-items-center rounded-full bg-linear-to-br ${accentGrad[scoreAccent(perf.score)]} text-sm font-bold text-white`}>
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-blue-600 text-sm font-bold text-white">
                 {initials}
               </span>
               <div className="min-w-0 flex-1">
@@ -199,7 +192,7 @@ export function EmployeeDashboard({
 
         {/* Main */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200/60 bg-white/70 px-4 py-3.5 backdrop-blur-xl dark:border-slate-800/60 dark:bg-slate-950/50 sm:px-6">
+          <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3.5 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
             <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-500/10 lg:hidden">
               <Icons.menu className="h-5 w-5" />
             </button>
@@ -292,9 +285,9 @@ function Overview({
       </Card>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatTile icon="phone" grad="from-indigo-500 to-violet-500" value={String(perf.calls)} label="Qo'ng'iroqlar" />
+        <StatTile icon="phone" grad="from-blue-600 to-blue-700" value={String(perf.calls)} label="Qo'ng'iroqlar" />
         <StatTile icon="shield" grad={accentGrad[scoreAccent(perf.score)]} value={String(perf.score)} label="Sifat bahosi" valueCls={scoreColor(perf.score)} bar={perf.score} />
-        <StatTile icon="ruler" grad="from-rose-500 to-pink-500" value={String(totalPenalty)} label="Jami jarima ball" valueCls={totalPenalty < 0 ? "text-rose-500" : "text-emerald-500"} />
+        <StatTile icon="ruler" grad="from-rose-600 to-rose-700" value={String(totalPenalty)} label="Jami jarima ball" valueCls={totalPenalty < 0 ? "text-rose-500" : "text-emerald-500"} />
       </div>
 
       <ScheduleTab userId={userId} override={shiftOverride} compact />
@@ -352,7 +345,7 @@ function CallsTab({ calls, onOpen }: { calls: EmpCall[]; onOpen: (c: EmpCall) =>
                 <button
                   onClick={() => onOpen(call)}
                   title="Tafsilotlarni ko'rish"
-                  className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-lg font-bold transition hover:scale-[1.05] ${scoreColor(call.score)} bg-slate-500/5 dark:bg-slate-800/40`}
+                  className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-lg font-bold transition ${scoreColor(call.score)} bg-slate-500/5 dark:bg-slate-800/40`}
                 >
                   {call.score}
                   <Icons.scan className="h-4 w-4 opacity-60" />
@@ -390,7 +383,7 @@ function TipsTab({ scripts, fallback }: { scripts: ScriptItem[]; fallback: strin
                 key={s.id}
                 className="flex items-start gap-3 rounded-xl border border-indigo-200/50 bg-indigo-500/5 px-4 py-2.5 text-sm text-slate-700 dark:border-indigo-400/20 dark:text-slate-200"
               >
-                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-linear-to-br from-indigo-500 to-violet-500 text-[10px] font-bold text-white">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-blue-600 text-[10px] font-bold text-white">
                   {i + 1}
                 </span>
                 {s.title}
@@ -406,7 +399,7 @@ function TipsTab({ scripts, fallback }: { scripts: ScriptItem[]; fallback: strin
         <ul className="space-y-2.5">
           {fallback.map((tip, i) => (
             <li key={i} className="flex items-start gap-3 rounded-xl border border-slate-200/60 bg-white/40 px-4 py-2.5 text-sm text-slate-600 dark:border-slate-700/50 dark:bg-slate-800/30 dark:text-slate-300">
-              <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-linear-to-br from-indigo-500 to-cyan-400 text-[10px] font-bold text-white">{i + 1}</span>
+              <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md bg-slate-500 text-[10px] font-bold text-white">{i + 1}</span>
               {tip}
             </li>
           ))}
@@ -533,7 +526,7 @@ function ScheduleTab({
           <span className="font-semibold text-slate-700 dark:text-slate-200">{Math.round(pct)}%</span>
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/50">
-          <div className="h-full rounded-full bg-linear-to-r from-indigo-500 to-cyan-400 transition-all duration-700" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full bg-blue-600 transition-all duration-700" style={{ width: `${pct}%` }} />
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
           <Info label="Tanaffus" value="13:00–14:00" />

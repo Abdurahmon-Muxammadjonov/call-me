@@ -24,18 +24,22 @@ export function useNow(): Date | null {
 
 export type Accent = "indigo" | "cyan" | "emerald" | "violet";
 
+/* A restrained, professional palette: one confident primary (blue) plus a
+ * small set of clearly distinct semantic accents (teal / emerald / amber)
+ * instead of four analogous neon cool-tones that all read as "the same
+ * purple-blue glow". Kept as flat/near-flat colors — no rainbow gradients. */
 export const accentText: Record<Accent, string> = {
-  indigo: "text-indigo-500 dark:text-indigo-400",
-  cyan: "text-cyan-500 dark:text-cyan-400",
-  emerald: "text-emerald-500 dark:text-emerald-400",
-  violet: "text-violet-500 dark:text-violet-400",
+  indigo: "text-blue-600 dark:text-blue-400",
+  cyan: "text-teal-600 dark:text-teal-400",
+  emerald: "text-emerald-600 dark:text-emerald-400",
+  violet: "text-amber-600 dark:text-amber-400",
 };
 
 export const accentGrad: Record<Accent, string> = {
-  indigo: "from-indigo-500 to-violet-500",
-  cyan: "from-cyan-500 to-sky-500",
-  emerald: "from-emerald-500 to-teal-500",
-  violet: "from-violet-500 to-fuchsia-500",
+  indigo: "from-blue-600 to-blue-700",
+  cyan: "from-teal-600 to-teal-700",
+  emerald: "from-emerald-600 to-emerald-700",
+  violet: "from-amber-500 to-amber-600",
 };
 
 export const accentGlow: Record<Accent, string> = {
@@ -49,13 +53,12 @@ export const accentGlow: Record<Accent, string> = {
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="relative grid h-10 w-10 place-items-center rounded-xl bg-linear-to-br from-indigo-500 via-violet-500 to-cyan-400 shadow-[0_0_22px_-4px_rgba(99,102,241,0.8)]">
-        <span className="absolute inset-0 rounded-xl bg-linear-to-br from-indigo-500 to-cyan-400 opacity-60 blur-md" />
-        <Icons.waveform className="relative h-5 w-5 text-white" />
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600">
+        <Icons.waveform className="h-5 w-5 text-white" />
       </div>
       {!compact && (
         <div className="leading-tight">
-          <p className="bg-linear-to-r from-indigo-500 via-violet-500 to-cyan-400 bg-clip-text text-lg font-bold tracking-tight text-transparent">
+          <p className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100">
             SalesPulse
           </p>
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
@@ -87,7 +90,7 @@ export function Card({
       className={`glass rounded-2xl ${glow ? "glow-ring" : ""} ${
         onClick ? "cursor-pointer" : ""
       } ${
-        hover ? "transition-all duration-300 hover:scale-[1.02] hover:shadow-lg" : ""
+        hover ? "transition-all duration-300 hover:shadow-lg" : ""
       } ${className}`}
     >
       {children}
@@ -133,10 +136,10 @@ export function Sparkline({ data, accent }: { data: number[]; accent: Accent }) 
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
   const stops: Record<Accent, string> = {
-    indigo: "#6366f1",
-    cyan: "#22d3ee",
-    emerald: "#34d399",
-    violet: "#8b5cf6",
+    indigo: "#2563eb",
+    cyan: "#0d9488",
+    emerald: "#059669",
+    violet: "#d97706",
   };
   const id = `spark-${accent}`;
   return (
@@ -314,8 +317,8 @@ export function PillButton({
       onClick={onClick}
       className={
         variant === "solid"
-          ? `inline-flex items-center gap-2 rounded-xl bg-linear-to-r ${accentGrad[accent]} px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`
-          : "inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 hover:scale-[1.02] hover:bg-white/80 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800/70"
+          ? `inline-flex items-center gap-2 rounded-xl bg-linear-to-r ${accentGrad[accent]} px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg`
+          : "inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 hover:bg-white/80 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:bg-slate-800/70"
       }
     >
       {Icon && <Icon className="h-4 w-4" />}
@@ -371,8 +374,8 @@ export function ConfirmModal({
         <div
           className={`mx-auto grid h-14 w-14 place-items-center rounded-2xl text-white shadow-lg ${
             tone === "danger"
-              ? "bg-linear-to-br from-rose-500 to-pink-500"
-              : "bg-linear-to-br from-indigo-500 to-cyan-400"
+              ? "bg-rose-600"
+              : "bg-blue-600"
           }`}
         >
           {tone === "danger" ? <Icons.logout className="h-6 w-6" /> : <Icons.shield className="h-6 w-6" />}
@@ -382,16 +385,16 @@ export function ConfirmModal({
         <div className="mt-6 flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 hover:scale-[1.02] dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
+            className="flex-1 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.02] ${
+            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 ${
               tone === "danger"
-                ? "bg-linear-to-r from-rose-500 to-pink-500"
-                : "bg-linear-to-r from-indigo-500 to-cyan-400"
+                ? "bg-rose-600"
+                : "bg-blue-600"
             }`}
           >
             {confirmLabel}

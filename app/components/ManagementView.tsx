@@ -516,7 +516,7 @@ function GeneralPanel({ metrics }: { metrics: HealthMetric[] }) {
         return (
           <div
             key={m.key}
-            className={`rounded-2xl border border-slate-200/60 bg-white/50 p-5 transition-all duration-300 hover:scale-[1.02] dark:border-slate-800/60 dark:bg-slate-900/30 ${accentGlow[m.accent]}`}
+            className={`rounded-2xl border border-slate-200/60 bg-white/50 p-5 transition-all duration-300 dark:border-slate-800/60 dark:bg-slate-900/30 ${accentGlow[m.accent]}`}
           >
             <div className="flex items-start justify-between">
               <span
@@ -737,7 +737,7 @@ function SellerIdentity({ seller }: { seller: SellerKPI }) {
       : "bg-slate-400";
   return (
     <div className="flex items-center gap-3">
-      <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-linear-to-br from-indigo-500 via-violet-500 to-cyan-400 text-xs font-bold text-white">
+      <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-600 text-xs font-bold text-white">
         {initials}
         <span
           className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-white dark:ring-slate-900 ${dot}`}

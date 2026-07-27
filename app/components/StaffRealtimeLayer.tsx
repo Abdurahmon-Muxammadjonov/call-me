@@ -79,7 +79,7 @@ function KickOutModal({
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.08, type: "spring", stiffness: 500, damping: 22 }}
-              className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-linear-to-br from-rose-500 to-pink-500 text-white shadow-lg"
+              className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-rose-600 text-white shadow-lg"
             >
               <Icons.lock className="h-7 w-7" />
             </motion.span>
@@ -94,7 +94,7 @@ function KickOutModal({
 
             <button
               onClick={onConfirm}
-              className="mt-6 w-full rounded-xl bg-linear-to-r from-rose-500 to-pink-500 px-4 py-3 text-sm font-bold text-white shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+              className="mt-6 w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white shadow-md transition-all duration-300 hover:shadow-lg"
             >
               Login sahifasiga o&apos;tish
             </button>

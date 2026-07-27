@@ -206,9 +206,9 @@ function OperatorCard({ employee, onClick }: { employee: Employee; onClick: () =
   const dot =
     employee.status === "online" ? "bg-emerald-400" : employee.status === "away" ? "bg-amber-400" : "bg-slate-400";
   return (
-    <div className="group flex flex-col gap-4 rounded-2xl border border-slate-200/60 bg-white/60 p-4 backdrop-blur-md transition-all duration-300 hover:border-indigo-300/60 hover:shadow-lg dark:border-slate-800/60 dark:bg-slate-900/30">
+    <div className="group flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-colors duration-150 hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center gap-4">
-        <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-linear-to-br from-indigo-500 via-violet-500 to-cyan-400 text-sm font-bold text-white">
+        <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-blue-600 text-sm font-bold text-white">
           {initials}
           <span className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white dark:ring-slate-900 ${dot}`} />
         </span>
@@ -530,7 +530,7 @@ function OperatorEditor({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 rounded-xl bg-linear-to-r from-indigo-500 to-cyan-400 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-200 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors duration-150 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? "Saqlanmoqda…" : "Saqlash"}
           </button>
