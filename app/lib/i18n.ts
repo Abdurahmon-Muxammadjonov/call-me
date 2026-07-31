@@ -134,7 +134,10 @@ const dict = {
 
     "landing.pricing.badge": "Narxlar",
     "landing.pricing.title": "Jamoangiz hajmiga mos reja",
-    "landing.pricing.subtitle": "Narxlar hali tasdiqlanmagan — bog'laning, jamoangiz uchun mos shartlarni birga aniqlaymiz.",
+    "landing.pricing.subtitle": "Xodimlar soniga qarab narx avtomatik hisoblanadi — pastdagi hisoblagichdan foydalaning.",
+    "landing.pricing.perEmployee": "xodim/oy",
+    "landing.pricing.employeesLabel": "Xodimlar soni",
+    "landing.pricing.total": "Jami (oyiga)",
     "landing.pricing.plan1Name": "Boshlang'ich",
     "landing.pricing.plan1Desc": "Kichik jamoalar uchun",
     "landing.pricing.plan1Feature1": "Asosiy AI audit",
@@ -151,7 +154,7 @@ const dict = {
     "landing.pricing.plan3Feature1": "Cheksiz qo'ng'iroq hajmi",
     "landing.pricing.plan3Feature2": "Maxsus integratsiyalar",
     "landing.pricing.plan3Feature3": "Shaxsiy menejer",
-    "landing.pricing.cta": "Narx so'rash",
+    "landing.pricing.cta": "Boshlash",
 
     "landing.faq.badge": "FAQ",
     "landing.faq.title": "Tez-tez so'raladigan savollar",
@@ -359,7 +362,10 @@ const dict = {
 
     "landing.pricing.badge": "Цены",
     "landing.pricing.title": "План под размер вашей команды",
-    "landing.pricing.subtitle": "Цены пока не утверждены — свяжитесь с нами, и мы подберём условия для вашей команды.",
+    "landing.pricing.subtitle": "Цена рассчитывается автоматически в зависимости от числа сотрудников — используйте счётчик ниже.",
+    "landing.pricing.perEmployee": "сотрудник/мес",
+    "landing.pricing.employeesLabel": "Количество сотрудников",
+    "landing.pricing.total": "Итого (в месяц)",
     "landing.pricing.plan1Name": "Стартовый",
     "landing.pricing.plan1Desc": "Для небольших команд",
     "landing.pricing.plan1Feature1": "Базовый AI-аудит",
@@ -376,7 +382,7 @@ const dict = {
     "landing.pricing.plan3Feature1": "Неограниченный объём звонков",
     "landing.pricing.plan3Feature2": "Индивидуальные интеграции",
     "landing.pricing.plan3Feature3": "Персональный менеджер",
-    "landing.pricing.cta": "Запросить цену",
+    "landing.pricing.cta": "Начать",
 
     "landing.faq.badge": "FAQ",
     "landing.faq.title": "Часто задаваемые вопросы",
@@ -584,7 +590,10 @@ const dict = {
 
     "landing.pricing.badge": "Pricing",
     "landing.pricing.title": "A plan that fits your team's size",
-    "landing.pricing.subtitle": "Pricing isn't finalized yet — get in touch and we'll figure out the right terms together.",
+    "landing.pricing.subtitle": "Price is calculated automatically based on your headcount — use the counter below.",
+    "landing.pricing.perEmployee": "employee/mo",
+    "landing.pricing.employeesLabel": "Number of employees",
+    "landing.pricing.total": "Total (per month)",
     "landing.pricing.plan1Name": "Starter",
     "landing.pricing.plan1Desc": "For small teams",
     "landing.pricing.plan1Feature1": "Core AI audit",
@@ -601,7 +610,7 @@ const dict = {
     "landing.pricing.plan3Feature1": "Unlimited call volume",
     "landing.pricing.plan3Feature2": "Custom integrations",
     "landing.pricing.plan3Feature3": "Dedicated account manager",
-    "landing.pricing.cta": "Request pricing",
+    "landing.pricing.cta": "Get started",
 
     "landing.faq.badge": "FAQ",
     "landing.faq.title": "Frequently asked questions",
