@@ -86,9 +86,9 @@ export const PLANS: PricingPlan[] = [
   {
     id: "enterprise",
     name: "MAX+",
-    monthlyPrice: 1_200_000,
+    monthlyPrice: 1_099_000,
     capacityLabel: "100% + AI",
-    managers: { kind: "unlimited" },
+    managers: { kind: "range", min: 5, max: 100 },
     analysisNote: "Tahlil hajmi oyiga soatlar bo'yicha belgilanadi",
     highlights: ["AI chat yordamchi", "Cheksiz AI Treyner", "Avtomatik reyting", "Trend tahlili"],
     hoursPerMonth: { default: 100, min: 20, max: 500, step: 10 },
