@@ -60,7 +60,7 @@ export const PLANS: PricingPlan[] = [
     name: "START",
     monthlyPrice: 300_000,
     capacityLabel: "~40%",
-    managers: { kind: "fixed", fixed: 1 },
+    managers: { kind: "range", min: 1, max: 5 },
     analysisNote: "Har bir menejer uchun kuniga ~20-30 daqiqa",
     highlights: ["Audio tahlil", "Menejer/xodim baholash", "Qisqa xulosa"],
   },

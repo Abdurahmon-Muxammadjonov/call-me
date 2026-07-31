@@ -53,22 +53,6 @@ function Stepper({
   );
 }
 
-function ManagersRow({ plan }: { plan: PricingPlan }) {
-  const [count, setCount] = useState(plan.managers.min ?? plan.managers.fixed ?? 1);
-  return (
-    <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-sm">
-      <span className="text-slate-500">Menejerlar soni</span>
-      {plan.managers.kind === "unlimited" ? (
-        <span className="font-mono-stat font-medium text-slate-900">∞</span>
-      ) : plan.managers.kind === "fixed" ? (
-        <span className="font-mono-stat font-medium text-slate-900">{plan.managers.fixed}</span>
-      ) : (
-        <Stepper value={count} min={plan.managers.min ?? 1} max={plan.managers.max ?? 1} onChange={setCount} />
-      )}
-    </div>
-  );
-}
-
 function HoursRow({ plan }: { plan: PricingPlan }) {
   const cfg = plan.hoursPerMonth;
   const [hours, setHours] = useState(cfg?.default ?? 0);
@@ -83,8 +67,14 @@ function HoursRow({ plan }: { plan: PricingPlan }) {
 
 function PlanCard({ plan, period, index }: { plan: PricingPlan; period: BillingPeriod; index: number }) {
   const t = useT();
-  const monthly = discountedMonthly(plan.monthlyPrice, period.discountPct);
-  const periodTotal = monthly * period.months;
+  const [count, setCount] = useState(plan.managers.fixed ?? plan.managers.min ?? 1);
+
+  // Narx — bitta xodim uchun (davr chegirmasi bilan), keyin xodimlar soniga
+  // ko'paytiriladi: masalan 300,000 x 4 xodim = 1,200,000/oy, davr uzayganda
+  // (3/6/12 oy) shu summa ustiga qo'shimcha chegirma qo'llanadi.
+  const perEmployee = discountedMonthly(plan.monthlyPrice, period.discountPct);
+  const monthlyTotal = perEmployee * count;
+  const periodTotal = monthlyTotal * period.months;
 
   return (
     <Reveal delay={index * 0.06} className="h-full">
@@ -104,14 +94,24 @@ function PlanCard({ plan, period, index }: { plan: PricingPlan; period: BillingP
 
         <div className="mt-5">
           <div className="flex items-baseline gap-1.5">
-            <span className="font-mono-stat text-3xl font-medium text-slate-900">{formatUZS(monthly)}</span>
-            <span className="text-sm text-slate-400">/ oy</span>
+            <span className="font-mono-stat text-2xl font-medium text-slate-900">{formatUZS(perEmployee)}</span>
+            <span className="text-sm text-slate-400">/ xodim / oy</span>
           </div>
           {period.discountPct > 0 && (
-            <p className="mt-1 text-xs text-slate-400 line-through">{formatUZS(plan.monthlyPrice)} / oy</p>
+            <p className="mt-1 text-xs text-slate-400 line-through">{formatUZS(plan.monthlyPrice)} / xodim / oy</p>
           )}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-sm">
+          <span className="text-slate-500">Xodimlar soni</span>
+          <Stepper value={count} min={plan.managers.min ?? 1} max={plan.managers.max ?? count} onChange={setCount} />
+        </div>
+
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Oyiga jami ({count} xodim)</p>
+          <p className="font-mono-stat mt-1 text-3xl font-medium text-slate-900">{formatUZS(monthlyTotal)}</p>
           <p className="mt-1.5 text-xs font-medium text-slate-500">
-            {period.months} oy uchun jami: <span className="font-mono-stat text-slate-700">{formatUZS(periodTotal)}</span>
+            {period.months} oy uchun umumiy: <span className="font-mono-stat text-slate-700">{formatUZS(periodTotal)}</span>
           </p>
         </div>
 
@@ -139,7 +139,6 @@ function PlanCard({ plan, period, index }: { plan: PricingPlan; period: BillingP
         </a>
 
         <div className="mt-5 space-y-3">
-          <ManagersRow plan={plan} />
           <HoursRow plan={plan} />
           <p className="border-t border-slate-100 pt-4 text-xs text-slate-400">{plan.analysisNote}</p>
         </div>
