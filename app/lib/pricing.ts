@@ -10,9 +10,9 @@ export interface BillingPeriod {
 
 export const BILLING_PERIODS: BillingPeriod[] = [
   { months: 1, discountPct: 0, label: "1 oy" },
-  { months: 3, discountPct: 5, label: "3 oy" },
-  { months: 6, discountPct: 10, label: "6 oy" },
-  { months: 12, discountPct: 20, label: "12 oy" },
+  { months: 3, discountPct: 7, label: "3 oy" },
+  { months: 6, discountPct: 12, label: "6 oy" },
+  { months: 12, discountPct: 22, label: "12 oy" },
 ];
 
 export function discountedMonthly(basePrice: number, discountPct: number): number {
@@ -81,16 +81,16 @@ export const PLANS: PricingPlan[] = [
     popular: true,
     managers: { kind: "range", min: 3, max: 10 },
     analysisNote: "Har bir menejer uchun kuniga 2-3 soat",
-    highlights: ["Transkriptsiya", "To'liq sotuv jarayoni", "Vazifalar nazorati", "Cheksiz AI Treyner"],
+    highlights: ["Transkriptsiya", "To'liq sotuv jarayoni", "Vazifalar nazorati", "Qo'ng'iroqni tarjima qilish"],
   },
   {
     id: "enterprise",
-    name: "ENTERPRISE / AI+",
+    name: "MAX+",
     monthlyPrice: 1_200_000,
     capacityLabel: "100% + AI",
     managers: { kind: "unlimited" },
     analysisNote: "Tahlil hajmi oyiga soatlar bo'yicha belgilanadi",
-    highlights: ["AI chat yordamchi", "Avtomatik reyting", "Muammoli qo'ng'iroq ogohlantirishi", "Trend tahlili"],
+    highlights: ["AI chat yordamchi", "Cheksiz AI Treyner", "Avtomatik reyting", "Trend tahlili"],
     hoursPerMonth: { default: 100, min: 20, max: 500, step: 10 },
   },
 ];
@@ -151,7 +151,7 @@ export const PRICING_CATEGORIES: PricingCategory[] = [
     title: "Qo'shimcha funksiyalar",
     features: [
       row("Qo'ng'iroqni tarjima qilish (boshqa tilga)", { pro: true, enterprise: true }),
-      row("Cheksiz AI Treyner", { pro: true, enterprise: true }),
+      row("Cheksiz AI Treyner", { enterprise: true }),
     ],
   },
   {
