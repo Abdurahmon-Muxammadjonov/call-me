@@ -5,6 +5,7 @@ import { useSession } from "../../../lib/auth";
 import { useT } from "../../../lib/i18n";
 import { WaveformArt } from "../WaveformArt";
 import { Reveal } from "../Reveal";
+import { openDemoModal } from "../demoModal";
 
 export function CTABanner() {
   const session = useSession();
@@ -33,12 +34,13 @@ export function CTABanner() {
               >
                 {ctaLabel}
               </Link>
-              <a
-                href="mailto:hello@salespulse.uz"
+              <button
+                type="button"
+                onClick={openDemoModal}
                 className="inline-flex items-center justify-center rounded-xl border border-white/40 px-7 py-3.5 text-sm font-bold text-white transition-colors hover:border-white/70"
               >
                 {t("landing.requestDemo")}
-              </a>
+              </button>
             </div>
           </div>
         </div>

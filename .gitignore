@@ -98,3 +98,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local demo-request submissions (names/phone numbers — not for git)
+/data/

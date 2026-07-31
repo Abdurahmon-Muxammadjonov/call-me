@@ -5,6 +5,7 @@ import { useSession } from "../../../lib/auth";
 import { useT } from "../../../lib/i18n";
 import { WaveformBackdrop } from "../WaveformArt";
 import { Reveal } from "../Reveal";
+import { openDemoModal } from "../demoModal";
 
 /* The original hero content (badge, title, subtitle, CTA) is preserved
  * as-is — only the surrounding chrome (bg waveform, section wrapper,
@@ -43,12 +44,13 @@ export function Hero() {
             >
               {ctaLabel}
             </Link>
-            <a
-              href="#cta"
+            <button
+              type="button"
+              onClick={openDemoModal}
               className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-7 py-3.5 text-sm font-bold text-slate-700 transition-colors hover:border-slate-400 dark:border-white/20 dark:text-slate-200 dark:hover:border-white/40"
             >
               {t("landing.requestDemo")}
-            </a>
+            </button>
           </div>
         </Reveal>
       </div>

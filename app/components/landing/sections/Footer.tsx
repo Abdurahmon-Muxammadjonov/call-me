@@ -54,7 +54,7 @@ export function Footer() {
             </p>
             <div className="mt-5 flex items-center gap-3">
               <a
-                href="https://t.me"
+                href="https://t.me/SalesPulsead_bot"
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Telegram"
@@ -63,7 +63,7 @@ export function Footer() {
                 <TelegramGlyph />
               </a>
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/salespulse.uz?igsh=dXIwNjV0cjF0YzRy"
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
@@ -123,9 +123,8 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                {/* TODO: haqiqiy telefon raqami bilan almashtirilsin */}
-                <a href="tel:+998900000000" className="flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-brand-blue dark:text-slate-400 dark:hover:text-brand-teal">
-                  <Icons.phone className="h-4 w-4" /> +998 90 000 00 00
+                <a href="tel:+998901136170" className="flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-brand-blue dark:text-slate-400 dark:hover:text-brand-teal">
+                  <Icons.phone className="h-4 w-4" /> +998 90 113 61 70
                 </a>
               </li>
             </ul>

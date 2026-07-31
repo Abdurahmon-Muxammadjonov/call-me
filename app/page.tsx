@@ -10,6 +10,7 @@ import { Pricing } from "./components/landing/sections/Pricing";
 import { FAQ } from "./components/landing/sections/FAQ";
 import { CTABanner } from "./components/landing/sections/CTABanner";
 import { Footer } from "./components/landing/sections/Footer";
+import { DemoRequestModal } from "./components/landing/DemoRequestModal";
 
 /* Public marketing/landing page — info-first, login is one click away via
  * the navbar/hero/CTA-banner buttons (all pointing at /login, which owns
@@ -31,6 +32,7 @@ export default function LandingPage() {
         <CTABanner />
       </main>
       <Footer />
+      <DemoRequestModal />
     </div>
   );
 }
