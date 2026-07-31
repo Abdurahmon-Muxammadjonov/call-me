@@ -77,11 +77,8 @@ const dict = {
     "landing.goToCabinet": "Kabinetga o'tish",
     "landing.requestDemo": "Demo so'rash",
 
-    "landing.stats.calls": "150,000+",
     "landing.stats.callsLabel": "qo'ng'iroq tahlil qilindi",
-    "landing.stats.accuracy": "98%",
     "landing.stats.accuracyLabel": "baholash aniqligi",
-    "landing.stats.teams": "40+",
     "landing.stats.teamsLabel": "jamoa foydalanmoqda",
 
     "landing.about.badge": "Biz haqimizda",
@@ -305,11 +302,8 @@ const dict = {
     "landing.goToCabinet": "Перейти в кабинет",
     "landing.requestDemo": "Запросить демо",
 
-    "landing.stats.calls": "150 000+",
     "landing.stats.callsLabel": "звонков проанализировано",
-    "landing.stats.accuracy": "98%",
     "landing.stats.accuracyLabel": "точность оценки",
-    "landing.stats.teams": "40+",
     "landing.stats.teamsLabel": "команд используют",
 
     "landing.about.badge": "О нас",
@@ -533,11 +527,8 @@ const dict = {
     "landing.goToCabinet": "Go to my dashboard",
     "landing.requestDemo": "Request a demo",
 
-    "landing.stats.calls": "150,000+",
     "landing.stats.callsLabel": "calls analyzed",
-    "landing.stats.accuracy": "98%",
     "landing.stats.accuracyLabel": "scoring accuracy",
-    "landing.stats.teams": "40+",
     "landing.stats.teamsLabel": "teams onboard",
 
     "landing.about.badge": "About us",

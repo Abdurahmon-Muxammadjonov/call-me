@@ -19,7 +19,7 @@ function getReducedMotionSnapshot(): boolean {
 function getReducedMotionServerSnapshot(): boolean {
   return false;
 }
-function usePrefersReducedMotion(): boolean {
+export function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(subscribeReducedMotion, getReducedMotionSnapshot, getReducedMotionServerSnapshot);
 }
 
