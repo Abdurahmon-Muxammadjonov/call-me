@@ -47,6 +47,9 @@ export interface PricingPlan {
   popular?: boolean;
   managers: ManagerRange;
   analysisNote: string;
+  /* 3-4 ta eng muhim funksiya — narx tagida qisqa xulosa sifatida
+   * ko'rsatiladi (to'liq ro'yxat pastda, kategoriyalar bo'yicha qoladi). */
+  highlights: string[];
   /* Only "enterprise" has an adjustable hours/month stepper. */
   hoursPerMonth?: { default: number; min: number; max: number; step: number };
 }
@@ -59,6 +62,7 @@ export const PLANS: PricingPlan[] = [
     capacityLabel: "~40%",
     managers: { kind: "fixed", fixed: 1 },
     analysisNote: "Har bir menejer uchun kuniga ~20-30 daqiqa",
+    highlights: ["Audio tahlil", "Menejer/xodim baholash", "Qisqa xulosa"],
   },
   {
     id: "standard",
@@ -67,6 +71,7 @@ export const PLANS: PricingPlan[] = [
     capacityLabel: "~60%",
     managers: { kind: "range", min: 1, max: 3 },
     analysisNote: "Har bir menejer uchun kuniga ~1 soat",
+    highlights: ["To'liq audio tahlil", "Skript tekshiruvi", "CRM'ga avtomatik izoh", "Lid sifatini aniqlash"],
   },
   {
     id: "pro",
@@ -76,6 +81,7 @@ export const PLANS: PricingPlan[] = [
     popular: true,
     managers: { kind: "range", min: 3, max: 10 },
     analysisNote: "Har bir menejer uchun kuniga 2-3 soat",
+    highlights: ["Transkriptsiya", "To'liq sotuv jarayoni", "Vazifalar nazorati", "Cheksiz AI Treyner"],
   },
   {
     id: "enterprise",
@@ -84,6 +90,7 @@ export const PLANS: PricingPlan[] = [
     capacityLabel: "100% + AI",
     managers: { kind: "unlimited" },
     analysisNote: "Tahlil hajmi oyiga soatlar bo'yicha belgilanadi",
+    highlights: ["AI chat yordamchi", "Avtomatik reyting", "Muammoli qo'ng'iroq ogohlantirishi", "Trend tahlili"],
     hoursPerMonth: { default: 100, min: 20, max: 500, step: 10 },
   },
 ];

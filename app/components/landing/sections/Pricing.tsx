@@ -115,6 +115,18 @@ function PlanCard({ plan, period, index }: { plan: PricingPlan; period: BillingP
           </p>
         </div>
 
+        {/* Narx tagidagi qisqa xulosa — bu pulga nima kirishini bir qarashda ko'rsatadi */}
+        <ul className="mt-4 space-y-1.5 border-t border-slate-100 pt-4">
+          {plan.highlights.map((h) => (
+            <li key={h} className="flex items-start gap-2 text-xs font-medium text-slate-600">
+              <span className="mt-0.5 grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600">
+                <Icons.check className="h-2.5 w-2.5" />
+              </span>
+              {h}
+            </li>
+          ))}
+        </ul>
+
         <a
           href="#cta"
           className={`mt-5 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-bold transition-colors ${
