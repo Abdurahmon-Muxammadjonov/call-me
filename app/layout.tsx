@@ -32,7 +32,7 @@ const themeScript = `
   } catch (e) {}
   try {
     var loc = localStorage.getItem('procell-locale');
-    document.documentElement.setAttribute('data-locale', loc === 'ru' ? 'ru' : 'uz');
+    document.documentElement.setAttribute('data-locale', (loc === 'ru' || loc === 'en') ? loc : 'uz');
   } catch (e) {}
 })();
 `;

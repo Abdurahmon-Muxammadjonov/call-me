@@ -30,10 +30,28 @@ import {
 import type { Session } from "../lib/auth";
 import { useLiveProfile, useScripts, useShift, type ScriptItem } from "../lib/realtime";
 import { useManagerRealtime, type ManagerShift } from "../lib/useManagerRealtime";
-import { NotificationBell } from "./NotificationBell";
 import { StaffRealtimeLayer } from "./StaffRealtimeLayer";
 
-type EmpTab = "overview" | "calls" | "schedule" | "tips" | "penalties";
+export type EmpTab = "overview" | "calls" | "schedule" | "tips" | "penalties";
+
+/* URL segment (after /cabinet) for each tab — mirrors AppShell's TAB_PATH
+ * for the director area. "" is the root (/cabinet itself → overview). */
+export const EMP_TAB_PATH: Record<EmpTab, string> = {
+  overview: "",
+  calls: "calls",
+  schedule: "schedule",
+  tips: "tips",
+  penalties: "penalties",
+};
+
+const EMP_PATH_TO_TAB: Record<string, EmpTab> = Object.fromEntries(
+  Object.entries(EMP_TAB_PATH).map(([tab, path]) => [path, tab as EmpTab])
+);
+
+export function empTabFromSegments(segments: string[] | undefined): EmpTab {
+  const path = segments?.[0] ?? "";
+  return EMP_PATH_TO_TAB[path] ?? "overview";
+}
 
 /* Performance shown on the dashboard. It comes 100% from the backend Employee
  * record — there is no demo/placeholder data. Until the backend exposes
@@ -50,18 +68,21 @@ const NAV: { id: EmpTab; label: string; icon: keyof typeof Icons; grad: string }
 
 export function EmployeeDashboard({
   session,
+  tab,
+  onSelectTab,
   isDark,
   onToggleTheme,
   onLogout,
 }: {
   session: Session;
+  tab: EmpTab;
+  onSelectTab: (id: EmpTab) => void;
   isDark: boolean;
   onToggleTheme: () => void;
   onLogout: () => void;
 }) {
   const [emp, setEmp] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(() => Boolean(session.employeeId));
-  const [tab, setTab] = useState<EmpTab>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sheetCall, setSheetCall] = useState<EmpCall | null>(null);
   const [confirmOut, setConfirmOut] = useState(false);
@@ -125,7 +146,7 @@ export function EmployeeDashboard({
   const totalPenalty = perf.penalties.reduce((s, p) => s + p.points, 0);
 
   function select(id: EmpTab) {
-    setTab(id);
+    onSelectTab(id);
     setMobileOpen(false);
   }
 
@@ -209,7 +230,6 @@ export function EmployeeDashboard({
               <Icons.clock className="h-4 w-4 text-indigo-500 dark:text-cyan-400" />
               <LiveClock className="font-semibold text-slate-700 dark:text-slate-200" />
             </div>
-            <NotificationBell userId={session.employeeId} />
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
           </header>
 

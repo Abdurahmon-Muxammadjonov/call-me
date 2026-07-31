@@ -20,23 +20,31 @@ import { StaffManager } from "./StaffManager";
 import { ManagersDashboard } from "./ManagersDashboard";
 import type { Session } from "../lib/auth";
 
-const DASHBOARD_TARGET_KEY = "prosell-dashboard-target-tab";
+/* URL segment (after /dashboard) for each tab — the single source of truth
+ * for /dashboard routing. "" is the root (/dashboard itself → overview). */
+export const TAB_PATH: Record<TabId, string> = {
+  overview: "",
+  management: "management",
+  comparison: "comparison",
+  staff: "staff",
+  recordings: "recordings",
+  upload: "upload",
+  "deep-audit": "deep-audit",
+  operators: "operators",
+  categories: "categories",
+  criteria: "criteria",
+  amocrm: "amocrm",
+};
 
-function getInitialTab(): TabId {
-  if (typeof window === "undefined") return "overview";
-  const saved = window.localStorage.getItem(DASHBOARD_TARGET_KEY);
-  if (saved === "management" || saved === "overview" || saved === "comparison" || saved === "staff" || saved === "recordings" || saved === "upload" || saved === "deep-audit" || saved === "operators" || saved === "categories" || saved === "criteria" || saved === "amocrm") {
-    return saved;
-  }
-  return "overview";
-}
+const PATH_TO_TAB: Record<string, TabId> = Object.fromEntries(
+  Object.entries(TAB_PATH).map(([tab, path]) => [path, tab as TabId])
+);
 
-function consumeInitialTab(): TabId {
-  const initial = getInitialTab();
-  if (typeof window !== "undefined") {
-    window.localStorage.removeItem(DASHBOARD_TARGET_KEY);
-  }
-  return initial;
+/* Maps a /dashboard/[[...tab]] catch-all segment array back to a TabId.
+ * Unknown/empty segments fall back to "overview" (the /dashboard root). */
+export function tabFromSegments(segments: string[] | undefined): TabId {
+  const path = segments?.[0] ?? "";
+  return PATH_TO_TAB[path] ?? "overview";
 }
 
 const TAB_KEYS: Record<TabId, { title: DictKey; subtitle: DictKey }> = {
@@ -90,18 +98,21 @@ function renderTab(tab: TabId) {
 
 export function AppShell({
   session,
+  activeTab,
+  onSelectTab,
   isDark,
   onToggleTheme,
   onLogout,
 }: {
   session: Session;
+  activeTab: TabId;
+  onSelectTab: (id: TabId) => void;
   isDark: boolean;
   onToggleTheme: () => void;
   onLogout: () => void;
 }) {
   const t = useT();
   const initials = session.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-  const [activeTab, setActiveTab] = useState<TabId>(consumeInitialTab);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
 
@@ -109,7 +120,7 @@ export function AppShell({
   const meta = { title: t(metaKeys.title), subtitle: t(metaKeys.subtitle) };
 
   function selectTab(id: TabId) {
-    setActiveTab(id);
+    onSelectTab(id);
     setMobileOpen(false);
   }
 

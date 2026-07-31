@@ -2,16 +2,17 @@
 
 /* Minimal i18n — same external-store pattern as theme.ts (see that file for
  * the rationale: hydration-safe via useSyncExternalStore, no setState-in-effect).
- * Two locales today (uz/ru); adding a third means adding one more key to
+ * Three locales today (uz/ru/en); adding another means adding one more key to
  * `dict` below and to `LOCALES`. Missing keys fall back to Uzbek, then to the
  * raw key itself, so a partially-translated screen never crashes or blanks. */
 
 import { useSyncExternalStore } from "react";
 
-export type Locale = "uz" | "ru";
+export type Locale = "uz" | "ru" | "en";
 export const LOCALES: { value: Locale; label: string }[] = [
   { value: "uz", label: "O'zbekcha" },
   { value: "ru", label: "Русский" },
+  { value: "en", label: "English" },
 ];
 
 const LOCALE_KEY = "procell-locale";
@@ -32,7 +33,8 @@ function subscribe(cb: () => void): () => void {
 // the inline script in layout.tsx (same no-flash trick as the `dark` class
 // in theme.ts), so reading it back here is hydration-safe.
 function getSnapshot(): Locale {
-  return document.documentElement.dataset.locale === "ru" ? "ru" : "uz";
+  const attr = document.documentElement.dataset.locale;
+  return attr === "ru" || attr === "en" ? attr : "uz";
 }
 
 function getServerSnapshot(): Locale {
@@ -61,6 +63,18 @@ const dict = {
     "common.save": "Saqlash",
     "common.loading": "Yuklanmoqda...",
     "common.refresh": "Yangilash",
+
+    "landing.badge": "AI Audit Core",
+    "landing.title": "Call-center sifatini AI yordamida audit qiling",
+    "landing.subtitle": "SalesPulse har bir qo'ng'iroqni tahlil qiladi, operatorlar samaradorligini o'lchaydi va jonli statistika beradi.",
+    "landing.login": "Tizimga kirish",
+    "landing.goToCabinet": "Kabinetga o'tish",
+    "landing.feature1Title": "AI auditor",
+    "landing.feature1Body": "Har bir qo'ng'iroq belgilangan mezonlar bo'yicha avtomatik baholanadi.",
+    "landing.feature2Title": "Jonli statistika",
+    "landing.feature2Body": "KPI, konversiya va yo'qotish sabablari real vaqtda yangilanadi.",
+    "landing.feature3Title": "Jamoa nazorati",
+    "landing.feature3Body": "Menejerlar va operatorlar samaradorligini bir joydan kuzating.",
 
     "login.title": "Xush kelibsiz",
     "login.subtitle": "Audit tizimiga kirish uchun ma'lumotlaringizni kiriting",
@@ -174,6 +188,18 @@ const dict = {
     "common.loading": "Загрузка...",
     "common.refresh": "Обновить",
 
+    "landing.badge": "AI Audit Core",
+    "landing.title": "Аудит качества call-центра с помощью AI",
+    "landing.subtitle": "SalesPulse анализирует каждый звонок, измеряет эффективность операторов и даёт живую статистику.",
+    "landing.login": "Войти в систему",
+    "landing.goToCabinet": "Перейти в кабинет",
+    "landing.feature1Title": "AI-аудитор",
+    "landing.feature1Body": "Каждый звонок автоматически оценивается по заданным критериям.",
+    "landing.feature2Title": "Живая статистика",
+    "landing.feature2Body": "KPI, конверсия и причины потерь обновляются в реальном времени.",
+    "landing.feature3Title": "Контроль команды",
+    "landing.feature3Body": "Отслеживайте эффективность менеджеров и операторов в одном месте.",
+
     "login.title": "Добро пожаловать",
     "login.subtitle": "Введите данные для входа в систему аудита",
     "login.email": "Email",
@@ -276,6 +302,130 @@ const dict = {
     "managers.status.online": "онлайн",
     "managers.status.away": "занят",
     "managers.status.offline": "офлайн",
+  },
+  en: {
+    "common.logout": "Log out",
+    "common.cancel": "Cancel",
+    "common.yes": "Yes",
+    "common.no": "No",
+    "common.save": "Save",
+    "common.loading": "Loading...",
+    "common.refresh": "Refresh",
+
+    "landing.badge": "AI Audit Core",
+    "landing.title": "Audit your call-center quality with AI",
+    "landing.subtitle": "SalesPulse analyzes every call, measures operator performance, and gives you live statistics.",
+    "landing.login": "Sign in",
+    "landing.goToCabinet": "Go to my dashboard",
+    "landing.feature1Title": "AI auditor",
+    "landing.feature1Body": "Every call is automatically scored against your defined criteria.",
+    "landing.feature2Title": "Live statistics",
+    "landing.feature2Body": "KPIs, conversion, and loss reasons update in real time.",
+    "landing.feature3Title": "Team oversight",
+    "landing.feature3Body": "Track manager and operator performance from one place.",
+
+    "login.title": "Welcome back",
+    "login.subtitle": "Enter your details to access the audit system",
+    "login.email": "Email",
+    "login.password": "Password",
+    "login.emailPlaceholder": "email@salespulse.uz",
+    "login.passwordPlaceholder": "At least 6 characters",
+    "login.show": "Show",
+    "login.hide": "Hide",
+    "login.submit": "Sign in",
+    "login.submitting": "Checking...",
+    "login.footer": "SalesPulse © 2026 — Secure audit environment",
+    "login.emailRequired": "Enter your email.",
+    "login.emailInvalid": "Invalid email format.",
+    "login.passwordRequired": "Enter your password.",
+    "login.passwordTooShort": "Password must be at least {min} characters.",
+    "login.wrongCredentials": "Incorrect email or password.",
+    "login.serverUnreachable": "Could not reach the server. Check your connection and try again.",
+
+    "nav.section.main": "MAIN",
+    "nav.section.settings": "SETTINGS",
+    "nav.overview.label": "Overview",
+    "nav.overview.hint": "Dashboard",
+    "nav.management.label": "Management panel",
+    "nav.management.hint": "Leadership view",
+    "nav.comparison.label": "Comparison panel",
+    "nav.comparison.hint": "Daily/weekly/monthly",
+    "nav.staff.label": "Staff management",
+    "nav.staff.hint": "All employees",
+    "nav.recordings.label": "Recordings",
+    "nav.recordings.hint": "Transcription log",
+    "nav.upload.label": "Upload audio",
+    "nav.upload.hint": "New calls",
+    "nav.deep-audit.label": "Deep audit",
+    "nav.deep-audit.hint": "Advanced Deep Audit",
+    "nav.operators.label": "Operators",
+    "nav.operators.hint": "Team management",
+    "nav.categories.label": "Criteria categories",
+    "nav.categories.hint": "Grouping",
+    "nav.criteria.label": "Evaluation criteria",
+    "nav.criteria.hint": "Scoring rules",
+    "nav.amocrm.label": "amoCRM connection",
+    "nav.amocrm.hint": "Integration",
+
+    "tab.overview.title": "Overview",
+    "tab.overview.subtitle": "Overall state of call-center quality audit",
+    "tab.management.title": "Management panel",
+    "tab.management.subtitle": "Three-tier leadership analysis and platforms",
+    "tab.comparison.title": "Comparison panel",
+    "tab.comparison.subtitle": "Daily, weekly, and monthly results — period-over-period",
+    "tab.staff.title": "Staff management",
+    "tab.staff.subtitle": "All employees — settings, shifts, and scripts",
+    "tab.recordings.title": "Recordings",
+    "tab.recordings.subtitle": "Log of transcribed calls",
+    "tab.upload.title": "Upload audio",
+    "tab.upload.subtitle": "Upload new calls for analysis",
+    "tab.deep-audit.title": "Deep audit",
+    "tab.deep-audit.subtitle": "Detailed AI audit of a single call",
+    "tab.operators.title": "Operators",
+    "tab.operators.subtitle": "Team management",
+    "tab.categories.title": "Criteria categories",
+    "tab.categories.subtitle": "Evaluation categories",
+    "tab.criteria.title": "Evaluation criteria",
+    "tab.criteria.subtitle": "Scoring rules",
+    "tab.amocrm.title": "amoCRM connection",
+    "tab.amocrm.subtitle": "CRM integration",
+
+    "confirm.logout.title": "Sign out",
+    "confirm.logout.message": "Are you sure you want to sign out?",
+    "confirm.logout.confirm": "Yes, sign out",
+
+    "theme.toggle": "Toggle theme",
+    "locale.toggle": "Change language",
+
+    "overview.live.online": "Backend connected · live data",
+    "overview.live.offline": "Backend offline",
+    "overview.live.connecting": "Connecting to backend...",
+    "overview.backendUnreachable": "No connection to the backend. Please try again.",
+    "overview.topOperators": "Top operators",
+    "overview.topOperatorsSubtitle": "By average KPI score (live)",
+    "overview.lostReasons": "Loss reasons",
+    "overview.lostReasonsSubtitle": "Most common (live)",
+    "overview.recentActivity": "Recent activity",
+    "overview.recentActivitySubtitle": "Most recently analyzed calls",
+    "overview.emptyLeaders": "No stats yet — will appear after the first call analysis.",
+    "overview.emptyLost": "Loss reasons haven't been identified yet.",
+    "overview.emptyRecent": "No analyzed calls yet.",
+    "overview.stat.calls": "Total calls",
+    "overview.stat.duration": "Average duration",
+    "overview.stat.score": "Average KPI",
+    "overview.stat.ai": "AI auditor",
+    "overview.stat.live": "Live",
+    "overview.stat.disconnected": "Disconnected",
+
+    "managers.title": "Managers",
+    "managers.live": "Updates live (real-time)",
+    "managers.active": "active",
+    "managers.total": "total",
+    "managers.empty": "No managers found",
+    "managers.loading": "Loading data, please wait...",
+    "managers.status.online": "online",
+    "managers.status.away": "away",
+    "managers.status.offline": "offline",
   },
 } satisfies Record<Locale, Record<string, string>>;
 
