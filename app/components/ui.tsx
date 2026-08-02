@@ -282,21 +282,23 @@ export function LocaleToggle({ className = "" }: { className?: string }) {
   const locale = useLocale();
   const t = useT();
 
-  function cycle() {
-    const idx = LOCALES.findIndex((l) => l.value === locale);
-    const next = LOCALES[(idx + 1) % LOCALES.length] as { value: Locale; label: string };
-    setLocale(next.value);
-  }
-
   return (
-    <button
-      onClick={cycle}
-      aria-label={t("locale.toggle")}
-      title={t("locale.toggle")}
-      className={`inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-slate-200/70 bg-slate-100/80 px-3 text-xs font-bold uppercase tracking-wide text-slate-600 transition-all duration-300 hover:bg-slate-200/70 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800 ${className}`}
-    >
-      {locale}
-    </button>
+    <div className={`relative inline-flex h-9 items-center ${className}`}>
+      <select
+        value={locale}
+        onChange={(e) => setLocale(e.target.value as Locale)}
+        aria-label={t("locale.toggle")}
+        title={t("locale.toggle")}
+        className="h-9 cursor-pointer appearance-none rounded-full border border-slate-200/70 bg-slate-100/80 py-0 pl-3 pr-7 text-xs font-bold text-slate-600 outline-none transition-colors duration-300 hover:bg-slate-200/70 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800"
+      >
+        {LOCALES.map((l) => (
+          <option key={l.value} value={l.value}>
+            {l.label}
+          </option>
+        ))}
+      </select>
+      <Icons.chevronDown className="pointer-events-none absolute right-2 h-3 w-3 text-slate-400" />
+    </div>
   );
 }
 

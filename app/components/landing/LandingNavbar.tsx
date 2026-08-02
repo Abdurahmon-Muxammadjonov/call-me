@@ -7,6 +7,7 @@ import { Icons } from "../Icons";
 import { useSession } from "../../lib/auth";
 import { useTheme } from "../../lib/theme";
 import { useT, type DictKey } from "../../lib/i18n";
+import { CONTACT_PHONE_TEL, CONTACT_PHONE_DISPLAY } from "../../lib/contact";
 
 const LINKS: { key: DictKey; href: string }[] = [
   { key: "nav.home", href: "#top" },
@@ -75,6 +76,14 @@ export function LandingNavbar() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <a
+            href={`tel:${CONTACT_PHONE_TEL}`}
+            title={CONTACT_PHONE_DISPLAY}
+            aria-label={CONTACT_PHONE_DISPLAY}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/70 text-slate-600 transition-colors hover:border-brand-blue hover:text-brand-blue dark:border-white/15 dark:text-slate-300 dark:hover:text-brand-teal"
+          >
+            <Icons.phone className="h-4 w-4" />
+          </a>
           <LocaleToggle />
           <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
           <Link
@@ -111,6 +120,12 @@ export function LandingNavbar() {
                 {t("nav.dashboardLink")}
               </Link>
             )}
+            <a
+              href={`tel:${CONTACT_PHONE_TEL}`}
+              className="flex items-center gap-2 font-heading text-sm font-semibold text-slate-600 dark:text-slate-300"
+            >
+              <Icons.phone className="h-4 w-4" /> {CONTACT_PHONE_DISPLAY}
+            </a>
             <div className="flex items-center gap-2 pt-2">
               <LocaleToggle />
               <ThemeToggle isDark={isDark} onToggle={toggleTheme} />

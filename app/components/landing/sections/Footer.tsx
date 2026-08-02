@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logo } from "../../ui";
 import { Icons } from "../../Icons";
 import { useT, type DictKey } from "../../../lib/i18n";
+import { CONTACT_PHONE_TEL, CONTACT_PHONE_DISPLAY } from "../../../lib/contact";
 
 const NAV_LINKS: { key: DictKey; href: string }[] = [
   { key: "nav.home", href: "#top" },
@@ -123,8 +124,8 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="tel:+998901136170" className="flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-brand-blue dark:text-slate-400 dark:hover:text-brand-teal">
-                  <Icons.phone className="h-4 w-4" /> +998 90 113 61 70
+                <a href={`tel:${CONTACT_PHONE_TEL}`} className="flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-brand-blue dark:text-slate-400 dark:hover:text-brand-teal">
+                  <Icons.phone className="h-4 w-4" /> {CONTACT_PHONE_DISPLAY}
                 </a>
               </li>
             </ul>
