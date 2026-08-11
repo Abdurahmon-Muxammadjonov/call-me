@@ -777,7 +777,14 @@ function AudioPlayer({ src, onDuration }: { src: string; onDuration?: (sec: numb
           max={dur || 0}
           value={cur}
           onChange={seek}
-          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-indigo-500 dark:bg-slate-700"
+          // Native `accent-color` alone doesn't render a distinct
+          // played/unplayed split consistently across browsers — this
+          // gradient trick (split at the current % position) does, so the
+          // listened-to portion is always visibly a different color.
+          style={{
+            background: `linear-gradient(to right, var(--color-blue-600) ${dur ? (cur / dur) * 100 : 0}%, rgba(148,163,184,0.35) ${dur ? (cur / dur) * 100 : 0}%)`,
+          }}
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full accent-blue-600"
         />
         <div className="mt-1 flex items-center justify-between font-mono text-[11px] text-slate-400">
           <span>{formatSeconds(cur)}</span>
