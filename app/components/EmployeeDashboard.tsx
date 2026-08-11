@@ -33,6 +33,7 @@ import { useManagerRealtime, type ManagerShift } from "../lib/useManagerRealtime
 import { StaffRealtimeLayer } from "./StaffRealtimeLayer";
 import { Portal } from "./Portal";
 import { ToastHost } from "./ToastHost";
+import { NotificationBell } from "./NotificationBell";
 
 export type EmpTab = "overview" | "calls" | "schedule" | "tips" | "penalties";
 
@@ -232,6 +233,7 @@ export function EmployeeDashboard({
               <Icons.clock className="h-4 w-4 text-indigo-500 dark:text-cyan-400" />
               <LiveClock className="font-semibold text-slate-700 dark:text-slate-200" />
             </div>
+            <NotificationBell userId={session.employeeId} />
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
           </header>
 
