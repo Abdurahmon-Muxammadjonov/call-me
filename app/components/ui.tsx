@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Icons, type IconKey } from "./Icons";
 import { LOCALES, setLocale, useLocale, useT, type Locale } from "../lib/i18n";
+import { Portal } from "./Portal";
 
 /* ---------- Shared 1s clock ----------
  * A single ticking source the whole app subscribes to. useSyncExternalStore is
@@ -370,43 +371,45 @@ export function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div
-        onClick={onCancel}
-        className="absolute inset-0 animate-fade-in bg-slate-900/50 backdrop-blur-sm"
-      />
-      <div className="glass glow-ring relative w-full max-w-sm animate-slide-up rounded-2xl p-6 text-center shadow-2xl">
+    <Portal>
+      <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
         <div
-          className={`mx-auto grid h-14 w-14 place-items-center rounded-2xl text-white shadow-lg ${
-            tone === "danger"
-              ? "bg-rose-600"
-              : "bg-blue-600"
-          }`}
-        >
-          {tone === "danger" ? <Icons.logout className="h-6 w-6" /> : <Icons.shield className="h-6 w-6" />}
-        </div>
-        <h3 className="mt-4 text-lg font-bold text-slate-800 dark:text-slate-100">{title}</h3>
-        <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{message}</p>
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
-          >
-            {cancelLabel}
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 ${
+          onClick={onCancel}
+          className="absolute inset-0 animate-fade-in bg-slate-900/50 backdrop-blur-sm"
+        />
+        <div className="glass glow-ring relative w-full max-w-sm animate-slide-up rounded-2xl p-6 text-center shadow-2xl">
+          <div
+            className={`mx-auto grid h-14 w-14 place-items-center rounded-2xl text-white shadow-lg ${
               tone === "danger"
                 ? "bg-rose-600"
                 : "bg-blue-600"
             }`}
           >
-            {confirmLabel}
-          </button>
+            {tone === "danger" ? <Icons.logout className="h-6 w-6" /> : <Icons.shield className="h-6 w-6" />}
+          </div>
+          <h3 className="mt-4 text-lg font-bold text-slate-800 dark:text-slate-100">{title}</h3>
+          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{message}</p>
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={onCancel}
+              className="flex-1 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-300 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
+            >
+              {cancelLabel}
+            </button>
+            <button
+              onClick={onConfirm}
+              className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all duration-300 ${
+                tone === "danger"
+                  ? "bg-rose-600"
+                  : "bg-blue-600"
+              }`}
+            >
+              {confirmLabel}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Portal>
   );
 }
 

@@ -6,7 +6,7 @@ import { ProblemSolution } from "./components/landing/sections/ProblemSolution";
 import { Features } from "./components/landing/sections/Features";
 import { HowItWorks } from "./components/landing/sections/HowItWorks";
 import { UseCases } from "./components/landing/sections/UseCases";
-import { Pricing } from "./components/landing/sections/Pricing";
+import { PricingContact } from "./components/landing/sections/PricingContact";
 import { FAQ } from "./components/landing/sections/FAQ";
 import { CTABanner } from "./components/landing/sections/CTABanner";
 import { Footer } from "./components/landing/sections/Footer";
@@ -27,7 +27,7 @@ export default function LandingPage() {
         <Features />
         <HowItWorks />
         <UseCases />
-        <Pricing />
+        <PricingContact />
         <FAQ />
         <CTABanner />
       </main>

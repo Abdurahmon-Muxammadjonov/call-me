@@ -5,6 +5,7 @@ import { Icons } from "./Icons";
 import { ShiftAlertBanner } from "./ShiftAlertBanner";
 import { useCredentialWatch, useShiftEvents, type CredentialChange } from "../lib/realtime";
 import { clearSession, type Session } from "../lib/auth";
+import { Portal } from "./Portal";
 
 /* =====================================================================
  * StaffRealtimeLayer — invisible orchestrator mounted on the staff dashboard.
@@ -57,6 +58,7 @@ function KickOutModal({
     : "";
 
   return (
+    <Portal>
     <AnimatePresence>
       {change && (
         <motion.div
@@ -102,5 +104,6 @@ function KickOutModal({
         </motion.div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }

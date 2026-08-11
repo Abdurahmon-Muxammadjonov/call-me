@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icons } from "./Icons";
 import { SectionTitle, PillButton, Skeleton, ConfirmModal } from "./ui";
+import { Portal } from "./Portal";
 import { apiUrl } from "../lib/api";
 import {
   listEmployees,
@@ -357,6 +358,7 @@ function OperatorEditor({
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-150 flex justify-end">
       {/* Backdrop */}
       <motion.div
@@ -548,6 +550,7 @@ function OperatorEditor({
         onCancel={() => setConfirmDelete(false)}
       />
     </div>
+    </Portal>
   );
 }
 

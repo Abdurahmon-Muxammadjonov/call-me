@@ -55,6 +55,7 @@ import {
 import { STATS } from "../lib/data";
 import { getSupabase } from "../lib/supabase";
 import { useT } from "../lib/i18n";
+import { Portal } from "./Portal";
 
 /* Relaxed shape so live values (computed from the backend) can replace the
  * template values without TS narrowing each card to its literal accent/trend. */
@@ -588,6 +589,7 @@ function CallDetailModal({ id, managerName, onClose }: { id: string; managerName
   }, [id]);
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-6" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
@@ -672,6 +674,7 @@ function CallDetailModal({ id, managerName, onClose }: { id: string; managerName
         ) : null}
       </div>
     </div>
+    </Portal>
   );
 }
 
@@ -1506,6 +1509,7 @@ function CategoryCriteriaModal({
   onClose: () => void;
 }) {
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-6" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
@@ -1546,6 +1550,7 @@ function CategoryCriteriaModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 

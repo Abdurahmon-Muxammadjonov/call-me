@@ -132,6 +132,8 @@ const dict = {
     "landing.pricing.badge": "Narxlar",
     "landing.pricing.title": "Jamoangiz hajmiga mos reja",
     "landing.pricing.subtitle": "To'lov davrini tanlang — uzoq muddatga chegirma bilan.",
+    "landing.pricing.contactSubtitle": "Narxlar jamoangiz hajmiga qarab belgilanadi — Telegram bot orqali bog'laning, sizga mos rejani tanlaymiz.",
+    "landing.pricing.telegramCta": "Telegram orqali narxni bilish",
     "landing.pricing.cta": "Tanlash",
 
     "landing.faq.badge": "FAQ",
@@ -338,6 +340,8 @@ const dict = {
     "landing.pricing.badge": "Цены",
     "landing.pricing.title": "План под размер вашей команды",
     "landing.pricing.subtitle": "Выберите период оплаты — скидка при длительной подписке.",
+    "landing.pricing.contactSubtitle": "Цена зависит от размера вашей команды — свяжитесь с нами в Telegram-боте, и мы подберём подходящий план.",
+    "landing.pricing.telegramCta": "Узнать цену в Telegram",
     "landing.pricing.cta": "Выбрать",
 
     "landing.faq.badge": "FAQ",
@@ -544,6 +548,8 @@ const dict = {
     "landing.pricing.badge": "Pricing",
     "landing.pricing.title": "A plan that fits your team's size",
     "landing.pricing.subtitle": "Choose a billing period — save more the longer you commit.",
+    "landing.pricing.contactSubtitle": "Pricing depends on your team's size — reach out on our Telegram bot and we'll find the right plan for you.",
+    "landing.pricing.telegramCta": "Get pricing on Telegram",
     "landing.pricing.cta": "Choose",
 
     "landing.faq.badge": "FAQ",

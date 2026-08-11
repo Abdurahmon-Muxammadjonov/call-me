@@ -31,6 +31,7 @@ import type { Session } from "../lib/auth";
 import { useLiveProfile, useScripts, useShift, type ScriptItem } from "../lib/realtime";
 import { useManagerRealtime, type ManagerShift } from "../lib/useManagerRealtime";
 import { StaffRealtimeLayer } from "./StaffRealtimeLayer";
+import { Portal } from "./Portal";
 
 export type EmpTab = "overview" | "calls" | "schedule" | "tips" | "penalties";
 
@@ -582,6 +583,7 @@ function ScoreSheet({ call, onClose }: { call: EmpCall | null; onClose: () => vo
   if (!call) return null;
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-100 flex items-end justify-center sm:items-center">
       <div onClick={onClose} className="absolute inset-0 animate-fade-in bg-slate-900/50 backdrop-blur-sm" />
       <div className="glass glow-ring relative max-h-[88vh] w-full max-w-lg animate-sheet-up overflow-y-auto rounded-t-3xl p-6 shadow-2xl sm:rounded-3xl">
@@ -647,6 +649,7 @@ function ScoreSheet({ call, onClose }: { call: EmpCall | null; onClose: () => vo
         )}
       </div>
     </div>
+    </Portal>
   );
 }
 
