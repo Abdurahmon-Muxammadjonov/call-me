@@ -19,6 +19,7 @@ import { ComparisonView } from "./ComparisonView";
 import { StaffManager } from "./StaffManager";
 import { ManagersDashboard } from "./ManagersDashboard";
 import { ToastHost } from "./ToastHost";
+import { CallNotificationBell } from "./CallNotificationBell";
 import type { Session } from "../lib/auth";
 
 /* URL segment (after /dashboard) for each tab — the single source of truth
@@ -227,10 +228,7 @@ export function AppShell({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <button className="relative hidden rounded-lg border border-slate-200 bg-white p-2.5 text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:block">
-                <Icons.bell className="h-4.5 w-4.5" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white dark:ring-slate-900" />
-              </button>
+              <CallNotificationBell />
               <LocaleToggle />
               <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
             </div>

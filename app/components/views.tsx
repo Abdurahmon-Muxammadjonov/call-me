@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { Icons, type IconKey } from "./Icons";
 import { fetchBackendHealth, fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
 import {
@@ -1076,9 +1077,12 @@ function AnalyzeResultCard({ result }: { result: AnalyzeResult }) {
 /* Endi to'liq backenddan: yuqorida qo'ng'iroq tanlanadi, pastda o'sha
  * qo'ng'iroqning batafsil AI auditi ko'rsatiladi (GET /api/calls/:id). */
 export function DeepAuditView() {
+  // Bell'dan (yangi qo'ng'iroq bildirishnomasi) "?call=<id>" bilan kelinsa,
+  // ro'yxat yuklangach o'sha qo'ng'iroq avtomatik tanlanadi.
+  const preselectedId = useSearchParams().get("call");
   const [calls, setCalls] = useState<CallRow[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(preselectedId);
   const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
