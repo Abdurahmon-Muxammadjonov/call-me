@@ -56,6 +56,7 @@ import { STATS } from "../lib/data";
 import { getSupabase } from "../lib/supabase";
 import { useT } from "../lib/i18n";
 import { Portal } from "./Portal";
+import { showToast } from "../lib/toast";
 
 /* Relaxed shape so live values (computed from the backend) can replace the
  * template values without TS narrowing each card to its literal accent/trend. */
@@ -1597,8 +1598,11 @@ export function CriteriaView() {
       await addCriterion(input);
       setAdding(false);
       await refresh();
+      showToast("Qoida qo'shildi.", "success");
     } catch (e) {
-      setError((e as Error).message || "Qoida qo'shilmadi.");
+      const msg = (e as Error).message || "Qoida qo'shilmadi.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setBusy(false);
     }
@@ -1612,8 +1616,11 @@ export function CriteriaView() {
       await updateCriterion(editing.id, input);
       setEditing(null);
       await refresh();
+      showToast("Qoida yangilandi.", "success");
     } catch (e) {
-      setError((e as Error).message || "Qoida saqlanmadi.");
+      const msg = (e as Error).message || "Qoida saqlanmadi.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setBusy(false);
     }
@@ -1624,8 +1631,11 @@ export function CriteriaView() {
     try {
       await updateCriterion(cr.id, { is_active: !cr.is_active });
       await refresh();
+      showToast(cr.is_active ? "Qoida nofaol qilindi." : "Qoida aktivlashtirildi.", "success");
     } catch (e) {
-      setError((e as Error).message || "Holatni o'zgartirib bo'lmadi.");
+      const msg = (e as Error).message || "Holatni o'zgartirib bo'lmadi.";
+      setError(msg);
+      showToast(msg, "error");
     }
   }
 
@@ -1637,8 +1647,11 @@ export function CriteriaView() {
     try {
       await deleteCriterion(id);
       await refresh();
+      showToast("Qoida o'chirildi.", "success");
     } catch (e) {
-      setError((e as Error).message || "O'chirib bo'lmadi.");
+      const msg = (e as Error).message || "O'chirib bo'lmadi.";
+      setError(msg);
+      showToast(msg, "error");
     }
   }
 

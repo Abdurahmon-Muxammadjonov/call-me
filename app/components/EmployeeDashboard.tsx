@@ -32,6 +32,7 @@ import { useLiveProfile, useScripts, useShift, type ScriptItem } from "../lib/re
 import { useManagerRealtime, type ManagerShift } from "../lib/useManagerRealtime";
 import { StaffRealtimeLayer } from "./StaffRealtimeLayer";
 import { Portal } from "./Portal";
+import { ToastHost } from "./ToastHost";
 
 export type EmpTab = "overview" | "calls" | "schedule" | "tips" | "penalties";
 
@@ -270,6 +271,7 @@ export function EmployeeDashboard({
       {/* Real-time listeners: kick-out on credential change + shift banners.
           Booting to login reuses the same logout path (presence cleanup). */}
       <StaffRealtimeLayer session={session} onLogout={handleLogout} />
+      <ToastHost />
     </div>
   );
 }

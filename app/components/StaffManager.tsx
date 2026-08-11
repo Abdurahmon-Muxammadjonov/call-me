@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Icons } from "./Icons";
 import { SectionTitle, PillButton, Skeleton, ConfirmModal } from "./ui";
 import { Portal } from "./Portal";
+import { showToast } from "../lib/toast";
 import { apiUrl } from "../lib/api";
 import {
   listEmployees,
@@ -341,9 +342,11 @@ function OperatorEditor({
           scripts: cleanScripts,
         });
       }
+      showToast(isNew ? "Operator qo'shildi." : "Operator ma'lumotlari yangilandi.", "success");
       onSaved();
     } catch {
       setSaving(false); // keep the panel open so the admin can retry
+      showToast("Saqlab bo'lmadi. Qayta urinib ko'ring.", "error");
     }
   }
 
@@ -351,9 +354,11 @@ function OperatorEditor({
     if (!operator) return;
     try {
       await deleteEmployee(operator.id);
+      showToast("Operator o'chirildi.", "success");
       onSaved();
     } catch {
       setConfirmDelete(false);
+      showToast("O'chirib bo'lmadi. Qayta urinib ko'ring.", "error");
     }
   }
 

@@ -18,6 +18,7 @@ import { ManagementView } from "./ManagementView";
 import { ComparisonView } from "./ComparisonView";
 import { StaffManager } from "./StaffManager";
 import { ManagersDashboard } from "./ManagersDashboard";
+import { ToastHost } from "./ToastHost";
 import type { Session } from "../lib/auth";
 
 /* URL segment (after /dashboard) for each tab — the single source of truth
@@ -254,6 +255,8 @@ export function AppShell({
         onConfirm={onLogout}
         onCancel={() => setConfirmOut(false)}
       />
+
+      <ToastHost />
     </div>
   );
 }
