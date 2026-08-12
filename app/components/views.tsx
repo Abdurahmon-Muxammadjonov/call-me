@@ -65,12 +65,58 @@ type StatItem = {
   key: string;
   label: string;
   value: string;
+  /* Berilsa, StatCard raqamni statik matn sifatida emas, eski qiymatdan yangisiga
+   * animatsiya bilan "sanab" ko'rsatadi (masalan Realtime orqali qo'ng'iroq kelganda). */
+  numericValue?: number;
   delta: string;
   trend: "up" | "down";
   accent: Accent;
   icon: string;
   spark: number[];
 };
+
+/* Raqam o'zgarganda (masalan Realtime push'dan keyin) eski qiymatdan yangisiga
+ * requestAnimationFrame bilan sanab-sanab o'tadi — sahifa har safar qayta yuklanganda
+ * emas, faqat HAQIQIY o'zgarishda animatsiya ko'rinadi (birinchi renderda sakramaydi). */
+function AnimatedNumber({ value }: { value: number }) {
+  const [display, setDisplay] = useState(value);
+  const prevRef = useRef(value);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const from = prevRef.current;
+    const to = value;
+    if (from === to) return;
+    prevRef.current = to;
+
+    const distance = Math.abs(to - from);
+    // Kichik farqda sekin-sekin (deyarli bittalab) sanaladi; katta farqda umumiy
+    // davomiylik cho'zilib ketmasin deb yuqori chegara bilan cheklanadi.
+    const duration = Math.min(900, Math.max(280, distance * 55));
+    const startTime = performance.now();
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out
+      const current = Math.round(from + (to - from) * eased);
+      setDisplay(current);
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        setDisplay(to);
+        rafRef.current = null;
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [value]);
+
+  return <>{display.toLocaleString()}</>;
+}
 
 /* Small reusable empty-state line. */
 function Empty({ text }: { text: string }) {
@@ -103,8 +149,8 @@ function StatCard({ stat }: { stat: StatItem }) {
           {stat.delta}
         </span>
       </div>
-      <p className="mt-4 text-3xl font-bold tracking-tight text-slate-800 dark:text-white">
-        {stat.value}
+      <p className="mt-4 text-3xl font-bold tracking-tight text-slate-800 dark:text-white tabular-nums">
+        {stat.numericValue !== undefined ? <AnimatedNumber value={stat.numericValue} /> : stat.value}
       </p>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{stat.label}</p>
       <div className="mt-3">
@@ -176,7 +222,7 @@ export function OverviewView() {
 
         setStats(
           [
-            { label: t("overview.stat.calls"), key: "calls", value: totalCalls.toLocaleString(), delta: t("overview.stat.live"), trend: "up", accent: "indigo", icon: "phone", spark: [10, 20, 15, 25, 30, 22, 25] },
+            { label: t("overview.stat.calls"), key: "calls", value: totalCalls.toLocaleString(), numericValue: totalCalls, delta: t("overview.stat.live"), trend: "up", accent: "indigo", icon: "phone", spark: [10, 20, 15, 25, 30, 22, 25] },
             { label: t("overview.stat.duration"), key: "duration", value: formatDuration(Math.round(avgDuration)), delta: t("overview.stat.live"), trend: "up", accent: "violet", icon: "clock", spark: [12, 18, 16, 24, 28, 20, 26] },
             { label: t("overview.stat.score"), key: "score", value: avgKpi ? avgKpi.toFixed(1) : "—", delta: t("overview.stat.live"), trend: "up", accent: "emerald", icon: "spark", spark: [8, 14, 12, 20, 25, 18, 22] },
             { label: t("overview.stat.ai"), key: "tokens", value: "—", delta: t("overview.stat.disconnected"), trend: "down", accent: "cyan", icon: "shield", spark: [0, 0, 0, 0, 0, 0, 0] },
