@@ -120,13 +120,19 @@ export function useSession(): Session | null {
 export async function authenticate(email: string, password: string): Promise<Session | null> {
   const emp = await authEmployee(email, password); // null on bad creds; throws on network
   if (!emp) return null;
+  return sessionFromUser(emp);
+}
 
-  const isDirector = emp.role === "director" || emp.role === "admin";
+/* Shared role→Session mapping — used by both the login flow above and the
+ * registration flows (register.ts), so "director"/"admin" → full dashboard,
+ * everything else → employee cabinet is decided in exactly one place. */
+export function sessionFromUser(u: { id: string; name: string; email: string; role?: string | null }): Session {
+  const isDirector = u.role === "director" || u.role === "admin";
   return {
     role: isDirector ? "director" : "employee",
-    email: emp.email,
-    name: emp.name,
-    title: isDirector ? "Rahbar" : emp.role || "Operator",
-    employeeId: emp.id,
+    email: u.email,
+    name: u.name,
+    title: isDirector ? "Rahbar" : u.role || "Operator",
+    employeeId: u.id,
   };
 }

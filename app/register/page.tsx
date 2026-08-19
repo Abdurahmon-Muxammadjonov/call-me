@@ -4,36 +4,36 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { AuthShell } from "../components/auth/AuthShell";
-import { LoginForm } from "../components/auth/LoginForm";
+import { RegisterForm } from "../components/auth/RegisterForm";
 import { BootSplash } from "../components/BootSplash";
+import { ToastHost } from "../components/ToastHost";
 import { saveSession, useSession, type Session } from "../lib/auth";
+import { showToast } from "../lib/toast";
 
-const BOOT_MS = 1500;
+const BOOT_MS = 1200;
 
 function homeFor(session: Session): string {
   return session.role === "director" ? "/dashboard" : "/cabinet";
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const session = useSession();
   const [booting, setBooting] = useState(false);
 
-  // Already signed in (fresh visit, reload, or back-navigation) → skip the
-  // form and go straight to the right area instead of showing login again.
   useEffect(() => {
     if (session && !booting) router.replace(homeFor(session));
   }, [session, booting, router]);
 
-  // Post-login splash: hold it for BOOT_MS, then hand off to the role's area.
   useEffect(() => {
     if (!booting || !session) return;
     const t = setTimeout(() => router.replace(homeFor(session)), BOOT_MS);
     return () => clearTimeout(t);
   }, [booting, session, router]);
 
-  function handleLogin(s: Session) {
-    saveSession(s); // notifies the session store → `session` updates above
+  function handleRegistered(s: Session) {
+    saveSession(s);
+    showToast(`Xush kelibsiz, ${s.name}!`, "success");
     setBooting(true);
   }
 
@@ -42,8 +42,8 @@ export default function LoginPage() {
   return (
     <>
       {!booting && (
-        <AuthShell variant="login">
-          <LoginForm onLogin={handleLogin} />
+        <AuthShell variant="register">
+          <RegisterForm onRegistered={handleRegistered} />
         </AuthShell>
       )}
       <AnimatePresence>
@@ -53,6 +53,7 @@ export default function LoginPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <ToastHost />
     </>
   );
 }

@@ -233,6 +233,12 @@ export const Icons = {
       <path d="M9.4 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3.1 3.9M6.1 6.1A16 16 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 3.1-.5" />
     </svg>
   ),
+  copy: (p: IconProps) => (
+    <svg {...base(p)}>
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+    </svg>
+  ),
 } as const;
 
 export type IconKey = keyof typeof Icons;
