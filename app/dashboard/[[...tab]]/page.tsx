@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { AppShell, TAB_PATH, tabFromSegments } from "../../components/AppShell";
 import { clearSession, useSession } from "../../lib/auth";
 import { useTheme } from "../../lib/theme";
+import { CompanyProvider } from "../../lib/company";
 import type { TabId } from "../../lib/data";
 
 /* /dashboard/[[...tab]] — every director section gets its own URL (e.g.
@@ -42,13 +43,15 @@ export default function DashboardPage() {
   if (!session || session.role !== "director") return null;
 
   return (
-    <AppShell
-      session={session}
-      activeTab={activeTab}
-      onSelectTab={selectTab}
-      isDark={isDark}
-      onToggleTheme={toggleTheme}
-      onLogout={handleLogout}
-    />
+    <CompanyProvider>
+      <AppShell
+        session={session}
+        activeTab={activeTab}
+        onSelectTab={selectTab}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onLogout={handleLogout}
+      />
+    </CompanyProvider>
   );
 }

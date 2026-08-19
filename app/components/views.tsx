@@ -58,6 +58,7 @@ import { getSupabase } from "../lib/supabase";
 import { useT } from "../lib/i18n";
 import { Portal } from "./Portal";
 import { showToast } from "../lib/toast";
+import { useCompany } from "../lib/company";
 
 /* Relaxed shape so live values (computed from the backend) can replace the
  * template values without TS narrowing each card to its literal accent/trend. */
@@ -187,6 +188,7 @@ export function OverviewView() {
   // Hammasi backenddan jonli: KPI cardlar, top operatorlar, yo'qotish sabablari
   // va so'nggi faollik. Demo qiymat yo'q — ma'lumot bo'lmasa bo'sh holat.
   const t = useT();
+  const { stats: companyStats } = useCompany();
   const [stats, setStats] = useState<StatItem[]>([]);
   const [live, setLive] = useState<"loading" | "online" | "offline">("loading");
   const [leaders, setLeaders] = useState<ManagerStats[]>([]);
@@ -315,6 +317,26 @@ export function OverviewView() {
     };
   }, []);
 
+  /* GET /dashboard/stats — bitta so'rov bilan agregatsiya qilingan, mavjud
+     bo'lsa "Jami qo'ng'iroq" va "O'rtacha KPI" kartalarini shu bilan
+     almashtiradi (avvalgi listCalls-dan hisoblangan qiymatlar `companyStats`
+     hali kelmagan holatda zaxira sifatida ko'rinadi). avg_score `null` —
+     0 emas — bo'lsa raqam o'rniga "Hali baho yo'q" ko'rsatiladi. Effekt
+     emas — har renderda hisoblanadi, shuning uchun qo'shimcha state yoki
+     setState-in-effect kerak emas. */
+  const displayStats = stats.map((s) => {
+    if (!companyStats) return s;
+    if (s.key === "calls") {
+      return { ...s, value: companyStats.total_calls.toLocaleString(), numericValue: companyStats.total_calls };
+    }
+    if (s.key === "score") {
+      return companyStats.avg_score == null
+        ? { ...s, value: "Hali baho yo'q", numericValue: undefined }
+        : { ...s, value: companyStats.avg_score.toFixed(1), numericValue: companyStats.avg_score };
+    }
+    return s;
+  });
+
   const nameOf = (id: string | null | undefined) => (id && names[id]) || (id ? `${id.slice(0, 8)}…` : "—");
 
   /* Bo'sh holat: data hali yuklonmagan bo'lsa, skeletonlarni ko'rsatamiz */
@@ -366,7 +388,7 @@ export function OverviewView() {
         </span>
       </div>
 
-      <StatGrid stats={stats} />
+      <StatGrid stats={displayStats} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Top operatorlar (leaderboard) */}

@@ -68,7 +68,9 @@ export const DEFAULT_TIPS = [
   "Suhbat oxirida keyingi qadamni belgilang va CRM'ga kiriting.",
 ];
 
-/* Shape returned by the backend `users` table. */
+/* Shape returned by the backend `users` table. `token` only appears on the
+ * /users/login response (a session JWT) — every other endpoint reusing this
+ * shape (list/get/update) simply won't have it. */
 interface BackendUser {
   id: string;
   name: string;
@@ -77,6 +79,7 @@ interface BackendUser {
   phone: string | null;
   role: string;
   created_at?: string;
+  token?: string;
 }
 
 interface ApiEnvelope<T> {
@@ -204,7 +207,7 @@ export async function goOffline(id: string): Promise<void> {
 
 /* Employee login — POST /users/login verifies the password (scrypt hash)
  * server-side and returns the user without the hash. */
-export async function authEmployee(email: string, password: string): Promise<Employee | null> {
+export async function authEmployee(email: string, password: string): Promise<(Employee & { token?: string }) | null> {
   const res = await fetch(apiUrl("/users/login"), {
     method: "POST",
     headers: JSON_HEADERS,
@@ -212,5 +215,5 @@ export async function authEmployee(email: string, password: string): Promise<Emp
   });
   if (res.status === 401 || res.status === 400) return null;
   const user = await parse<BackendUser>(res);
-  return toEmployee(user);
+  return { ...toEmployee(user), token: user.token };
 }

@@ -25,6 +25,16 @@ export function apiUrl(path: string): string {
   return `${base}${normalizedPath}`;
 }
 
+/* `Authorization: Bearer <token>` for the newer /company/* and
+ * /dashboard/* endpoints, which require a session JWT (see
+ * app/lib/auth.ts's Session.token). Older endpoints (users/login,
+ * calls, criteria, ...) don't take this yet — pass it only where the
+ * backend contract calls for it. Returns {} when there's no token, so it's
+ * always safe to spread into a headers object unconditionally. */
+export function authHeaders(token?: string | null): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export interface ApiErrorDetails {
   status: number;
   statusText: string;

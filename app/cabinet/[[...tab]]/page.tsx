@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { EmployeeDashboard, EMP_TAB_PATH, empTabFromSegments, type EmpTab } from "../../components/EmployeeDashboard";
 import { clearSession, useSession } from "../../lib/auth";
 import { useTheme } from "../../lib/theme";
+import { CompanyProvider } from "../../lib/company";
 
 /* /cabinet/[[...tab]] — the employee-role equivalent of /dashboard, kept
  * under its own URL namespace so a director and an employee never share a
@@ -40,13 +41,15 @@ export default function CabinetPage() {
   if (!session || session.role === "director") return null;
 
   return (
-    <EmployeeDashboard
-      session={session}
-      tab={activeTab}
-      onSelectTab={selectTab}
-      isDark={isDark}
-      onToggleTheme={toggleTheme}
-      onLogout={handleLogout}
-    />
+    <CompanyProvider>
+      <EmployeeDashboard
+        session={session}
+        tab={activeTab}
+        onSelectTab={selectTab}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onLogout={handleLogout}
+      />
+    </CompanyProvider>
   );
 }

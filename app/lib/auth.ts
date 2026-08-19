@@ -11,6 +11,18 @@ export interface Session {
   name: string;
   title: string;
   employeeId?: string;
+  /* Session JWT (30 kun) — /company/* va /dashboard/* so'rovlarida
+   * `Authorization: Bearer` sifatida yuboriladi (see lib/api.ts's
+   * authHeaders). Undefined on backends that don't issue one yet — every
+   * caller treats a missing token as "send no Authorization header"
+   * rather than failing. */
+  token?: string;
+  /* Backend'ning xom `role` qiymati ("director"/"admin"/"user" va h.k.) —
+   * yuqoridagi `role` UI-marshrutlash uchun ikkitagacha soddalashtirilgan
+   * (director/employee), lekin nozikroq ruxsat tekshiruvlari (masalan
+   * "faqat admin, director emas ham") uchun xom qiymat ham saqlanadi.
+   * Solishtirishda useHasRole ishlatilsin. */
+  rawRole?: string;
 }
 
 /* ---------- Session persistence ----------
@@ -126,7 +138,13 @@ export async function authenticate(email: string, password: string): Promise<Ses
 /* Shared role→Session mapping — used by both the login flow above and the
  * registration flows (register.ts), so "director"/"admin" → full dashboard,
  * everything else → employee cabinet is decided in exactly one place. */
-export function sessionFromUser(u: { id: string; name: string; email: string; role?: string | null }): Session {
+export function sessionFromUser(u: {
+  id: string;
+  name: string;
+  email: string;
+  role?: string | null;
+  token?: string | null;
+}): Session {
   const isDirector = u.role === "director" || u.role === "admin";
   return {
     role: isDirector ? "director" : "employee",
@@ -134,5 +152,7 @@ export function sessionFromUser(u: { id: string; name: string; email: string; ro
     name: u.name,
     title: isDirector ? "Rahbar" : u.role || "Operator",
     employeeId: u.id,
+    token: u.token ?? undefined,
+    rawRole: u.role ?? undefined,
   };
 }

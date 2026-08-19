@@ -30,6 +30,10 @@ export interface RegisteredUser {
   name: string;
   email: string;
   role: string;
+  /* Session JWT — see Session.token in lib/auth.ts. Not on every backend
+   * deployment yet; sessionFromUser() treats a missing token as "no
+   * Authorization header sent" rather than failing. */
+  token?: string;
 }
 
 /* Backend errors that specifically mean "the company code is wrong" get
@@ -87,7 +91,10 @@ export interface RegisterCompanyResult {
 }
 
 /* POST /auth/register-company — yangi kompaniya + owner yaratiladi;
- * backend generatsiya qilgan 9 xonali invite_code javobda qaytishi kutiladi. */
+ * backend generatsiya qilgan 9 xonali invite_code javobda qaytishi kutiladi.
+ * `token`, mavjud bo'lsa, `data.user` ichida yoki unga tengdosh (yon-yonida)
+ * kelishi mumkin — ikkalasini ham tekshiramiz, backend qaysi shaklda
+ * qaytarishidan qat'i nazar ishlashi uchun. */
 export async function registerCompany(input: RegisterCompanyInput): Promise<RegisterCompanyResult> {
   try {
     const res = await fetch(apiUrl("/auth/register-company"), {
@@ -100,8 +107,11 @@ export async function registerCompany(input: RegisterCompanyInput): Promise<Regi
         password: input.password,
       }),
     });
-    const data = await parse<{ user: RegisteredUser; invite_code: string }>(res);
-    return { user: data.user, inviteCode: data.invite_code };
+    const data = await parse<{ user: RegisteredUser; invite_code: string; token?: string }>(res);
+    return {
+      user: { ...data.user, token: data.user.token ?? data.token },
+      inviteCode: data.invite_code,
+    };
   } catch (e) {
     throw new Error(friendlyRegisterError(e));
   }

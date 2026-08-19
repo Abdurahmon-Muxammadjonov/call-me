@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Icons } from "./Icons";
 import { Logo, ThemeToggle, LocaleToggle, ConfirmModal } from "./ui";
 import { NAV_SECTIONS, type TabId } from "../lib/data";
 import { useT, type DictKey } from "../lib/i18n";
+import { useHasRole } from "../lib/useHasRole";
 import {
   OverviewView,
   RecordingsView,
@@ -20,6 +22,7 @@ import { StaffManager } from "./StaffManager";
 import { ManagersDashboard } from "./ManagersDashboard";
 import { ToastHost } from "./ToastHost";
 import { CallNotificationBell } from "./CallNotificationBell";
+import { CompanyBadge } from "./CompanyBadge";
 import type { Session } from "../lib/auth";
 
 /* URL segment (after /dashboard) for each tab — the single source of truth
@@ -114,6 +117,7 @@ export function AppShell({
   onLogout: () => void;
 }) {
   const t = useT();
+  const canEditBranding = useHasRole(["director", "admin"]);
   const initials = session.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
@@ -153,6 +157,10 @@ export function AppShell({
             </button>
           </div>
 
+          <div className="border-y border-slate-100 px-6 py-3 dark:border-slate-800/60">
+            <CompanyBadge />
+          </div>
+
           <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-2">
             {NAV_SECTIONS.map((section, sIdx) => (
               <div key={section.title}>
@@ -187,6 +195,18 @@ export function AppShell({
               </div>
             ))}
           </nav>
+
+          {canEditBranding && (
+            <div className="px-4">
+              <Link
+                href="/settings/branding"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              >
+                <Icons.building className="h-4 w-4 shrink-0" />
+                Brend sozlamalari
+              </Link>
+            </div>
+          )}
 
           {/* Profile */}
           <div className="border-t border-slate-200 p-4 dark:border-slate-800">

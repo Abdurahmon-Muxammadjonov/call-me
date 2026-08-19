@@ -34,6 +34,7 @@ import { StaffRealtimeLayer } from "./StaffRealtimeLayer";
 import { Portal } from "./Portal";
 import { ToastHost } from "./ToastHost";
 import { NotificationBell } from "./NotificationBell";
+import { CompanyBadge } from "./CompanyBadge";
 
 export type EmpTab = "overview" | "calls" | "schedule" | "tips" | "penalties";
 
@@ -171,6 +172,10 @@ export function EmployeeDashboard({
             <button onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-500/10 lg:hidden">
               <Icons.close className="h-5 w-5" />
             </button>
+          </div>
+
+          <div className="border-y border-slate-100 px-6 py-3 dark:border-slate-800/60">
+            <CompanyBadge />
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-2">
