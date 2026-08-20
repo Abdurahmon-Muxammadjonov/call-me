@@ -239,6 +239,11 @@ export const Icons = {
       <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
     </svg>
   ),
+  telegram: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M21 4 3 11.4l6 2.3M21 4l-3.2 16-8.8-6.4M21 4 9 14.7v5.3l3-3.3" />
+    </svg>
+  ),
 } as const;
 
 export type IconKey = keyof typeof Icons;

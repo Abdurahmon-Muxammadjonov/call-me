@@ -124,7 +124,7 @@ export function AppShell({
 }) {
   const t = useT();
   const canEditBranding = useHasRole(["director", "admin"]);
-  const { isUnlocked } = useSections();
+  const { isUnlocked, inPlan } = useSections();
   const initials = session.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
@@ -293,6 +293,7 @@ export function AppShell({
           open
           sectionKey={NAV_ITEM_BY_ID.get(lockedTab)!.sectionKey!}
           sectionLabel={t(NAV_LABEL_KEYS[lockedTab].label)}
+          inPlan={inPlan(NAV_ITEM_BY_ID.get(lockedTab)!.sectionKey)}
           onClose={() => setLockedTab(null)}
         />
       )}

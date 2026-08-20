@@ -1,16 +1,8 @@
 # Backend prompt — Bo'limlarni qulflash (locked sections / feature-gating)
 
-> Bu faylni Claude'ga (backend) bering.
->
-> **Kontekst:** Frontendda (director dashboard, `/dashboard`) endi har bir
-> sidebar bo'limi qulflangan/qulflanmaganini backenddan so'raydi va
-> qulflangan bo'limga bosilganda kod kiritish oynasini ko'rsatadi. Ikkala
-> endpoint (`GET /company/sections`, `POST /company/sections/unlock`) allaqachon
-> **javob beryapti** (401 "Authorization header talab qilinadi" qaytardi —
-> demak marshrutlar backendda mavjud), lekin **haqiqiy javob shakli va
-> `section` kalitlari nomi hali autentifikatsiya bilan tekshirilmadi** —
-> frontend quyidagi kalit nomlarini **taxmin** qilib yozdi. Shu faylning
-> maqsadi — shu taxminni tasdiqlash yoki to'g'rilash.
+> Bu hujjat endi **ma'lumot uchun** — backend allaqachon quyidagi shaklda
+> javob beryapti va frontend shu bo'yicha yozilgan (2026-08-20 holatiga
+> ko'ra). Agar shakl o'zgarsa, shu faylni yangilab, frontendga xabar bering.
 
 Backend: Express + Supabase (procell-backend).
 
@@ -18,36 +10,31 @@ Backend: Express + Supabase (procell-backend).
 
 ## 1. `GET /company/sections` — kompaniyaning bo'lim holatlari
 
-Frontend (`app/lib/sections.tsx` → `SectionsProvider`) dashboard yuklanganda
-bir marta chaqiradi:
 ```
 GET /company/sections
 Headers: Authorization: Bearer <token>
 ```
 
-Frontend kutayotgan javob shakli:
+Javob — **massiv** (array, obyekt emas), har bir element `section_key`,
+`is_locked`, `in_plan`ga ega:
 ```json
-{
-  "success": true,
-  "data": {
-    "reports": { "is_locked": false },
-    "staff": { "is_locked": true },
-    "call_analytics": { "is_locked": true },
-    "operators": { "is_locked": false },
-    "categories": { "is_locked": true },
-    "criteria": { "is_locked": true }
-  }
-}
+{ "success": true, "data": [
+  { "section_key": "dashboard", "is_locked": false, "in_plan": true },
+  { "section_key": "call_analytics", "is_locked": true, "in_plan": true },
+  { "section_key": "reports", "is_locked": true, "in_plan": false },
+  { "section_key": "campaigns", "is_locked": true, "in_plan": false }
+]}
 ```
-- `data` — obyekt, kalit = bo'lim nomi (`section` kodi), qiymat =
-  `{ "is_locked": boolean }`.
-- **"Umumiy ko'rinish" (overview/dashboard) va "amoCRM ulanishi" (webhook
-  integratsiya) bu ro'yxatda umuman bo'lmasin** — frontend ularni har doim
-  ochiq deb hisoblaydi va `data`da ular bo'lsa ham e'tibor bermaydi.
-- Frontendda ishlatilgan bo'lim kalitlari — sidebar menyusiga mos ravishda
-  quyidagicha guruhlangan (bittasi bir nechta menyu bandini birga qamrab olishi
-  mumkin):
-  | Frontend kaliti (`sectionKey`) | Qaysi sidebar bandlari |
+- `in_plan: true` + `is_locked: true` → sotib olingan, lekin hali kod bilan
+  ochilmagan → frontend "Kod kiritish" oqimini ko'rsatadi.
+- `in_plan: false` → joriy tarifga kirmaydi → frontend "Tarifni oshirish"
+  oqimini ko'rsatadi.
+- `ALWAYS_UNLOCKED_SECTIONS` (`dashboard`, `webhook_integration`) — backend
+  bu ikkitasini hech qachon qulflamaydi; frontend ham ular uchun modal
+  ko'rsatmaydi (sidebar'da bu ikkitasiga `sectionKey` umuman berilmagan).
+- Frontendda ishlatilgan `sectionKey`larning sidebar bandlariga moslash
+  jadvali (`app/lib/data.ts`):
+  | `section_key` | Sidebar bandlari |
   |---|---|
   | `reports` | Boshqaruv paneli, Solishtirish paneli |
   | `staff` | Xodimlarni boshqarish |
@@ -56,73 +43,90 @@ Frontend kutayotgan javob shakli:
   | `categories` | Mezon kategoriyalari |
   | `criteria` | Baholash mezonlari |
 
-  **⚠️ Bu jadval frontend tomonidan taxmin qilingan nom.** Agar backendda
-  bo'limlar boshqacha nomlangan bo'lsa (masalan `call_analytics` o'rniga
-  `recordings`, yoki `reports` o'rniga `dashboard_reports`), **shu jadvaldagi
-  nomlarni backend haqiqiy ishlatadigan nomlarga moslashtiring** — frontend
-  kodini o'zgartirish oson (`app/lib/data.ts`dagi `sectionKey` maydonlari),
-  faqat qaysi nomlar to'g'ri ekanini ayting.
-- Frontendda topilmagan (backend javobida yo'q) kalit **qulflangan** deb
-  talqin qilinadi (fail-safe — yangi bo'lim standart holatda yashirin
-  qolishi kerak, tasodifan ochilib qolmasligi uchun).
-- Auth yo'q/eskirgan bo'lsa → **401** `{ "success": false, "error": "..." }`
-  (bu allaqachon shunday ishlayapti).
+  ⚠️ Bu jadval hali **haqiqiy autentifikatsiya qilingan javob bilan
+  to'liq tasdiqlanmagan** (faqat 401 orqali marshrut borligi tekshirildi).
+  Agar backend haqiqiy `section_key` nomlari boshqacha bo'lsa (masalan
+  `campaigns` kabi frontendda mavjud bo'lmagan kalitlar ham bor ekan),
+  `app/lib/data.ts`dagi `sectionKey` maydonlarini moslashtirish kerak.
+- Frontend `data`ni massivdan `Record<section_key, {is_locked, in_plan}>`
+  xaritasiga o'zi aylantiradi (`app/lib/sections.tsx`). Ro'yxatda yo'q kalit
+  — qulflangan **va** tarifga kirmaydi (fail-safe default) deb talqin
+  qilinadi.
 
 ---
 
 ## 2. `POST /company/sections/unlock` — kod bilan bo'limni ochish
 
-Frontend (`app/components/LockedSectionModal.tsx` → `unlockSection`) shuni
-chaqiradi:
 ```
 POST /company/sections/unlock
 Headers: Authorization: Bearer <token>, Content-Type: application/json
-body { "section": "staff", "code": "ABC123" }
+body { "section_key": "call_analytics", "code": "ABC123" }
 ```
-Talablar:
-- `section` — yuqoridagi jadvaldagi kalitlardan biri (yoki backendning
-  haqiqiy nomlash sxemasi bo'yicha).
-- `code` — administrator/backend tomonidan oldindan berilgan bir martalik
-  yoki ko'p martalik ochish kodi (aniq generatsiya/saqlash mexanizmi
-  backend ixtiyorida — frontend faqat kodni yuboradi va natijani kutadi).
-- Muvaffaqiyatli bo'lsa shu kompaniya uchun o'sha `section`ni
-  doimiy (`is_locked=false`) qilib belgilang — keyingi `GET
-  /company/sections` chaqiruvlarida ham ochiq bo'lib qolishi kerak.
-- Kod noto'g'ri/eskirgan/allaqachon ishlatilgan bo'lsa → **400/409**
-  `{ "success": false, "error": "..." }`. Xato matnini xohlagancha yozishingiz
-  mumkin — frontend uni to'g'ridan-to'g'ri modal oynada ko'rsatadi (agar
-  bo'lmasa, standart "Kod noto'g'ri yoki allaqachon ishlatilgan." matni
-  chiqadi).
+Javoblar:
+- Muvaffaqiyat: `{ "success": true }`
+- **400** — kod noto'g'ri/eskirgan → frontend "Kod noto'g'ri yoki eskirgan."
+  ko'rsatadi (backend o'z `error` matnini yuborsa, o'shani ko'rsatadi).
+- **429** — juda ko'p urinish → frontend "Juda ko'p urinish. Birozdan keyin
+  qayta urinib ko'ring." ko'rsatadi.
 
-Muvaffaqiyat javobi:
+Muvaffaqiyatdan keyin frontend darhol (optimistik) o'sha bo'limni ochiq deb
+belgilaydi **va** fonda `GET /company/sections`ni qayta so'raydi — sahifa
+qayta yuklanmaydi.
+
+---
+
+## 3. `POST /internal/telegram/deeplink` — botga o'tish havolasi
+
+```
+POST /internal/telegram/deeplink
+Headers: Authorization: Bearer <token>, Content-Type: application/json
+body { "purpose": "get_code" }   // yoki "upgrade"
+```
+Javob:
 ```json
-{ "success": true }
+{ "success": true, "data": { "url": "https://t.me/SalesPulsead_bot?start=..." } }
 ```
-(Frontend `data` qaytishini talab qilmaydi — faqat `success: true` yetarli,
-chunki u UI holatini optimistik ravishda o'zi yangilaydi.)
+- `purpose: "get_code"` — "Kod olish" tugmasi (bo'lim tarifga kiradi, kod
+  kerak).
+- `purpose: "upgrade"` — "Tarifni oshirish" tugmasi (bo'lim tarifga
+  kirmaydi).
+- Frontend faqat `data.url`ni yangi tabda ochadi (`window.open`) — qolgan
+  hammasi (telefon so'rash, tarif tanlash, to'lov, admin tasdig'i, kod
+  generatsiyasi) botning o'zida bo'ladi.
+- Havola **30 daqiqa** amal qiladi, **bir martalik** — muddati o'tgan/
+  ishlatilgan link ochilsa, bot o'zi foydalanuvchiga xabar beradi; frontend
+  bu holatni alohida ushlamaydi.
 
 ---
 
-## 3. Qamrov — faqat direktor dashboard (`/dashboard`)
+## 4. `GET /company/me` — `tariff` maydoni
 
-Xodim kabineti (`/cabinet`, `EmployeeDashboard`) bu tizimga **kirmaydi** —
-uning navigatsiyasida (umumiy ko'rinish/qo'ng'iroqlar/jadval/maslahatlar/
-jarimalar) hech qanday `sectionKey` yo'q va u har doim to'liq ochiq qoladi.
-Agar kelajakda xodim tarafida ham qulflash kerak bo'lsa, alohida so'rov
-sifatida ayting — hozircha bu doiraga kirmaydi.
+```json
+{ "success": true, "data": {
+  "id": "...", "name": "...", "tariff_id": "uuid|null",
+  "tariff": { "key": "start", "name": "START", "included_sections": ["call_analytics"] }
+}}
+```
+- `tariff: null` — hali hech narsa sotib olinmagan → barcha lockable
+  bo'limlar `in_plan: false` bo'ladi (hammasi "upgrade" oqimiga tushadi).
+- `tariff.name` — ixtiyoriy ravishda sidebar/settings'da "Joriy tarif:
+  START" sifatida ko'rsatilishi mumkin (hali frontendda qo'shilmagan).
 
 ---
 
-## 4. Qisqacha
-```
-1) GET /company/sections — { success, data: { <section_key>: { is_locked } } }, auth talab qiladi (allaqachon 401 qaytaryapti — endpoint bor)
-2) POST /company/sections/unlock — body { section, code } → { success: true } yoki { success:false, error }
-3) "reports"/"staff"/"call_analytics"/"operators"/"categories"/"criteria" — frontend TAXMIN qilgan nomlar, backend haqiqiy nomlari bilan solishtirib tasdiqlang/to'g'rilang
-4) overview va amoCRM bo'limlari hech qachon ro'yxatda bo'lmasin — doim ochiq
-5) /cabinet (xodim) bu tizimga kirmaydi, faqat /dashboard (direktor)
-```
+## 5. Qamrov — faqat direktor dashboard (`/dashboard`)
 
-Bularsiz ham `/dashboard` xato bermaydi — `GET /company/sections` 401dan
-tashqari har qanday xato/tarmoq muammosida frontend sukut bo'yicha
-**hamma gated bo'limni qulflangan** ko'rsatadi (xavfsiz tomon), lekin bu
-holatda haqiqiy ochish kodlari ishlamaydi toki nom sxemasi tasdiqlanmaguncha.
+Xodim kabineti (`/cabinet`) bu tizimga kirmaydi — uning navigatsiyasida
+hech qanday `sectionKey` yo'q, har doim to'liq ochiq.
+
+---
+
+## 6. Qisqacha
+```
+1) GET /company/sections → { success, data: [{section_key, is_locked, in_plan}, ...] } (massiv!)
+2) POST /company/sections/unlock → body {section_key, code}; 400=noto'g'ri kod, 429=juda ko'p urinish
+3) POST /internal/telegram/deeplink → body {purpose:"get_code"|"upgrade"} → {data:{url}}, 30 daqiqa/bir martalik
+4) GET /company/me endi tariff{key,name,included_sections} qaytaradi (null = hali tanlanmagan)
+5) dashboard va webhook_integration hech qachon qulflanmaydi
+6) /cabinet (xodim) bu tizimga kirmaydi
+```
