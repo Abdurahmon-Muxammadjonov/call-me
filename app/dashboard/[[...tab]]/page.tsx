@@ -6,6 +6,7 @@ import { AppShell, TAB_PATH, tabFromSegments } from "../../components/AppShell";
 import { clearSession, useSession } from "../../lib/auth";
 import { useTheme } from "../../lib/theme";
 import { CompanyProvider } from "../../lib/company";
+import { SectionsProvider } from "../../lib/sections";
 import type { TabId } from "../../lib/data";
 
 /* /dashboard/[[...tab]] — every director section gets its own URL (e.g.
@@ -44,14 +45,16 @@ export default function DashboardPage() {
 
   return (
     <CompanyProvider>
-      <AppShell
-        session={session}
-        activeTab={activeTab}
-        onSelectTab={selectTab}
-        isDark={isDark}
-        onToggleTheme={toggleTheme}
-        onLogout={handleLogout}
-      />
+      <SectionsProvider>
+        <AppShell
+          session={session}
+          activeTab={activeTab}
+          onSelectTab={selectTab}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+          onLogout={handleLogout}
+        />
+      </SectionsProvider>
     </CompanyProvider>
   );
 }

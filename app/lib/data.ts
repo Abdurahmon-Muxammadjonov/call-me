@@ -21,6 +21,13 @@ export interface NavItem {
   icon: string; // key into the Icons map
   /* per-item gradient (from-/to-) so each menu entry has its own identity */
   grad: string;
+  /* Key into the backend's `company_sections` map (see lib/sections.tsx).
+   * Several TabIds can share one key when they're really one feature area
+   * being paywalled together (e.g. recordings/upload/deep-audit are all
+   * "call_analytics"). Omitted entirely for the two sections the backend
+   * always leaves unlocked (overview, amocrm) — no key means "never
+   * locked", so SectionsProvider doesn't even need to know about them. */
+  sectionKey?: string;
 }
 
 export interface NavSection {
@@ -33,20 +40,20 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "ASOSIY",
     items: [
       { id: "overview", label: "Umumiy ko'rinish", hint: "Boshqaruv paneli", icon: "grid", grad: "from-indigo-500 to-violet-500" },
-      { id: "management", label: "Boshqaruv paneli", hint: "Rahbariyat ko'rinishi", icon: "trendingUp", grad: "from-violet-500 to-fuchsia-500" },
-      { id: "comparison", label: "Solishtirish paneli", hint: "Kunlik/haftalik/oylik", icon: "trendingUp", grad: "from-amber-500 to-orange-500" },
-      { id: "staff", label: "Xodimlarni boshqarish", hint: "Barcha xodimlar", icon: "users", grad: "from-rose-500 to-pink-500" },
-      { id: "recordings", label: "Audio yozuvlar", hint: "Transkripsiya jurnali", icon: "waveform", grad: "from-cyan-500 to-sky-500" },
-      { id: "upload", label: "Audio yuklash", hint: "Yangi qo'ng'iroqlar", icon: "upload", grad: "from-emerald-500 to-teal-500" },
-      { id: "deep-audit", label: "Chuqur tahlil", hint: "Advanced Deep Audit", icon: "scan", grad: "from-fuchsia-500 to-pink-500" },
+      { id: "management", label: "Boshqaruv paneli", hint: "Rahbariyat ko'rinishi", icon: "trendingUp", grad: "from-violet-500 to-fuchsia-500", sectionKey: "reports" },
+      { id: "comparison", label: "Solishtirish paneli", hint: "Kunlik/haftalik/oylik", icon: "trendingUp", grad: "from-amber-500 to-orange-500", sectionKey: "reports" },
+      { id: "staff", label: "Xodimlarni boshqarish", hint: "Barcha xodimlar", icon: "users", grad: "from-rose-500 to-pink-500", sectionKey: "staff" },
+      { id: "recordings", label: "Audio yozuvlar", hint: "Transkripsiya jurnali", icon: "waveform", grad: "from-cyan-500 to-sky-500", sectionKey: "call_analytics" },
+      { id: "upload", label: "Audio yuklash", hint: "Yangi qo'ng'iroqlar", icon: "upload", grad: "from-emerald-500 to-teal-500", sectionKey: "call_analytics" },
+      { id: "deep-audit", label: "Chuqur tahlil", hint: "Advanced Deep Audit", icon: "scan", grad: "from-fuchsia-500 to-pink-500", sectionKey: "call_analytics" },
     ],
   },
   {
     title: "SOZLAMALAR",
     items: [
-      { id: "operators", label: "Operatorlar", hint: "Jamoa boshqaruvi", icon: "users", grad: "from-amber-500 to-orange-500" },
-      { id: "categories", label: "Mezon kategoriyalari", hint: "Guruhlash", icon: "layers", grad: "from-rose-500 to-red-500" },
-      { id: "criteria", label: "Baholash mezonlari", hint: "Ballash qoidalari", icon: "ruler", grad: "from-sky-500 to-blue-500" },
+      { id: "operators", label: "Operatorlar", hint: "Jamoa boshqaruvi", icon: "users", grad: "from-amber-500 to-orange-500", sectionKey: "operators" },
+      { id: "categories", label: "Mezon kategoriyalari", hint: "Guruhlash", icon: "layers", grad: "from-rose-500 to-red-500", sectionKey: "categories" },
+      { id: "criteria", label: "Baholash mezonlari", hint: "Ballash qoidalari", icon: "ruler", grad: "from-sky-500 to-blue-500", sectionKey: "criteria" },
       { id: "amocrm", label: "amoCRM ulanishi", hint: "Integratsiya", icon: "plug", grad: "from-teal-500 to-emerald-500" },
     ],
   },

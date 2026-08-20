@@ -23,6 +23,8 @@ import { ManagersDashboard } from "./ManagersDashboard";
 import { ToastHost } from "./ToastHost";
 import { CallNotificationBell } from "./CallNotificationBell";
 import { CompanyBadge } from "./CompanyBadge";
+import { LockedSectionModal } from "./LockedSectionModal";
+import { useSections } from "../lib/sections";
 import type { Session } from "../lib/auth";
 
 /* URL segment (after /dashboard) for each tab — the single source of truth
@@ -85,6 +87,10 @@ const NAV_LABEL_KEYS: Record<TabId, { label: DictKey; hint: DictKey }> = {
  * stable key. */
 const NAV_SECTION_KEYS: DictKey[] = ["nav.section.main", "nav.section.settings"];
 
+/* Flat id→NavItem lookup, built once — used to resolve the locked-section
+ * modal's sectionKey/label without re-scanning NAV_SECTIONS on every click. */
+const NAV_ITEM_BY_ID = new Map(NAV_SECTIONS.flatMap((s) => s.items).map((item) => [item.id, item]));
+
 function renderTab(tab: TabId) {
   switch (tab) {
     case "overview": return <OverviewView />;
@@ -118,9 +124,11 @@ export function AppShell({
 }) {
   const t = useT();
   const canEditBranding = useHasRole(["director", "admin"]);
+  const { isUnlocked } = useSections();
   const initials = session.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
+  const [lockedTab, setLockedTab] = useState<TabId | null>(null);
 
   const metaKeys = TAB_KEYS[activeTab];
   const meta = { title: t(metaKeys.title), subtitle: t(metaKeys.subtitle) };
@@ -172,21 +180,25 @@ export function AppShell({
                     const Icon = Icons[item.icon as keyof typeof Icons];
                     const active = activeTab === item.id;
                     const navKeys = NAV_LABEL_KEYS[item.id];
+                    const locked = !isUnlocked(item.sectionKey);
                     return (
                       <li key={item.id} className="relative">
                         {active && (
                           <span className="absolute -left-4 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-600 dark:bg-blue-400" />
                         )}
                         <button
-                          onClick={() => selectTab(item.id)}
+                          onClick={() => (locked ? setLockedTab(item.id) : selectTab(item.id))}
                           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
                             active
                               ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+                              : locked
+                              ? "text-slate-400 hover:bg-slate-100 hover:text-slate-500 dark:text-slate-500 dark:hover:bg-slate-800"
                               : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                           }`}
                         >
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="flex-1 text-left">{t(navKeys.label)}</span>
+                          {locked && <Icons.lock className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />}
                         </button>
                       </li>
                     );
@@ -275,6 +287,15 @@ export function AppShell({
       />
 
       <ToastHost />
+
+      {lockedTab && NAV_ITEM_BY_ID.get(lockedTab)?.sectionKey && (
+        <LockedSectionModal
+          open
+          sectionKey={NAV_ITEM_BY_ID.get(lockedTab)!.sectionKey!}
+          sectionLabel={t(NAV_LABEL_KEYS[lockedTab].label)}
+          onClose={() => setLockedTab(null)}
+        />
+      )}
     </div>
   );
 }
