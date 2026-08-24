@@ -8,7 +8,6 @@ import { NAV_SECTIONS, type TabId } from "../lib/data";
 import { useT, type DictKey } from "../lib/i18n";
 import { useHasRole } from "../lib/useHasRole";
 import {
-  OverviewView,
   RecordingsView,
   UploadView,
   DeepAuditView,
@@ -16,6 +15,7 @@ import {
   CriteriaView,
   AmoCrmView,
 } from "./views";
+import { AnalyticsView } from "./AnalyticsView";
 import { ManagementView } from "./ManagementView";
 import { ComparisonView } from "./ComparisonView";
 import { StaffManager } from "./StaffManager";
@@ -93,7 +93,7 @@ const NAV_ITEM_BY_ID = new Map(NAV_SECTIONS.flatMap((s) => s.items).map((item) =
 
 function renderTab(tab: TabId) {
   switch (tab) {
-    case "overview": return <OverviewView />;
+    case "overview": return <AnalyticsView />;
     case "management": return <ManagementView />;
     case "comparison": return <ComparisonView />;
     case "staff": return <StaffManager />;

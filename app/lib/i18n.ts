@@ -180,7 +180,7 @@ const dict = {
 
     "nav.section.main": "ASOSIY",
     "nav.section.settings": "SOZLAMALAR",
-    "nav.overview.label": "Umumiy ko'rinish",
+    "nav.overview.label": "Analitika",
     "nav.overview.hint": "Boshqaruv paneli",
     "nav.management.label": "Boshqaruv paneli",
     "nav.management.hint": "Rahbariyat ko'rinishi",
@@ -203,8 +203,8 @@ const dict = {
     "nav.amocrm.label": "amoCRM ulanishi",
     "nav.amocrm.hint": "Integratsiya",
 
-    "tab.overview.title": "Umumiy ko'rinish",
-    "tab.overview.subtitle": "Call-center sifat auditi bo'yicha umumiy holat",
+    "tab.overview.title": "Analitika",
+    "tab.overview.subtitle": "Jamoa samaradorligi va kunlik hisobot",
     "tab.management.title": "Boshqaruv paneli",
     "tab.management.subtitle": "Uch darajali rahbariyat tahlili va platformalar",
     "tab.comparison.title": "Solishtirish paneli",
@@ -388,7 +388,7 @@ const dict = {
 
     "nav.section.main": "ОСНОВНОЕ",
     "nav.section.settings": "НАСТРОЙКИ",
-    "nav.overview.label": "Обзор",
+    "nav.overview.label": "Аналитика",
     "nav.overview.hint": "Панель управления",
     "nav.management.label": "Панель руководства",
     "nav.management.hint": "Вид для руководства",
@@ -411,8 +411,8 @@ const dict = {
     "nav.amocrm.label": "Подключение amoCRM",
     "nav.amocrm.hint": "Интеграция",
 
-    "tab.overview.title": "Обзор",
-    "tab.overview.subtitle": "Общее состояние аудита качества call-центра",
+    "tab.overview.title": "Аналитика",
+    "tab.overview.subtitle": "Эффективность команды и ежедневный отчёт",
     "tab.management.title": "Панель руководства",
     "tab.management.subtitle": "Трёхуровневый анализ для руководства и платформы",
     "tab.comparison.title": "Панель сравнения",
@@ -596,7 +596,7 @@ const dict = {
 
     "nav.section.main": "MAIN",
     "nav.section.settings": "SETTINGS",
-    "nav.overview.label": "Overview",
+    "nav.overview.label": "Analytics",
     "nav.overview.hint": "Dashboard",
     "nav.management.label": "Management panel",
     "nav.management.hint": "Leadership view",
@@ -619,8 +619,8 @@ const dict = {
     "nav.amocrm.label": "amoCRM connection",
     "nav.amocrm.hint": "Integration",
 
-    "tab.overview.title": "Overview",
-    "tab.overview.subtitle": "Overall state of call-center quality audit",
+    "tab.overview.title": "Analytics",
+    "tab.overview.subtitle": "Team performance and daily reporting",
     "tab.management.title": "Management panel",
     "tab.management.subtitle": "Three-tier leadership analysis and platforms",
     "tab.comparison.title": "Comparison panel",

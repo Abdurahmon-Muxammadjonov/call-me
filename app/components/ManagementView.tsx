@@ -145,7 +145,15 @@ export function ManagementView() {
       {data && (
         <>
           {syncSummary && (
-            <Card className="border border-emerald-200/70 bg-emerald-50/80 p-5 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+            // .dark .glass sets background/border-color via a compound selector that
+            // outranks a single Tailwind utility class, so bg-*/border-* here were
+            // silently dropped — `style` is the fix (same as the below-norm employee
+            // card in AnalyticsView). Low-alpha rgba composites correctly over both
+            // the light and near-black card surface, so one value covers both themes.
+            <Card
+              className="p-5"
+              style={{ backgroundColor: "rgba(16,185,129,0.08)", borderColor: "rgba(16,185,129,0.32)" }}
+            >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">PBX sync muvaffaqiyatli</p>

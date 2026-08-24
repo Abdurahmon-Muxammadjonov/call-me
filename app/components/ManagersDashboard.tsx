@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, SectionTitle } from "./ui";
+import { Card, SectionTitle, accentForId, accentGrad, initialsOf } from "./ui";
 import { apiClient } from "../lib/api/client";
 import { getSupabase } from "../lib/supabase";
 import { useT } from "../lib/i18n";
@@ -220,7 +220,14 @@ export function ManagersDashboard() {
                 key={manager.id}
                 className="flex items-center justify-between rounded-xl border border-slate-200/70 bg-white/40 p-3 dark:border-slate-700/60 dark:bg-slate-800/30"
               >
-                <span className="font-medium text-slate-700 dark:text-slate-200">{manager.name}</span>
+                <span className="flex min-w-0 items-center gap-3">
+                  <span
+                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-linear-to-br text-xs font-bold text-white ${accentGrad[accentForId(manager.id)]}`}
+                  >
+                    {initialsOf(manager.name)}
+                  </span>
+                  <span className="truncate font-medium text-slate-700 dark:text-slate-200">{manager.name}</span>
+                </span>
                 <StatusPill status={manager.status} />
               </div>
             ))}

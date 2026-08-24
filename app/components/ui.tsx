@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { Icons, type IconKey } from "./Icons";
 import { LOCALES, setLocale, useLocale, useT, type Locale } from "../lib/i18n";
 import { Portal } from "./Portal";
@@ -74,16 +74,25 @@ export function Logo({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/* ---------- Glass card ---------- */
+/* ---------- Glass card ----------
+ * `.glass`/`.dark .glass` set border-color and box-shadow via a compound
+ * selector (`.dark .glass`, specificity 0,2,0) — higher than any single
+ * Tailwind utility class (0,1,0), so a `border-*`/`shadow-[...]` className
+ * alone can never override them (it silently loses the cascade, not a
+ * visible error). `style` is the escape hatch for the rare case that
+ * genuinely needs to override those two properties (e.g. a danger-state
+ * glow) — inline style always wins regardless of selector specificity. */
 export function Card({
   children,
   className = "",
+  style,
   glow = false,
   hover = false,
   onClick,
 }: {
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
   glow?: boolean;
   hover?: boolean;
   onClick?: () => void;
@@ -91,6 +100,7 @@ export function Card({
   return (
     <div
       onClick={onClick}
+      style={style}
       className={`glass rounded-xl ${glow ? "glow-ring" : ""} ${
         onClick ? "cursor-pointer" : ""
       } ${
@@ -127,8 +137,12 @@ export function SectionTitle({
   );
 }
 
-/* ---------- Sparkline ---------- */
-export function Sparkline({ data, accent }: { data: number[]; accent: Accent }) {
+/* ---------- Sparkline ----------
+ * `accent` covers the four standard site accents; `color` is an escape
+ * hatch for the handful of spots that need a hue outside that set (purple,
+ * rose) without stretching the shared Accent union — pass whichever one
+ * applies, `color` wins if both are given. */
+export function Sparkline({ data, accent, color }: { data: number[]; accent?: Accent; color?: string }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const span = max - min || 1;
@@ -145,20 +159,21 @@ export function Sparkline({ data, accent }: { data: number[]; accent: Accent }) 
     emerald: "#059669",
     violet: "#d97706",
   };
-  const id = `spark-${accent}`;
+  const stroke = color ?? stops[accent ?? "indigo"];
+  const id = `spark-${accent ?? "custom"}-${stroke.replace("#", "")}`;
   return (
     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-8 w-full">
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stops[accent]} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={stops[accent]} stopOpacity="0" />
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon points={`0,${h} ${pts.join(" ")} ${w},${h}`} fill={`url(#${id})`} />
       <polyline
         points={pts.join(" ")}
         fill="none"
-        stroke={stops[accent]}
+        stroke={stroke}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -166,6 +181,30 @@ export function Sparkline({ data, accent }: { data: number[]; accent: Accent }) 
       />
     </svg>
   );
+}
+
+/* ---------- Person identity (avatar color + initials) ----------
+ * A stable accent per person, derived from a hash of their id — the same
+ * person always gets the same color across reloads (and, within the limits
+ * of shared id spaces, across pages), instead of every avatar in a list
+ * being flat one-color. Originally written for AnalyticsView's team grid;
+ * promoted here so every people-list in the app (staff cards, manager rows,
+ * recordings table) can share it. */
+const PERSON_ACCENTS: Accent[] = ["indigo", "cyan", "emerald", "violet"];
+export function accentForId(id: string): Accent {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return PERSON_ACCENTS[hash % PERSON_ACCENTS.length];
+}
+
+export function initialsOf(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 /* ---------- Score helpers (Strict Anti-Gravity grading) ---------- */

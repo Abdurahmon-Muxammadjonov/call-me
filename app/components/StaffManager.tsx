@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icons } from "./Icons";
-import { SectionTitle, PillButton, Skeleton, ConfirmModal } from "./ui";
+import { SectionTitle, PillButton, Skeleton, ConfirmModal, accentForId, accentGrad, initialsOf } from "./ui";
 import { Portal } from "./Portal";
 import { showToast } from "../lib/toast";
 import { apiUrl } from "../lib/api";
@@ -204,13 +204,15 @@ export function StaffManager() {
 
 /* ---------- Grid card ---------- */
 function OperatorCard({ employee, onClick }: { employee: Employee; onClick: () => void }) {
-  const initials = employee.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const initials = initialsOf(employee.name);
   const dot =
     employee.status === "online" ? "bg-emerald-400" : employee.status === "away" ? "bg-amber-400" : "bg-slate-400";
   return (
     <div className="group flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-colors duration-150 hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center gap-4">
-        <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-blue-600 text-sm font-bold text-white">
+        <span
+          className={`relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-linear-to-br text-sm font-bold text-white ${accentGrad[accentForId(employee.id)]}`}
+        >
           {initials}
           <span className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white dark:ring-slate-900 ${dot}`} />
         </span>

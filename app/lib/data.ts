@@ -39,7 +39,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "ASOSIY",
     items: [
-      { id: "overview", label: "Umumiy ko'rinish", hint: "Boshqaruv paneli", icon: "grid", grad: "from-indigo-500 to-violet-500" },
+      { id: "overview", label: "Analitika", hint: "Jamoa samaradorligi va kunlik hisobot", icon: "grid", grad: "from-indigo-500 to-violet-500" },
       { id: "management", label: "Boshqaruv paneli", hint: "Rahbariyat ko'rinishi", icon: "trendingUp", grad: "from-violet-500 to-fuchsia-500", sectionKey: "reports" },
       { id: "comparison", label: "Solishtirish paneli", hint: "Kunlik/haftalik/oylik", icon: "trendingUp", grad: "from-amber-500 to-orange-500", sectionKey: "reports" },
       { id: "staff", label: "Xodimlarni boshqarish", hint: "Barcha xodimlar", icon: "users", grad: "from-rose-500 to-pink-500", sectionKey: "staff" },
@@ -63,52 +63,6 @@ export const NAV_SECTIONS: NavSection[] = [
  * tarixi) backenddan Employee yozuvi orqali keladi — qarang app/lib/store.ts.
  * Statik/demo performance olib tashlandi; backend hali bu ma'lumotni bermasa,
  * dashboard bo'sh holatlarni ko'rsatadi. */
-
-/* KPI kartalar shabloni — qiymatlar jonli backenddan (OverviewView) keladi.
- * Demo raqamlar olib tashlandi; ulanmaguncha «—» ko'rsatiladi. Sparkline'lar
- * dekorativ (ambient trend). */
-export const STATS = [
-  {
-    key: "calls",
-    label: "Jami qo'ng'iroqlar",
-    value: "—",
-    delta: "Jonli",
-    trend: "up" as const,
-    accent: "indigo" as const,
-    icon: "phone",
-    spark: [18, 24, 20, 30, 28, 42, 38, 52, 48, 61],
-  },
-  {
-    key: "duration",
-    label: "O'rtacha davomiylik",
-    value: "—",
-    delta: "Jonli",
-    trend: "up" as const,
-    accent: "cyan" as const,
-    icon: "clock",
-    spark: [40, 38, 42, 36, 34, 35, 30, 32, 28, 27],
-  },
-  {
-    key: "score",
-    label: "O'rtacha sifat bahosi",
-    value: "—",
-    delta: "Jonli",
-    trend: "up" as const,
-    accent: "emerald" as const,
-    icon: "shield",
-    spark: [60, 64, 62, 70, 68, 74, 72, 76, 79, 78],
-  },
-  {
-    key: "tokens",
-    label: "AI tahlil xarajati",
-    value: "—",
-    delta: "Ulanmagan",
-    trend: "up" as const,
-    accent: "violet" as const,
-    icon: "spark",
-    spark: [10, 22, 18, 30, 44, 40, 58, 66, 72, 90],
-  },
-];
 
 /* Demo qo'ng'iroqlar (CALLS), mezon kategoriyalari (CATEGORIES) va deep-audit
  * namunasi (DEEP_AUDIT) olib tashlandi — barchasi backend/CRM'dan jonli keladi:
