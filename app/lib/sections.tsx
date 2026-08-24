@@ -2,7 +2,8 @@
 
 /* Per-company feature-gating — sits alongside CompanyProvider (see
  * lib/company.tsx), same "fetch once on dashboard load, read from context
- * everywhere" shape. "Umumiy ko'rinish" (dashboard) and "amoCRM ulanishi"
+ * everywhere" shape. "Analitika" (dashboard, tab id "overview" — formerly
+ * labeled "Umumiy ko'rinish") and "amoCRM ulanishi"
  * (webhook_integration) are the backend's own ALWAYS_UNLOCKED_SECTIONS and
  * never gated — every other nav item's padlock is driven from here via
  * NavItem.sectionKey (lib/data.ts). See PROMPT_BACKEND_SECTIONS.md for the

@@ -32,7 +32,16 @@ export interface ManagerStats {
   total_bonus: number;
 }
 
-/* GET /api/calls — jurnaldagi bitta qator. */
+/* GET /api/calls — jurnaldagi bitta qator.
+ *
+ * incoming_count/outgoing_count/unanswered_count/bad_leads_count — bular
+ * AuditResult.metrics'da (POST /api/analyze-call javobida) ALLAQACHON
+ * hisoblanadi, lekin hozircha `calls` qatoriga yozilmaydi va shu bois bu
+ * yerda ham qaytarilmaydi. new_leads_count/sent_to_dealer_count/
+ * closed_deals_count — hali umuman hisoblanmaydigan yangi maydonlar.
+ * Barchasi ixtiyoriy: backend qo'shguncha `undefined` bo'ladi va Analitika
+ * sahifasi tegishli widget'da halol bo'sh holatni ko'rsatadi (fabrikatsiya
+ * qilinmaydi). Qarang: PROMPT_BACKEND_ANALITIKA.md. */
 export interface CallRow {
   id: string;
   manager_id: string;
@@ -43,6 +52,13 @@ export interface CallRow {
   bonus_amount: number;
   rop_comment: string;
   created_at: string;
+  incoming_count?: number | null;
+  outgoing_count?: number | null;
+  unanswered_count?: number | null;
+  bad_leads_count?: number | null;
+  new_leads_count?: number | null;
+  sent_to_dealer_count?: number | null;
+  closed_deals_count?: number | null;
 }
 
 export interface Conversions {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { Icons, type IconKey } from "./Icons";
-import { fetchBackendHealth, fetchCallAnalytics, formatDuration, API_BASE } from "../lib/api";
+import { API_BASE } from "../lib/api";
 import {
   getStatus as getCrmStatus,
   connectSimple as saveCrmConnection,
@@ -11,7 +11,6 @@ import {
 } from "../lib/api/crm";
 import {
   listManagers,
-  getManagerStats,
   listCalls,
   getCall,
   analyzeCall,
@@ -20,7 +19,6 @@ import {
   formatDateTime,
   formatSeconds,
   type Manager,
-  type ManagerStats,
   type CallRow,
   type CallDetail,
   type AnalyzeResult,
@@ -40,7 +38,6 @@ import {
 import {
   Card,
   SectionTitle,
-  Sparkline,
   ScoreBar,
   PillButton,
   Skeleton,
@@ -50,74 +47,10 @@ import {
   scoreAccent,
   accentText,
   accentGrad,
-  accentGlow,
   type Accent,
 } from "./ui";
-import { STATS } from "../lib/data";
-import { getSupabase } from "../lib/supabase";
-import { useT } from "../lib/i18n";
 import { Portal } from "./Portal";
 import { showToast } from "../lib/toast";
-import { useCompany } from "../lib/company";
-
-/* Relaxed shape so live values (computed from the backend) can replace the
- * template values without TS narrowing each card to its literal accent/trend. */
-type StatItem = {
-  key: string;
-  label: string;
-  value: string;
-  /* Berilsa, StatCard raqamni statik matn sifatida emas, eski qiymatdan yangisiga
-   * animatsiya bilan "sanab" ko'rsatadi (masalan Realtime orqali qo'ng'iroq kelganda). */
-  numericValue?: number;
-  delta: string;
-  trend: "up" | "down";
-  accent: Accent;
-  icon: string;
-  spark: number[];
-};
-
-/* Raqam o'zgarganda (masalan Realtime push'dan keyin) eski qiymatdan yangisiga
- * requestAnimationFrame bilan sanab-sanab o'tadi — sahifa har safar qayta yuklanganda
- * emas, faqat HAQIQIY o'zgarishda animatsiya ko'rinadi (birinchi renderda sakramaydi). */
-function AnimatedNumber({ value }: { value: number }) {
-  const [display, setDisplay] = useState(value);
-  const prevRef = useRef(value);
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const from = prevRef.current;
-    const to = value;
-    if (from === to) return;
-    prevRef.current = to;
-
-    const distance = Math.abs(to - from);
-    // Kichik farqda sekin-sekin (deyarli bittalab) sanaladi; katta farqda umumiy
-    // davomiylik cho'zilib ketmasin deb yuqori chegara bilan cheklanadi.
-    const duration = Math.min(900, Math.max(280, distance * 55));
-    const startTime = performance.now();
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
-    const step = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out
-      const current = Math.round(from + (to - from) * eased);
-      setDisplay(current);
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(step);
-      } else {
-        setDisplay(to);
-        rafRef.current = null;
-      }
-    };
-    rafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [value]);
-
-  return <>{display.toLocaleString()}</>;
-}
 
 /* Small reusable empty-state line. */
 function Empty({ text }: { text: string }) {
@@ -126,351 +59,7 @@ function Empty({ text }: { text: string }) {
   );
 }
 
-/* ============================ STAT WIDGETS ============================ */
-function StatCard({ stat }: { stat: StatItem }) {
-  const accent = stat.accent as Accent;
-  const Icon = Icons[stat.icon as keyof typeof Icons];
-  const TrendIcon = stat.trend === "up" ? Icons.arrowUp : Icons.arrowDown;
-  return (
-    <Card hover className={`p-5 ${accentGlow[accent]}`}>
-      <div className="flex items-start justify-between">
-        <div
-          className={`grid h-11 w-11 place-items-center rounded-lg bg-linear-to-b ${accentGrad[accent]} text-white shadow-[0_1px_2px_rgb(0,0,0,0.06),0_4px_8px_-2px_rgb(0,0,0,0.15)]`}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
-            stat.trend === "up"
-              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-              : "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
-          }`}
-        >
-          <TrendIcon className="h-3 w-3" />
-          {stat.delta}
-        </span>
-      </div>
-      <p className="mt-4 text-3xl font-bold tracking-tight text-slate-800 dark:text-white tabular-nums">
-        {stat.numericValue !== undefined ? <AnimatedNumber value={stat.numericValue} /> : stat.value}
-      </p>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{stat.label}</p>
-      <div className="mt-3">
-        <Sparkline data={stat.spark} accent={accent} />
-      </div>
-    </Card>
-  );
-}
-
-export function StatGrid({ stats = STATS }: { stats?: StatItem[] }) {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {stats.map((s) => (
-        <StatCard key={s.key} stat={s} />
-      ))}
-    </div>
-  );
-}
-
-/* ============================ OVERVIEW ============================ */
-const LOST_PALETTE = [
-  "from-rose-400 to-pink-400",
-  "from-amber-400 to-orange-400",
-  "from-cyan-400 to-sky-400",
-  "from-violet-400 to-fuchsia-400",
-  "from-emerald-400 to-teal-400",
-];
-
-interface LostBar { label: string; count: number; pct: number }
-
 const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta urinib ko'ring.";
-
-export function OverviewView() {
-  // Hammasi backenddan jonli: KPI cardlar, top operatorlar, yo'qotish sabablari
-  // va so'nggi faollik. Demo qiymat yo'q — ma'lumot bo'lmasa bo'sh holat.
-  const t = useT();
-  const { stats: companyStats } = useCompany();
-  const [stats, setStats] = useState<StatItem[]>([]);
-  const [live, setLive] = useState<"loading" | "online" | "offline">("loading");
-  const [leaders, setLeaders] = useState<ManagerStats[]>([]);
-  const [lost, setLost] = useState<LostBar[]>([]);
-  const [recent, setRecent] = useState<CallRow[]>([]);
-  const [names, setNames] = useState<Record<string, string>>({});
-  const [dataLoaded, setDataLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  const fetchData = (ctrl: AbortController) => {
-    (async () => {
-      // Qo'ng'iroqlar jurnali — KPI o'rtachasi va so'nggi faollik shu yerdan.
-      try {
-        await fetchBackendHealth(ctrl.signal).catch(() => null);
-
-        const [calls, mgrs, analytics] = await Promise.all([
-          listCalls({ limit: 100 }, ctrl.signal),
-          listManagers(ctrl.signal).catch(() => [] as Manager[]),
-          fetchCallAnalytics(ctrl.signal).catch(() => null),
-        ]);
-
-        const nameMap = Object.fromEntries(mgrs.map((m) => [m.id, m.name]));
-        setNames(nameMap);
-        setRecent(calls.slice(0, 6));
-
-        const totalCalls = analytics?.totalCalls ?? calls.length;
-        const avgDuration = analytics?.averageDurationSeconds
-          ?? (calls.length ? calls.reduce((s, c) => s + (c.duration || 0), 0) / calls.length : 0);
-        const avgKpi = calls.length
-          ? calls.reduce((s, c) => s + (Number(c.kpi_score) || 0), 0) / calls.length
-          : 0;
-
-        setStats(
-          [
-            { label: t("overview.stat.calls"), key: "calls", value: totalCalls.toLocaleString(), numericValue: totalCalls, delta: t("overview.stat.live"), trend: "up", accent: "indigo", icon: "phone", spark: [10, 20, 15, 25, 30, 22, 25] },
-            { label: t("overview.stat.duration"), key: "duration", value: formatDuration(Math.round(avgDuration)), delta: t("overview.stat.live"), trend: "up", accent: "violet", icon: "clock", spark: [12, 18, 16, 24, 28, 20, 26] },
-            { label: t("overview.stat.score"), key: "score", value: avgKpi ? avgKpi.toFixed(1) : "—", delta: t("overview.stat.live"), trend: "up", accent: "emerald", icon: "spark", spark: [8, 14, 12, 20, 25, 18, 22] },
-            { label: t("overview.stat.ai"), key: "tokens", value: "—", delta: t("overview.stat.disconnected"), trend: "down", accent: "cyan", icon: "shield", spark: [0, 0, 0, 0, 0, 0, 0] },
-          ]
-        );
-
-        // Yo'qotish sabablari taqsimoti (analytics.lostReasonsSummary).
-        if (analytics) {
-          const entries = Object.entries(analytics.lostReasonsSummary);
-          const totalLost = entries.reduce((s, [, n]) => s + n, 0);
-          setLost(
-            entries
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 5)
-              .map(([label, count]) => ({
-                label,
-                count,
-                pct: totalLost ? Math.round((count / totalLost) * 100) : 0,
-              }))
-          );
-        }
-        setDataLoaded(true);
-        setLive("online");
-        setLoadError(false);
-      } catch (e) {
-        if ((e as Error)?.name !== "AbortError") {
-          setLive("offline");
-          setDataLoaded(false);
-          setLoadError(true);
-        }
-      }
-
-      // Top operatorlar — har menejer bo'yicha yig'ma statistika.
-      try {
-        const mgrs = await listManagers(ctrl.signal);
-        const allStats = await Promise.all(
-          mgrs.map((m) => getManagerStats(m.id, ctrl.signal).catch(() => null))
-        );
-        setLeaders(
-          allStats
-            .filter((s): s is ManagerStats => !!s)
-            .sort((a, b) => b.avg_kpi_score - a.avg_kpi_score)
-            .slice(0, 5)
-        );
-      } catch {
-        /* leaderboard ixtiyoriy — xato bo'lsa bo'sh qoladi */
-      }
-    })();
-  };
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchData(ctrl);
-    return () => ctrl.abort();
-  }, []);
-
-  /* reloadKey o'zgarsa (polling yoki sync'dan), yangi data yuklonadi. */
-  useEffect(() => {
-    const ctrl = new AbortController();
-    (async () => {
-      setLive("loading");
-      setDataLoaded(false);
-      fetchData(ctrl);
-    })();
-    return () => ctrl.abort();
-  }, [reloadKey]);
-
-  /* Realtime: pollingsiz — Supabase'dagi `calls`/`managers` jadvallariga
-     yozuv qo'shilsa/o'zgarsa/o'chirilsa shu zahoti reloadKey bosiladi va
-     yangi ma'lumot backend'dan (jonli hisoblangan analytics bilan birga)
-     qayta olinadi. Analytics/leaderboard server tomonida agregatsiya
-     qilinadigani uchun har bir eventni to'liq refetch'ga tarjima qilamiz —
-     lekin bu endi ZERO interval, faqat haqiqiy o'zgarish bo'lganda ishlaydi. */
-  useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) return; // Realtime sozlanmagan — polling qo'shilmaydi, sahifa bir martalik yuklanish bilan qoladi.
-
-    const channel = supabase
-      .channel("overview-calls-managers")
-      .on("postgres_changes", { event: "*", schema: "public", table: "calls" }, () => {
-        setReloadKey((k) => k + 1);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "managers" }, () => {
-        setReloadKey((k) => k + 1);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  /* GET /dashboard/stats — bitta so'rov bilan agregatsiya qilingan, mavjud
-     bo'lsa "Jami qo'ng'iroq" va "O'rtacha KPI" kartalarini shu bilan
-     almashtiradi (avvalgi listCalls-dan hisoblangan qiymatlar `companyStats`
-     hali kelmagan holatda zaxira sifatida ko'rinadi). avg_score `null` —
-     0 emas — bo'lsa raqam o'rniga "Hali baho yo'q" ko'rsatiladi. Effekt
-     emas — har renderda hisoblanadi, shuning uchun qo'shimcha state yoki
-     setState-in-effect kerak emas. */
-  const displayStats = stats.map((s) => {
-    if (!companyStats) return s;
-    if (s.key === "calls") {
-      return { ...s, value: companyStats.total_calls.toLocaleString(), numericValue: companyStats.total_calls };
-    }
-    if (s.key === "score") {
-      return companyStats.avg_score == null
-        ? { ...s, value: "Hali baho yo'q", numericValue: undefined }
-        : { ...s, value: companyStats.avg_score.toFixed(1), numericValue: companyStats.avg_score };
-    }
-    return s;
-  });
-
-  const nameOf = (id: string | null | undefined) => (id && names[id]) || (id ? `${id.slice(0, 8)}…` : "—");
-
-  /* Bo'sh holat: data hali yuklonmagan bo'lsa, skeletonlarni ko'rsatamiz */
-  if (!dataLoaded) {
-    return (
-      <div className="space-y-6">
-        {loadError && (
-          <Card className="p-5">
-            <p className="text-sm text-rose-600 dark:text-rose-400">{t("overview.backendUnreachable")}</p>
-          </Card>
-        )}
-        <div className="flex items-center gap-2 text-xs font-medium">
-          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset bg-slate-500/10 text-slate-500 ring-slate-500/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-            {t("overview.live.connecting")}
-          </span>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-40 rounded-xl border border-slate-200/30 bg-white/40 animate-pulse dark:border-slate-700/30 dark:bg-slate-800/30" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="h-64 rounded-xl border border-slate-200/30 bg-white/40 animate-pulse lg:col-span-2 dark:border-slate-700/30 dark:bg-slate-800/30" />
-          <div className="h-64 rounded-xl border border-slate-200/30 bg-white/40 animate-pulse dark:border-slate-700/30 dark:bg-slate-800/30" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 text-xs font-medium">
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset ${
-            live === "online"
-              ? "bg-emerald-500/10 text-emerald-600 ring-emerald-500/30 dark:text-emerald-400"
-              : live === "offline"
-              ? "bg-rose-500/10 text-rose-600 ring-rose-500/30 dark:text-rose-400"
-              : "bg-slate-500/10 text-slate-500 ring-slate-500/30"
-          }`}
-        >
-          <span className={`h-1.5 w-1.5 rounded-full bg-current ${live === "online" ? "animate-pulse" : ""}`} />
-          {live === "online"
-            ? t("overview.live.online")
-            : live === "offline"
-            ? t("overview.live.offline")
-            : t("overview.live.connecting")}
-        </span>
-      </div>
-
-      <StatGrid stats={displayStats} />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Top operatorlar (leaderboard) */}
-        <Card className="p-6 lg:col-span-2">
-          <SectionTitle title={t("overview.topOperators")} subtitle={t("overview.topOperatorsSubtitle")} />
-          {leaders.length === 0 ? (
-            <Empty text={t("overview.emptyLeaders")} />
-          ) : (
-            <ul className="space-y-3">
-              {leaders.map((l, i) => (
-                <li key={l.manager.id} className="flex items-center gap-3 rounded-xl border border-slate-200/60 bg-white/40 p-3 dark:border-slate-700/50 dark:bg-slate-800/30">
-                  <span className="w-5 text-center text-sm font-bold text-slate-400">{i + 1}</span>
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br ${accentGrad[scoreAccent(l.avg_kpi_score)]} text-xs font-bold text-white`}>
-                    {l.manager.name.split(" ").map((w) => w[0]).join("").slice(0, 2)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{l.manager.name}</p>
-                    <p className="text-xs text-slate-400">{l.total_calls} qo&apos;ng&apos;iroq · {formatUZS(l.total_penalty)} jarima</p>
-                  </div>
-                  <div className="w-24 shrink-0">
-                    <div className="mb-1 flex justify-end">
-                      <span className={`text-sm font-bold ${scoreColor(l.avg_kpi_score)}`}>{l.avg_kpi_score.toFixed(1)}</span>
-                    </div>
-                    <ScoreBar score={l.avg_kpi_score} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        {/* Yo'qotish sabablari taqsimoti */}
-        <Card className="p-6">
-          <SectionTitle title={t("overview.lostReasons")} subtitle={t("overview.lostReasonsSubtitle")} />
-          {lost.length === 0 ? (
-            <Empty text={t("overview.emptyLost")} />
-          ) : (
-            <div className="space-y-5">
-              {lost.map((d, i) => (
-                <div key={d.label}>
-                  <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate font-medium text-slate-600 dark:text-slate-300">{d.label}</span>
-                    <span className="shrink-0 font-semibold text-slate-700 dark:text-slate-200">{d.pct}%</span>
-                  </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/50">
-                    <div
-                      className={`h-full rounded-full bg-linear-to-r ${LOST_PALETTE[i % LOST_PALETTE.length]} transition-all duration-700`}
-                      style={{ width: `${d.pct}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
-
-      {/* So'nggi faollik */}
-      <Card className="p-6">
-        <SectionTitle title={t("overview.recentActivity")} subtitle={t("overview.recentActivitySubtitle")} />
-        {recent.length === 0 ? (
-          <Empty text={t("overview.emptyRecent")} />
-        ) : (
-          <ul className="space-y-4">
-            {recent.map((c) => (
-              <li key={c.id} className="flex items-center gap-3">
-                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-linear-to-br ${accentGrad[scoreAccent(c.kpi_score)]} text-xs font-bold text-white`}>
-                  {nameOf(c.manager_id).split(" ").map((w) => w[0]).join("").slice(0, 2)}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{nameOf(c.manager_id)}</p>
-                  <p className="text-xs text-slate-400">{formatDateTime(c.created_at)} · {formatSeconds(c.duration)}</p>
-                </div>
-                <span className={`text-sm font-bold ${scoreColor(c.kpi_score)}`}>{Math.round(c.kpi_score)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-    </div>
-  );
-}
 
 /* ============================ RECORDINGS ============================ */
 export function RecordingsView() {

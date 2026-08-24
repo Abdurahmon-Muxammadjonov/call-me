@@ -244,6 +244,13 @@ export const Icons = {
       <path d="M21 4 3 11.4l6 2.3M21 4l-3.2 16-8.8-6.4M21 4 9 14.7v5.3l3-3.3" />
     </svg>
   ),
+  alertTriangle: (p: IconProps) => (
+    <svg {...base(p)}>
+      <path d="M12 3.5 2 20h20L12 3.5Z" />
+      <path d="M12 10v4" />
+      <circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  ),
 } as const;
 
 export type IconKey = keyof typeof Icons;
