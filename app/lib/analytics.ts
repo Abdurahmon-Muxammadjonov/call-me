@@ -19,7 +19,7 @@
  * halol bo'sh holatni ko'rsatadi. Backend ularni qo'sha boshlagach, bu fayl
  * o'zgarishsiz jonli ma'lumotni ko'rsata boshlaydi. Qarang: PROMPT_BACKEND_ANALITIKA.md */
 
-import type { Accent } from "../components/ui";
+import { accentForId, initialsOf, type Accent } from "../components/ui";
 import { fetchCallAnalytics, fetchPopStats, type PopBlock } from "./api";
 import { listCalls, listManagers, getCall, type CallRow, type Manager, type Conversions } from "./calls";
 
@@ -248,23 +248,6 @@ function callsInWindow(calls: CallRow[], dayFrom: number, dayTo: number): CallRo
 function pctChange(current: number, previous: number): number | null {
   if (!previous) return current ? null : 0;
   return ((current - previous) / previous) * 100;
-}
-
-/* ---------- Xodim rangi — id hashidan, reload'lar orasida barqaror ---------- */
-const EMPLOYEE_ACCENTS: Accent[] = ["indigo", "cyan", "emerald", "violet"];
-function accentForId(id: string): Accent {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  return EMPLOYEE_ACCENTS[hash % EMPLOYEE_ACCENTS.length];
-}
-function initialsOf(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 /* Ratio 0–1 yoki 0–100 shaklida kelishi mumkin — 0–1 ga normallashtiramiz. */

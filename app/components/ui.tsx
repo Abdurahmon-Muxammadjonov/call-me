@@ -183,6 +183,30 @@ export function Sparkline({ data, accent, color }: { data: number[]; accent?: Ac
   );
 }
 
+/* ---------- Person identity (avatar color + initials) ----------
+ * A stable accent per person, derived from a hash of their id — the same
+ * person always gets the same color across reloads (and, within the limits
+ * of shared id spaces, across pages), instead of every avatar in a list
+ * being flat one-color. Originally written for AnalyticsView's team grid;
+ * promoted here so every people-list in the app (staff cards, manager rows,
+ * recordings table) can share it. */
+const PERSON_ACCENTS: Accent[] = ["indigo", "cyan", "emerald", "violet"];
+export function accentForId(id: string): Accent {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return PERSON_ACCENTS[hash % PERSON_ACCENTS.length];
+}
+
+export function initialsOf(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 /* ---------- Score helpers (Strict Anti-Gravity grading) ---------- */
 export function scoreAccent(score: number): Accent {
   if (score >= 85) return "emerald";

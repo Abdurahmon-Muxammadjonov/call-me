@@ -47,6 +47,8 @@ import {
   scoreAccent,
   accentText,
   accentGrad,
+  accentForId,
+  initialsOf,
   type Accent,
 } from "./ui";
 import { Portal } from "./Portal";
@@ -178,7 +180,18 @@ export function RecordingsView() {
                     onClick={() => setOpenId(c.id)}
                     className="cursor-pointer border-b border-slate-100/60 transition-colors hover:bg-indigo-500/5 dark:border-slate-800/40 dark:hover:bg-cyan-500/5"
                   >
-                    <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-200">{nameOf(c.manager_id)}</td>
+                    <td className="px-6 py-4">
+                      <span className="flex items-center gap-2.5 font-medium text-slate-700 dark:text-slate-200">
+                        <span
+                          className={`grid h-7 w-7 shrink-0 place-items-center rounded-full bg-linear-to-br text-[10px] font-bold text-white ${
+                            c.manager_id ? accentGrad[accentForId(c.manager_id)] : "from-slate-400 to-slate-500"
+                          }`}
+                        >
+                          {initialsOf(nameOf(c.manager_id))}
+                        </span>
+                        {nameOf(c.manager_id)}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{formatDateTime(c.created_at)}</td>
                     <td className="px-6 py-4 font-mono text-slate-500 dark:text-slate-400">{formatSeconds(c.duration)}</td>
                     <td className="px-6 py-4">

@@ -25,7 +25,7 @@ function Delta({ pct }: { pct: number }) {
   const flat = Math.abs(pct) < 0.05;
   const up = pct > 0;
   const tone = flat
-    ? "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+    ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
     : up
     ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
     : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400";
@@ -55,10 +55,10 @@ function ComparisonCard({
 }) {
   return (
     <Card className="p-5 sm:p-6">
-      <h3 className="mb-4 text-base font-semibold tracking-tight text-neutral-900 dark:text-white">{title}</h3>
+      <h3 className="mb-4 text-base font-semibold tracking-tight text-slate-900 dark:text-white">{title}</h3>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-[11px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+          <tr className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
             <th className="pb-2 text-left font-medium">Ko&apos;rsatkich</th>
             <th className="pb-2 text-right font-medium">{prevLabel}</th>
             <th className="pb-2 text-right font-medium">{curLabel}</th>
@@ -69,13 +69,13 @@ function ComparisonCard({
           {ROWS.map((r) => {
             const m = block[r.key];
             return (
-              <tr key={r.key} className="border-t border-neutral-100 dark:border-neutral-800">
-                <td className="py-2.5 text-neutral-600 dark:text-neutral-300">{r.label}</td>
-                <td className="py-2.5 text-right tabular-nums text-neutral-400 dark:text-neutral-500">
+              <tr key={r.key} className="border-t border-slate-100 dark:border-slate-800">
+                <td className="py-2.5 text-slate-600 dark:text-slate-300">{r.label}</td>
+                <td className="py-2.5 text-right tabular-nums text-slate-400 dark:text-slate-500">
                   {NUM.format(m.previous)} <span className="text-xs">{r.unit}</span>
                 </td>
-                <td className="py-2.5 text-right font-semibold tabular-nums text-neutral-900 dark:text-white">
-                  {NUM.format(m.current)} <span className="text-xs font-normal text-neutral-400">{r.unit}</span>
+                <td className="py-2.5 text-right font-semibold tabular-nums text-slate-900 dark:text-white">
+                  {NUM.format(m.current)} <span className="text-xs font-normal text-slate-400">{r.unit}</span>
                 </td>
                 <td className="py-2.5 text-right">
                   <Delta pct={m.change_pct} />
@@ -106,7 +106,7 @@ function HistoryCard({ days }: { days: ConversionDay[] }) {
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
             title={expanded ? "Yig'ish" : "Hammasini ko'rsatish"}
-            className="shrink-0 rounded-full border border-neutral-200 p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+            className="shrink-0 rounded-full border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
           >
             <svg
               viewBox="0 0 16 16"
@@ -121,7 +121,7 @@ function HistoryCard({ days }: { days: ConversionDay[] }) {
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[11px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+            <tr className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
               <th className="pb-2 text-left font-medium">Sana</th>
               <th className="pb-2 text-right font-medium">Qo&apos;ng&apos;iroqlar</th>
               <th className="pb-2 text-right font-medium">Trafik konv.</th>
@@ -130,11 +130,11 @@ function HistoryCard({ days }: { days: ConversionDay[] }) {
           </thead>
           <tbody>
             {rows.map((d) => (
-              <tr key={d.date} className="border-t border-neutral-100 dark:border-neutral-800">
-                <td className="py-2.5 text-neutral-600 dark:text-neutral-300">{d.date}</td>
-                <td className="py-2.5 text-right tabular-nums text-neutral-900 dark:text-white">{d.calls}</td>
-                <td className="py-2.5 text-right tabular-nums text-neutral-500 dark:text-neutral-400">{NUM.format(d.traffic_conversion)}%</td>
-                <td className="py-2.5 text-right tabular-nums text-neutral-500 dark:text-neutral-400">{NUM.format(d.sales_conversion)}%</td>
+              <tr key={d.date} className="border-t border-slate-100 dark:border-slate-800">
+                <td className="py-2.5 text-slate-600 dark:text-slate-300">{d.date}</td>
+                <td className="py-2.5 text-right tabular-nums text-slate-900 dark:text-white">{d.calls}</td>
+                <td className="py-2.5 text-right tabular-nums text-slate-500 dark:text-slate-400">{NUM.format(d.traffic_conversion)}%</td>
+                <td className="py-2.5 text-right tabular-nums text-slate-500 dark:text-slate-400">{NUM.format(d.sales_conversion)}%</td>
               </tr>
             ))}
           </tbody>
