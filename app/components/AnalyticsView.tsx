@@ -26,6 +26,8 @@ import {
   type PeriodStat,
 } from "../lib/analytics";
 import { getSupabase } from "../lib/supabase";
+import { useSession } from "../lib/auth";
+import { fetchCompanySettings, toAnalyticsNorms, DEFAULT_COMPANY_SETTINGS } from "../lib/companySettings";
 
 /* Real-time'dan kelgan bir nechta hodisani (masalan band jamoada ketma-ket
  * tahlil qilinayotgan qo'ng'iroqlar) BITTA qayta yuklashga birlashtiradi —
@@ -50,8 +52,25 @@ const CARD_THEME = {
 type CardColor = keyof typeof CARD_THEME;
 
 export function AnalyticsView() {
+  const session = useSession();
   const [period, setPeriod] = useState<Period>("day");
   const [reloadKey, setReloadKey] = useState(0);
+
+  // Kompaniyaning o'zi sozlagan KPI normalari (GET /company/settings) —
+  // backend hali bermasa/bo'lmasa DEFAULT_COMPANY_SETTINGS bilan boshlanadi
+  // va shu bilan ishlayveradi (fetchCompanySettings hech qachon throw
+  // qilmaydi, faqat AbortError'dan tashqari — qarang lib/companySettings.ts).
+  const [norms, setNorms] = useState<AnalyticsNorms>(() => toAnalyticsNorms(DEFAULT_COMPANY_SETTINGS));
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchCompanySettings(session?.token, ctrl.signal)
+      .then((s) => setNorms(toAnalyticsNorms(s)))
+      .catch(() => {
+        /* AbortError — komponent unmount bo'lganda, e'tiborsiz qoldiriladi */
+      });
+    return () => ctrl.abort();
+  }, [session?.token, reloadKey]);
 
   // Xom ma'lumot (qo'ng'iroqlar/menejerlar/PoP/analitika) — faqat mount va
   // real-time o'zgarishda qayta olinadi, davr almashtirilganda EMAS.
@@ -79,7 +98,7 @@ export function AnalyticsView() {
   useEffect(() => {
     if (!raw) return;
     const ctrl = new AbortController();
-    computeAnalyticsData(raw, period, ctrl.signal)
+    computeAnalyticsData(raw, period, ctrl.signal, norms)
       .then((d) => {
         setData(d);
         setDataStatus("online");
@@ -88,7 +107,7 @@ export function AnalyticsView() {
         if ((e as Error)?.name !== "AbortError") setDataStatus("offline");
       });
     return () => ctrl.abort();
-  }, [raw, period]);
+  }, [raw, period, norms]);
 
   /* Realtime: `calls`/`managers` o'zgarsa, xom ma'lumot qayta olinadi — lekin
    * bir nechta hodisa ketma-ket kelsa (band jamoada tez-tez bo'ladi),

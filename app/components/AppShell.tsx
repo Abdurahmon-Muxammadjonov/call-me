@@ -124,7 +124,7 @@ export function AppShell({
 }) {
   const t = useT();
   const canEditBranding = useHasRole(["director", "admin"]);
-  const { isUnlocked, inPlan } = useSections();
+  const { isUnlocked, inPlan, justUnlockedKeys } = useSections();
   const initials = session.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
@@ -181,6 +181,9 @@ export function AppShell({
                     const active = activeTab === item.id;
                     const navKeys = NAV_LABEL_KEYS[item.id];
                     const locked = !isUnlocked(item.sectionKey);
+                    // One-shot glow right after a code redemption opens this
+                    // section — see SectionsProvider's justUnlockedKeys.
+                    const justUnlocked = !!item.sectionKey && justUnlockedKeys.has(item.sectionKey);
                     return (
                       <li key={item.id} className="relative">
                         {active && (
@@ -189,6 +192,8 @@ export function AppShell({
                         <button
                           onClick={() => (locked ? setLockedTab(item.id) : selectTab(item.id))}
                           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                            justUnlocked ? "animate-unlock" : ""
+                          } ${
                             active
                               ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
                               : locked
@@ -209,13 +214,20 @@ export function AppShell({
           </nav>
 
           {canEditBranding && (
-            <div className="px-4">
+            <div className="space-y-1 px-4">
               <Link
                 href="/settings/branding"
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               >
                 <Icons.building className="h-4 w-4 shrink-0" />
                 Brend sozlamalari
+              </Link>
+              <Link
+                href="/settings/norms"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              >
+                <Icons.ruler className="h-4 w-4 shrink-0" />
+                KPI normalari
               </Link>
             </div>
           )}

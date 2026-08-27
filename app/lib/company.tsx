@@ -10,6 +10,12 @@ export interface Company {
   name: string;
   logo_url: string | null;
   plan: string;
+  /* Kompaniya joriy tarifi — kod kiritilib tarif ochilganda (POST
+   * /company/tariff/unlock) o'zgaradi. Hozircha hech qayerda ko'rsatilmaydi
+   * (LockedSectionModal shu paytda refetch()ni chaqiradi, shu maydonlarni
+   * yangilab qo'yadi — birov ko'rsatishni xohlasa, tayyor turadi). */
+  tariff_id?: string | null;
+  tariff?: { key: string; name: string; included_sections: string[] } | null;
   created_at: string;
 }
 

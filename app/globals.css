@@ -32,6 +32,10 @@
   --animate-float: float 8s ease-in-out infinite;
   --animate-sheet-up: sheet-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-blink: blink 1s step-end infinite;
+  /* One-shot "just unlocked" cue for a sidebar nav item right after a
+   * tariff/section-unlock code is redeemed — a brief emerald glow pulse,
+   * not a permanent state (see SectionsProvider's `justUnlockedKeys`). */
+  --animate-unlock: unlock-pop 2.2s ease-out forwards;
 }
 
 @keyframes fade-in {
@@ -75,6 +79,11 @@
 @keyframes waveform-bar {
   0%, 100% { transform: scaleY(0.35); }
   50% { transform: scaleY(1); }
+}
+@keyframes unlock-pop {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); background-color: rgba(16, 185, 129, 0.14); }
+  25% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); background-color: rgba(16, 185, 129, 0.18); }
+  100% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); background-color: transparent; }
 }
 
 :root {

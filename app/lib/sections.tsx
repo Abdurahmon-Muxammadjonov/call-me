@@ -7,7 +7,17 @@
  * (webhook_integration) are the backend's own ALWAYS_UNLOCKED_SECTIONS and
  * never gated — every other nav item's padlock is driven from here via
  * NavItem.sectionKey (lib/data.ts). See PROMPT_BACKEND_SECTIONS.md for the
- * contract and the section-key mapping this frontend assumes. */
+ * contract and the section-key mapping this frontend assumes.
+ *
+ * Two unlock codes exist side by side (see PROMPT_BACKEND — "Backend
+ * yangilanishlari" §4):
+ *   - `unlockSection()` → POST /company/sections/unlock — legacy, admin-
+ *     issued, one section at a time (dash-formatted code).
+ *   - `unlockTariff()`  → POST /company/tariff/unlock — bot-issued, one
+ *     13-char code that unlocks every section the new tariff includes at
+ *     once. This is the standard path going forward.
+ * LockedSectionModal picks between them by code shape (a dash means the
+ * legacy per-section code). */
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { apiUrl, authHeaders } from "./api";
@@ -41,6 +51,14 @@ interface SectionsContextValue {
    * the padlock disappears instantly, no refetch/page-reload needed. A
    * background refetch() still runs to reconcile with the backend. */
   markUnlocked: (sectionKey: string) => void;
+  /* Same, for a whole-tariff unlock that opens several sections at once
+   * (POST /company/tariff/unlock's `unlocked_sections`). */
+  markUnlockedMany: (sectionKeys: string[]) => void;
+  /* Section keys that were unlocked in the last few seconds — AppShell
+   * renders a one-shot glow (`animate-unlock`) on their nav item while a
+   * key is in here, then it's removed on its own. Purely cosmetic state,
+   * not persisted. */
+  justUnlockedKeys: Set<string>;
 }
 
 const SectionsContext = createContext<SectionsContextValue | null>(null);
@@ -51,11 +69,16 @@ interface SectionsApiRow {
   in_plan: boolean;
 }
 
+/* How long the sidebar "just unlocked" glow plays before clearing —
+ * matches --animate-unlock's duration in globals.css. */
+const UNLOCK_GLOW_MS = 2200;
+
 export function SectionsProvider({ children }: { children: ReactNode }) {
   const session = useSession();
   const [sections, setSections] = useState<SectionsMap>({});
   const [loading, setLoading] = useState(() => Boolean(session));
   const [tick, setTick] = useState(0);
+  const [justUnlockedKeys, setJustUnlockedKeys] = useState<Set<string>>(new Set());
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);
 
@@ -114,10 +137,47 @@ export function SectionsProvider({ children }: { children: ReactNode }) {
       ...prev,
       [sectionKey]: { in_plan: prev[sectionKey]?.in_plan ?? true, is_locked: false },
     }));
+    setJustUnlockedKeys((prev) => new Set(prev).add(sectionKey));
+    setTimeout(() => {
+      setJustUnlockedKeys((prev) => {
+        if (!prev.has(sectionKey)) return prev;
+        const next = new Set(prev);
+        next.delete(sectionKey);
+        return next;
+      });
+    }, UNLOCK_GLOW_MS);
+  }, []);
+
+  const markUnlockedMany = useCallback((sectionKeys: string[]) => {
+    if (!sectionKeys.length) return;
+    setSections((prev) => {
+      const next = { ...prev };
+      for (const key of sectionKeys) {
+        next[key] = { in_plan: prev[key]?.in_plan ?? true, is_locked: false };
+      }
+      return next;
+    });
+    setJustUnlockedKeys((prev) => {
+      const next = new Set(prev);
+      for (const key of sectionKeys) next.add(key);
+      return next;
+    });
+    setTimeout(() => {
+      setJustUnlockedKeys((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+        for (const key of sectionKeys) {
+          if (next.delete(key)) changed = true;
+        }
+        return changed ? next : prev;
+      });
+    }, UNLOCK_GLOW_MS);
   }, []);
 
   return (
-    <SectionsContext.Provider value={{ sections, loading, refetch, isUnlocked, inPlan, markUnlocked }}>
+    <SectionsContext.Provider
+      value={{ sections, loading, refetch, isUnlocked, inPlan, markUnlocked, markUnlockedMany, justUnlockedKeys }}
+    >
       {children}
     </SectionsContext.Provider>
   );
@@ -129,9 +189,9 @@ export function useSections(): SectionsContextValue {
   return ctx;
 }
 
-/* POST /company/sections/unlock — redeems an admin/bot-issued code for one
- * already-in-plan section. Throws a friendly Uzbek message on failure so
- * the modal can show it inline. */
+/* POST /company/sections/unlock — legacy path: redeems an admin-issued
+ * code for one already-in-plan section (dash-formatted code). Throws a
+ * friendly Uzbek message on failure so the modal can show it inline. */
 export async function unlockSection(token: string | undefined, sectionKey: string, code: string): Promise<void> {
   const res = await fetch(apiUrl("/company/sections/unlock"), {
     method: "POST",
@@ -146,4 +206,27 @@ export async function unlockSection(token: string | undefined, sectionKey: strin
     if (res.status === 400) throw new Error(json?.error || "Kod noto'g'ri yoki eskirgan.");
     throw new Error(json?.error || "Kod noto'g'ri yoki eskirgan.");
   }
+}
+
+/* POST /company/tariff/unlock — bot-issued 13-char code that unlocks every
+ * section the new tariff includes in one call. Returns the section keys
+ * the backend actually unlocked, for markUnlockedMany(). Same friendly-
+ * message contract as unlockSection() — 400 covers invalid/already-used/
+ * expired, 403 covers "belongs to another company". */
+export async function unlockTariff(token: string | undefined, code: string): Promise<string[]> {
+  const res = await fetch(apiUrl("/company/tariff/unlock"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json", ...authHeaders(token) },
+    body: JSON.stringify({ code: code.trim() }),
+  });
+  if (res.status === 429) {
+    throw new Error("Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.");
+  }
+  const json = (await res.json().catch(() => null)) as
+    | { success?: boolean; error?: string; data?: { unlocked_sections?: string[] } }
+    | null;
+  if (!res.ok || !json?.success) {
+    throw new Error(json?.error || "Kod noto'g'ri yoki eskirgan.");
+  }
+  return json.data?.unlocked_sections ?? [];
 }

@@ -4,8 +4,17 @@ import { useEffect, useState, type SyntheticEvent } from "react";
 import { Icons } from "./Icons";
 import { Portal } from "./Portal";
 import { useSession } from "../lib/auth";
-import { useSections, unlockSection } from "../lib/sections";
+import { useSections, unlockSection, unlockTariff } from "../lib/sections";
+import { useCompany } from "../lib/company";
 import { getTelegramDeeplink } from "../lib/telegram";
+
+/* Bot-issued whole-tariff codes are a plain 13-char alphanumeric string;
+ * the legacy admin-issued per-section code is dash-formatted (e.g.
+ * "AB12-CD34"). That's the only signal we have to route to the right
+ * endpoint without asking the user which kind of code they're holding. */
+function isLegacySectionCode(code: string): boolean {
+  return code.includes("-");
+}
 
 export function LockedSectionModal({
   open,
@@ -24,7 +33,8 @@ export function LockedSectionModal({
   onClose: () => void;
 }) {
   const session = useSession();
-  const { markUnlocked, refetch } = useSections();
+  const { markUnlocked, markUnlockedMany, refetch } = useSections();
+  const { refetch: refetchCompany } = useCompany();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -66,12 +76,23 @@ export function LockedSectionModal({
     }
     setSubmitting(true);
     setError("");
+    const trimmed = code.trim();
     try {
-      await unlockSection(session?.token, sectionKey, code);
+      if (isLegacySectionCode(trimmed)) {
+        // Admin-issued, single-section code — unchanged legacy path.
+        await unlockSection(session?.token, sectionKey, trimmed);
+        markUnlocked(sectionKey);
+      } else {
+        // Bot-issued 13-char code — unlocks every section the new tariff
+        // includes in one go. The company's tariff_id changes too, so
+        // /company/me needs a refetch alongside /company/sections.
+        const unlockedSections = await unlockTariff(session?.token, trimmed);
+        markUnlockedMany(unlockedSections.length ? unlockedSections : [sectionKey]);
+        refetchCompany();
+      }
       // Instant local unlock so the padlock disappears with no flash of
       // "still locked", then a background refetch reconciles with the
       // backend's actual state (in case anything else changed too).
-      markUnlocked(sectionKey);
       refetch();
       onClose();
     } catch (err) {
