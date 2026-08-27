@@ -8,14 +8,16 @@
  * bu sahifa ham to'g'ridan-to'g'ri o'zbekcha matn ishlatadi (i18n lug'atisiz)
  * — faqat global nav yorlig'i/sarlavha (AppShell chrome) lug'atda qoladi. */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icons } from "./Icons";
 import { Card, SectionTitle, Sparkline, Skeleton, PillButton, accentGrad, accentText } from "./ui";
 import {
-  fetchAnalyticsData,
+  fetchAnalyticsRaw,
+  computeAnalyticsData,
   PERIOD_LABEL,
   type AnalyticsData,
   type AnalyticsNorms,
+  type AnalyticsRaw,
   type EmployeeAnalytics,
   type FunnelStage,
   type KpiAlert,
@@ -24,6 +26,12 @@ import {
   type PeriodStat,
 } from "../lib/analytics";
 import { getSupabase } from "../lib/supabase";
+
+/* Real-time'dan kelgan bir nechta hodisani (masalan band jamoada ketma-ket
+ * tahlil qilinayotgan qo'ng'iroqlar) BITTA qayta yuklashga birlashtiradi —
+ * aks holda har bir yozuv butun og'ir pipeline'ni (2000 qo'ng'iroq + voronka
+ * namunasi) qayta ishga tushirib, sahifa "qotib qolgandek" tuyulardi. */
+const REALTIME_DEBOUNCE_MS = 4000;
 
 const PERIODS: Period[] = ["day", "week", "month"];
 const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta urinib ko'ring.";
@@ -43,39 +51,63 @@ type CardColor = keyof typeof CARD_THEME;
 
 export function AnalyticsView() {
   const [period, setPeriod] = useState<Period>("day");
-  const [data, setData] = useState<AnalyticsData | null>(null);
-  const [status, setStatus] = useState<"loading" | "online" | "offline">("loading");
   const [reloadKey, setReloadKey] = useState(0);
+
+  // Xom ma'lumot (qo'ng'iroqlar/menejerlar/PoP/analitika) — faqat mount va
+  // real-time o'zgarishda qayta olinadi, davr almashtirilganda EMAS.
+  const [raw, setRaw] = useState<AnalyticsRaw | null>(null);
+  const [rawStatus, setRawStatus] = useState<"loading" | "online" | "offline">("loading");
+
+  // Tanlangan davr uchun hisoblangan natija — `raw` xotirada tayyor bo'lgach
+  // tarmoqqa deyarli tegmasdan (voronka namunasi asosan keshdan) hisoblanadi.
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [dataStatus, setDataStatus] = useState<"loading" | "online" | "offline">("loading");
 
   useEffect(() => {
     const ctrl = new AbortController();
-    // setState faqat async callback ichida — effekt tanasida sinxron emas
-    // (loyiha konvensiyasi, qarang app/lib/company.tsx). "loading" holati
-    // pastda `stale` orqali render vaqtida hisoblanadi, shu bois bu yerda
-    // effekt boshida setStatus("loading") chaqirilmaydi.
-    fetchAnalyticsData(period, ctrl.signal)
-      .then((d) => {
-        setData(d);
-        setStatus("online");
+    fetchAnalyticsRaw(ctrl.signal)
+      .then((r) => {
+        setRaw(r);
+        setRawStatus("online");
       })
       .catch((e) => {
-        if ((e as Error)?.name !== "AbortError") setStatus("offline");
+        if ((e as Error)?.name !== "AbortError") setRawStatus("offline");
       });
     return () => ctrl.abort();
-  }, [period, reloadKey]);
+  }, [reloadKey]);
 
-  /* Realtime: `calls`/`managers` o'zgarsa, joriy davr shu zahoti qayta
-   * hisoblanadi (avvalgi "Umumiy ko'rinish" sahifasida bo'lgan xatti-harakat
-   * bilan bir xil). */
+  useEffect(() => {
+    if (!raw) return;
+    const ctrl = new AbortController();
+    computeAnalyticsData(raw, period, ctrl.signal)
+      .then((d) => {
+        setData(d);
+        setDataStatus("online");
+      })
+      .catch((e) => {
+        if ((e as Error)?.name !== "AbortError") setDataStatus("offline");
+      });
+    return () => ctrl.abort();
+  }, [raw, period]);
+
+  /* Realtime: `calls`/`managers` o'zgarsa, xom ma'lumot qayta olinadi — lekin
+   * bir nechta hodisa ketma-ket kelsa (band jamoada tez-tez bo'ladi),
+   * debounce ularni bitta qayta yuklashga birlashtiradi. */
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) return;
+    const bump = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => setReloadKey((k) => k + 1), REALTIME_DEBOUNCE_MS);
+    };
     const channel = supabase
       .channel("analytics-calls-managers")
-      .on("postgres_changes", { event: "*", schema: "public", table: "calls" }, () => setReloadKey((k) => k + 1))
-      .on("postgres_changes", { event: "*", schema: "public", table: "managers" }, () => setReloadKey((k) => k + 1))
+      .on("postgres_changes", { event: "*", schema: "public", table: "calls" }, bump)
+      .on("postgres_changes", { event: "*", schema: "public", table: "managers" }, bump)
       .subscribe();
     return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -85,6 +117,7 @@ export function AnalyticsView() {
   // hisoblanadi (qo'shimcha effekt/setState kerak emas), pastdagi skeleton/
   // bo'sh holatlarni shundan boshqaradi.
   const stale = data?.period !== period;
+  const status = rawStatus === "offline" ? "offline" : dataStatus === "offline" ? "offline" : rawStatus === "loading" || dataStatus === "loading" ? "loading" : "online";
 
   return (
     <div className="space-y-6">

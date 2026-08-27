@@ -20,8 +20,8 @@
  * o'zgarishsiz jonli ma'lumotni ko'rsata boshlaydi. Qarang: PROMPT_BACKEND_ANALITIKA.md */
 
 import { accentForId, initialsOf, type Accent } from "../components/ui";
-import { fetchCallAnalytics, fetchPopStats, type PopBlock } from "./api";
-import { listCalls, listManagers, getCall, type CallRow, type Manager, type Conversions } from "./calls";
+import { fetchCallAnalytics, fetchPopStats, type CallAnalytics, type PopBlock, type PopStats } from "./api";
+import { listCalls, listManagers, getCall, type CallDetail, type CallRow, type Manager, type Conversions } from "./calls";
 
 export type Period = "day" | "week" | "month";
 
@@ -256,7 +256,23 @@ function asRatio(v: number | undefined | null): number {
   return n > 1 ? n / 100 : n;
 }
 
-/* ---------- Voronka — bir davr oynasi uchun namunadan konversiya nisbatlari ---------- */
+/* ---------- Voronka — bir davr oynasi uchun namunadan konversiya nisbatlari -----
+ * `getCall` natijalari module-darajasida keshlanadi: Kunlik/Haftalik/Oylik
+ * oynalari ko'p hollarda bir xil so'nggi qo'ng'iroqlarni qamrab oladi
+ * (masalan bugungi qo'ng'iroqlar hafta va oy oynasida ham bor), shuning
+ * uchun davr almashtirilganda aksariyat namuna keshdan keladi — qayta
+ * tarmoq so'rovi yubormaydi. Sahifa umrini oshirib ketmasligi uchun
+ * hajmi ~2000 qo'ng'iroqning namunaviy qismi bilan chegaralangan holda
+ * qoladi (real jamoada bir necha yuzta yozuv, ahamiyatsiz xotira). */
+const callDetailCache = new Map<string, CallDetail | null>();
+async function getCallCached(id: string, signal?: AbortSignal): Promise<CallDetail | null> {
+  const cached = callDetailCache.get(id);
+  if (cached !== undefined) return cached;
+  const detail = await getCall(id, signal).catch(() => null);
+  callDetailCache.set(id, detail);
+  return detail;
+}
+
 async function sampleFunnelRatios(
   calls: CallRow[],
   signal: AbortSignal | undefined,
@@ -264,7 +280,7 @@ async function sampleFunnelRatios(
 ): Promise<{ r12: number; r23: number; r34: number } | null> {
   const sample = calls.slice(0, sampleSize);
   if (!sample.length) return null;
-  const details = await Promise.all(sample.map((c) => getCall(c.id, signal).catch(() => null)));
+  const details = await Promise.all(sample.map((c) => getCallCached(c.id, signal)));
   const convs = details.map((d) => d?.conversions).filter(Boolean) as Conversions[];
   if (!convs.length) return null;
   const avg = (k: "stage_1_to_2" | "stage_2_to_3" | "stage_3_to_4") =>
@@ -286,19 +302,45 @@ function buildFunnel(leadCount: number, ratios: { r12: number; r23: number; r34:
 }
 
 /* ============================================================
- * ASOSIY AGREGATOR — davr bo'yicha bitta marta hammasini yig'adi.
- * ============================================================ */
-export async function fetchAnalyticsData(
-  period: Period,
-  signal?: AbortSignal,
-  norms: AnalyticsNorms = DEFAULT_NORMS
-): Promise<AnalyticsData> {
+ * MA'LUMOT OLISH vs HISOBLASH — ikkiga ajratilgan.
+ *
+ * Avval bu ikkisi bitta funksiyada birlashgan edi va Kunlik/Haftalik/Oylik
+ * tugmasi bosilganda HAR SAFAR to'liq qayta ishga tushardi: 2000 tagacha
+ * qo'ng'iroq, menejerlar, PoP statistikasi, umumiy analitika — va ustiga
+ * voronka namunasi uchun yana o'ndan ortiq alohida `getCall` so'rovi.
+ * `fetchPopStats` esa allaqachon kunlik/haftalik/oylik BARCHASINI bitta
+ * javobda qaytaradi — demak davr almashtirilganda bu og'ir picha qayta
+ * yuklanishi shart emas edi, shu sahifa "qotib qolgandek" tuyulishining
+ * asosiy sababi shu edi.
+ *
+ * Endi: `fetchAnalyticsRaw()` faqat bir marta (yuklanganda / real real-time
+ * o'zgarishda) chaqiriladi; `computeAnalyticsData()` esa davr almashtirilganda
+ * xotiradagi xom ma'lumotdan hisoblaydi — tarmoqqa faqat voronka namunasi
+ * uchun boradi, u ham `getCallCached` orqali ko'p hollarda keshdan keladi. */
+export interface AnalyticsRaw {
+  calls: CallRow[];
+  managers: Manager[];
+  pop: PopStats | null;
+  analytics: CallAnalytics | null;
+}
+
+export async function fetchAnalyticsRaw(signal?: AbortSignal): Promise<AnalyticsRaw> {
   const [calls, managers, pop, analytics] = await Promise.all([
     listCalls({ limit: 2000 }, signal),
     listManagers(signal).catch(() => [] as Manager[]),
     fetchPopStats(null, signal).catch(() => null),
     fetchCallAnalytics(signal).catch(() => null),
   ]);
+  return { calls, managers, pop, analytics };
+}
+
+export async function computeAnalyticsData(
+  raw: AnalyticsRaw,
+  period: Period,
+  signal?: AbortSignal,
+  norms: AnalyticsNorms = DEFAULT_NORMS
+): Promise<AnalyticsData> {
+  const { calls, managers, pop, analytics } = raw;
 
   const days = buildDays(calls, norms);
   const { cur, prev } = windowFor(period);
@@ -363,8 +405,8 @@ export async function fetchAnalyticsData(
    * Joriy va oldingi oyna uchun namunadan konversiya nisbatlarini olamiz —
    * ManagementView'dagi SalesFunnel bilan bir xil yondashuv. */
   const [curRatios, prevRatios] = await Promise.all([
-    sampleFunnelRatios(curCalls, signal, 8),
-    sampleFunnelRatios(callsInWindow(calls, prevFrom, prevTo), signal, 5),
+    sampleFunnelRatios(curCalls, signal, 6),
+    sampleFunnelRatios(callsInWindow(calls, prevFrom, prevTo), signal, 4),
   ]);
 
   const fallbackRatios = analytics
