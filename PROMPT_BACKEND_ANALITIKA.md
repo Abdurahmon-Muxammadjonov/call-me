@@ -135,10 +135,62 @@ Yozuv yo'q bo'lsa — standart qiymatlar bilan javob bering (insert shart emas).
 ### `PATCH /company/settings` — direktor/admin normani o'zgartirishi uchun
 Body — yuqoridagi maydonlardan istalganchasi (partial update).
 
-> Frontend ulanishi: `fetchAnalyticsData(period, signal, norms)` allaqachon
-> `norms` argumentini qabul qiladi (standart — `DEFAULT_NORMS`) — bu endpoint
-> qo'shilgach, `AnalyticsView` uni `GET /company/settings`dan olib shu yerga
-> uzatadi, boshqa hech narsa o'zgarmaydi.
+> Frontend ulanishi: `computeAnalyticsData(raw, period, signal, norms)`
+> allaqachon `norms` argumentini qabul qiladi (standart — `DEFAULT_NORMS`) —
+> bu endpoint qo'shilgach, `AnalyticsView` uni `GET /company/settings`dan
+> olib shu yerga uzatadi, boshqa hech narsa o'zgarmaydi.
+
+---
+
+## 4. Tezlik — birinchi yuklanish hozir ~6.5 soniya
+
+Kunlik/Haftalik/Oylik almashtirish frontend tomonda allaqachon tezlashtirildi
+(endi ~50-140ms, tarmoqqa deyarli tegmaydi — client-side qayta hisoblash).
+Lekin sahifaning **birinchi ochilishi** hali ham sekin — buning sababi
+backend javob vaqti, frontend tomondan bundan ortiq qisqartirib bo'lmaydi.
+Eng katta ta'sir qiladigan 3 ta o'zgarish:
+
+### 4.1 `GET /api/calls` javobiga `conversions`ni ham qo'shing (eng muhim)
+
+Hozir `conversions` (traffic_conversion, sales_conversion, stage_1_to_2,
+stage_2_to_3, stage_3_to_4) faqat `GET /api/calls/:id` (bitta qo'ng'iroq)
+orqali keladi. Shu sabab "Konversiya voronkasi" widget'i har sahifa
+yuklanganda **10 tagacha qo'shimcha alohida so'rov** yuboradi (namunadagi har
+bir qo'ng'iroq uchun bittadan `GET /api/calls/:id`).
+
+Agar `GET /api/calls` (ro'yxat) qatorlariga ham `conversions` obyektini
+qo'shsangiz — frontend ANIQ hech qanday qo'shimcha so'rov yubormaydi (kod
+allaqachon shunga tayyor: `app/lib/analytics.ts` → `sampleFunnelRatios`
+avval qatordagi `c.conversions`ni tekshiradi, bo'lmasagina eski usulga
+qaytadi). Bu bitta o'zgarish bilan butun voronka namunasi tarmoq safaridan
+butunlay yo'qoladi.
+
+```sql
+-- Agar ro'yxat so'rovi hozir faqat asosiy ustunlarni SELECT qilsa,
+-- conversions jadvalini LEFT JOIN qiling (yoki subquery/aggregatsiya —
+-- backend arxitekturasiga qarab).
+```
+
+### 4.2 Indekslar
+
+`calls` jadvalida quyidagilar bo'lishi kerak (bo'lmasa, ro'yxat so'rovi
+jadval kattalashgani sari sekinlashadi):
+```sql
+create index if not exists idx_calls_created_at on public.calls (created_at desc);
+create index if not exists idx_calls_manager_id on public.calls (manager_id);
+create index if not exists idx_calls_company_created on public.calls (company_id, created_at desc); -- multi-tenant bo'lsa
+```
+
+### 4.3 Railway "cold start"ni tekshiring
+
+Agar backend Railway'ning bepul/uyquga ketadigan tarifida bo'lsa, uzoq
+faolsizlikdan keyingi BIRINCHI so'rov bir necha soniya kutishi mumkin —
+frontenddagi ~6.5s birinchi yuklanishning bir qismi shundan bo'lishi
+ehtimoli bor. Tekshiring: bir necha marta ketma-ket so'rov yuborib (masalan
+`curl` bilan `/health`ni 2 marta chaqirib) ikkinchisi sezilarli tezroq
+bo'lsa — demak shu. Yechim: tarifni "always-on" qiladigan rejaga o'tkazish
+yoki tashqi monitoring/keep-alive bilan har 5 daqiqada `/health`ga ping
+yuborib turish.
 
 ---
 
@@ -157,3 +209,7 @@ Body — yuqoridagi maydonlardan istalganchasi (partial update).
    yuborilganlar" kartalari va jamoa kartalaridagi 4 metrika endi bo'sh
    holat o'rniga real raqam ko'rsatishi kerak — frontend kodida hech qanday
    o'zgarish talab qilinmaydi.
+5. `GET /api/calls` javobida (ro'yxat, bitta qator emas) `conversions`
+   maydoni ko'rinishi kerak. Tarmoq panelida (DevTools) "Analitika"
+   sahifasini yuklaganda endi `GET /api/calls/:id` so'rovlari umuman
+   ketmasligini tekshiring.

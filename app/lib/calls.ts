@@ -59,6 +59,11 @@ export interface CallRow {
   new_leads_count?: number | null;
   sent_to_dealer_count?: number | null;
   closed_deals_count?: number | null;
+  /* Hozircha faqat GET /api/calls/:id (CallDetail) qaytaradi. Backend buni
+   * ro'yxat endpointida (GET /api/calls) ham bersa, Analitika sahifasidagi
+   * voronka namunasi bittalab GET /api/calls/:id so'rovlariga umuman
+   * ehtiyoj sezmay qoladi — qarang app/lib/analytics.ts. */
+  conversions?: Conversions | null;
 }
 
 export interface Conversions {

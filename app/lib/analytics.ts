@@ -280,8 +280,18 @@ async function sampleFunnelRatios(
 ): Promise<{ r12: number; r23: number; r34: number } | null> {
   const sample = calls.slice(0, sampleSize);
   if (!sample.length) return null;
-  const details = await Promise.all(sample.map((c) => getCallCached(c.id, signal)));
-  const convs = details.map((d) => d?.conversions).filter(Boolean) as Conversions[];
+  // `conversions` allaqachon ro'yxat qatorida bo'lsa (backend qo'shsa),
+  // hech qanday qo'shimcha so'rov kerak emas — faqat yo'q bo'lgan
+  // qo'ng'iroqlar uchun (keshlangan) GET /api/calls/:id ga boramiz.
+  const convs = (
+    await Promise.all(
+      sample.map(async (c) => {
+        if (c.conversions) return c.conversions;
+        const detail = await getCallCached(c.id, signal);
+        return detail?.conversions ?? null;
+      })
+    )
+  ).filter(Boolean) as Conversions[];
   if (!convs.length) return null;
   const avg = (k: "stage_1_to_2" | "stage_2_to_3" | "stage_3_to_4") =>
     convs.reduce((s, c) => s + asRatio(c[k]), 0) / convs.length;
