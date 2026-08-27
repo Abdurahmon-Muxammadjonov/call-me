@@ -127,82 +127,74 @@ export function LockedSectionModal({
             )}
           </p>
 
-          {inPlan ? (
-            <>
-              <button
-                type="button"
-                onClick={() => openDeeplink("get_code")}
-                disabled={linkLoading}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-brand-blue/30 bg-brand-blue/5 px-4 py-2.5 text-sm font-semibold text-brand-blue transition-colors hover:bg-brand-blue/10 disabled:cursor-not-allowed disabled:opacity-60 dark:text-brand-blue-light"
-              >
-                <Icons.telegram className="h-4 w-4 shrink-0" />
-                {linkLoading ? "Ochilmoqda..." : "Kod olish (Telegram)"}
-              </button>
-              {linkError && <p className="mt-2 text-center text-xs font-medium text-rose-500">{linkError}</p>}
+          {/* Telegram CTA — matnigina inPlan holatiga qarab o'zgaradi, tugma
+              o'zi HAR DOIM ko'rinadi (avval faqat inPlan===false'da "Tarifni
+              oshirish" ko'rinar, inPlan===true'da esa "Kod olish" ko'rinar —
+              ikkalasi ham to'g'ri, faqat MATN farqlanadi). */}
+          <button
+            type="button"
+            onClick={() => openDeeplink(inPlan ? "get_code" : "upgrade")}
+            disabled={linkLoading}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-blue px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-blue-light disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Icons.telegram className="h-4 w-4 shrink-0" />
+            {linkLoading ? "Ochilmoqda..." : inPlan ? "Kod olish (Telegram)" : "Tarifni oshirish (Telegram)"}
+          </button>
+          {linkError && <p className="mt-2 text-center text-xs font-medium text-rose-500">{linkError}</p>}
 
-              <form onSubmit={submit} className="mt-4 space-y-3" noValidate>
-                <input
-                  value={code}
-                  onChange={(e) => {
-                    setCode(e.target.value);
-                    if (error) setError("");
-                  }}
-                  placeholder="Ochish kodi"
-                  autoFocus
-                  autoComplete="off"
-                  aria-invalid={Boolean(error)}
-                  className={`w-full rounded-xl border bg-white px-4 py-3 text-center font-mono-stat text-sm tracking-widest text-slate-900 outline-none transition-colors focus:ring-2 dark:bg-white/5 dark:text-white ${
-                    error
-                      ? "border-rose-400 focus:border-rose-400 focus:ring-rose-400/20"
-                      : "border-slate-200 focus:border-brand-blue focus:ring-brand-blue/20 dark:border-white/15"
-                  }`}
-                />
-                {error && (
-                  <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-rose-500">
-                    <Icons.close className="h-3.5 w-3.5 shrink-0" />
-                    {error}
-                  </p>
-                )}
+          {/* Kod kiritish maydoni — HAR DOIM ko'rinadi. Bot endi butun
+              tarifni ochadigan bitta kod berganida, foydalanuvchida
+              allaqachon kod bo'lishi mumkin — hozirgi bo'lim `in_plan`
+              bo'lmasa ham (masalan sections ro'yxati hali reconcile
+              bo'lmagan bo'lishi mumkin), kodni kiritib ko'rish imkoniyati
+              berilishi kerak. */}
+          <div className="mt-4 flex items-center gap-3 text-xs text-slate-400">
+            <span className="h-px flex-1 bg-slate-200/70 dark:bg-slate-700/60" />
+            Kodingiz bormi?
+            <span className="h-px flex-1 bg-slate-200/70 dark:bg-slate-700/60" />
+          </div>
 
-                <div className="flex gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="flex-1 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
-                  >
-                    Bekor qilish
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex-1 rounded-xl bg-brand-blue px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-blue-light disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {submitting ? "Tekshirilmoqda..." : "Ochish"}
-                  </button>
-                </div>
-              </form>
-            </>
-          ) : (
-            <div className="mt-5 space-y-3">
-              <button
-                type="button"
-                onClick={() => openDeeplink("upgrade")}
-                disabled={linkLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-blue px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-blue-light disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Icons.telegram className="h-4 w-4 shrink-0" />
-                {linkLoading ? "Ochilmoqda..." : "Tarifni oshirish (Telegram)"}
-              </button>
-              {linkError && <p className="text-center text-xs font-medium text-rose-500">{linkError}</p>}
+          <form onSubmit={submit} className="mt-3 space-y-3" noValidate>
+            <input
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value);
+                if (error) setError("");
+              }}
+              placeholder="Ochish kodi"
+              autoFocus
+              autoComplete="off"
+              aria-invalid={Boolean(error)}
+              className={`w-full rounded-xl border bg-white px-4 py-3 text-center font-mono-stat text-sm tracking-widest text-slate-900 outline-none transition-colors focus:ring-2 dark:bg-white/5 dark:text-white ${
+                error
+                  ? "border-rose-400 focus:border-rose-400 focus:ring-rose-400/20"
+                  : "border-slate-200 focus:border-brand-blue focus:ring-brand-blue/20 dark:border-white/15"
+              }`}
+            />
+            {error && (
+              <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-rose-500">
+                <Icons.close className="h-3.5 w-3.5 shrink-0" />
+                {error}
+              </p>
+            )}
+
+            <div className="flex gap-3 pt-1">
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
+                className="flex-1 rounded-xl border border-slate-200/70 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-300"
               >
                 Bekor qilish
               </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 rounded-xl bg-brand-blue px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-blue-light disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? "Tekshirilmoqda..." : "Ochish"}
+              </button>
             </div>
-          )}
+          </form>
         </div>
       </div>
     </Portal>
