@@ -139,7 +139,7 @@ export function AppShell({
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-50 text-slate-800 dark:bg-[#080b14] dark:text-slate-200">
+    <div className="relative min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -151,15 +151,11 @@ export function AppShell({
       <div className="relative flex min-h-screen">
         {/* ===== Sidebar ===== */}
         <aside
-          className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200/80 bg-white transition-transform duration-200 dark:border-white/[0.06] dark:bg-[#0b0f1a] lg:static lg:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900 lg:static lg:translate-x-0 ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="relative flex items-center justify-between px-6 py-5">
-            <div
-              className="pointer-events-none absolute -left-10 -top-16 h-40 w-56 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/15"
-              aria-hidden="true"
-            />
+          <div className="flex items-center justify-between px-6 py-5">
             <Logo />
             <button
               onClick={() => setMobileOpen(false)}
@@ -169,14 +165,14 @@ export function AppShell({
             </button>
           </div>
 
-          <div className="border-y border-slate-100 px-6 py-3 dark:border-white/[0.06]">
+          <div className="border-y border-slate-100 px-6 py-3 dark:border-slate-800/60">
             <CompanyBadge />
           </div>
 
           <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-2">
             {NAV_SECTIONS.map((section, sIdx) => (
               <div key={section.title}>
-                <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400/90 dark:text-slate-500">
+                <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                   {t(NAV_SECTION_KEYS[sIdx] ?? "nav.section.main")}
                 </p>
                 <ul className="space-y-1">
@@ -191,21 +187,21 @@ export function AppShell({
                     return (
                       <li key={item.id} className="relative">
                         {active && (
-                          <span className="absolute -left-4 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-linear-to-b from-blue-500 to-teal-400 shadow-[0_0_12px_rgba(59,130,246,0.6)]" />
+                          <span className="absolute -left-4 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-600 dark:bg-blue-400" />
                         )}
                         <button
                           onClick={() => (locked ? setLockedTab(item.id) : selectTab(item.id))}
-                          className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
                             justUnlocked ? "animate-unlock" : ""
                           } ${
                             active
-                              ? "bg-linear-to-r from-blue-600/12 to-teal-500/8 text-blue-700 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.18)] dark:from-blue-500/18 dark:to-teal-400/10 dark:text-blue-200 dark:shadow-[inset_0_0_0_1px_rgba(96,165,250,0.22)]"
+                              ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
                               : locked
-                              ? "text-slate-400 hover:bg-slate-100 hover:text-slate-500 dark:text-slate-500 dark:hover:bg-white/5"
-                              : "text-slate-500 hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+                              ? "text-slate-400 hover:bg-slate-100 hover:text-slate-500 dark:text-slate-500 dark:hover:bg-slate-800"
+                              : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                           }`}
                         >
-                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-blue-600 dark:text-teal-300" : "text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300"}`} />
+                          <Icon className="h-4 w-4 shrink-0" />
                           <span className="flex-1 text-left">{t(navKeys.label)}</span>
                           {locked && <Icons.lock className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />}
                         </button>
@@ -221,14 +217,14 @@ export function AppShell({
             <div className="space-y-1 px-4">
               <Link
                 href="/settings/branding"
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-all hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               >
                 <Icons.building className="h-4 w-4 shrink-0" />
                 Brend sozlamalari
               </Link>
               <Link
                 href="/settings/norms"
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-all hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               >
                 <Icons.ruler className="h-4 w-4 shrink-0" />
                 KPI normalari
@@ -237,9 +233,9 @@ export function AppShell({
           )}
 
           {/* Profile */}
-          <div className="border-t border-slate-200/80 p-4 dark:border-white/[0.06]">
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-slate-50 p-3 dark:border-white/[0.06] dark:bg-white/[0.03]">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-linear-to-br from-blue-500 to-teal-400 text-sm font-bold text-white shadow-md">
+          <div className="border-t border-slate-200 p-4 dark:border-slate-800">
+            <div className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-blue-600 text-sm font-bold text-white">
                 {initials}
               </span>
               <div className="min-w-0 flex-1">
@@ -260,7 +256,7 @@ export function AppShell({
         {/* ===== Main ===== */}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Header */}
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200/80 bg-white/80 px-4 py-3.5 backdrop-blur-xl dark:border-white/[0.06] dark:bg-[#080b14]/80 sm:px-6">
+          <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3.5 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
             <button
               onClick={() => setMobileOpen(true)}
               className="rounded-lg p-2 text-slate-500 hover:bg-slate-500/10 lg:hidden"
@@ -269,7 +265,7 @@ export function AppShell({
             </button>
 
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              <h1 className="truncate text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100">
                 {meta.title}
               </h1>
               <p className="hidden truncate text-xs text-slate-400 sm:block">{meta.subtitle}</p>
@@ -283,12 +279,8 @@ export function AppShell({
           </header>
 
           {/* Content */}
-          <main className="relative flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(59,130,246,0.08),transparent)] dark:bg-[radial-gradient(60%_100%_at_50%_0%,rgba(59,130,246,0.12),transparent)]"
-              aria-hidden="true"
-            />
-            <div key={activeTab} className="relative mx-auto max-w-7xl animate-slide-up">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <div key={activeTab} className="mx-auto max-w-7xl animate-slide-up">
               {renderTab(activeTab)}
             </div>
           </main>

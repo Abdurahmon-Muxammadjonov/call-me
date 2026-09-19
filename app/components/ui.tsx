@@ -43,17 +43,6 @@ export const accentGrad: Record<Accent, string> = {
   violet: "from-amber-500 to-amber-600",
 };
 
-/* Soft tint tile for metric icons — restrained "premium" alternative to a
- * solid gradient block: translucent accent fill + hairline ring, icon in
- * the accent color. Use for KPI/stat icons; keep accentGrad for avatars,
- * progress bars and CTAs where saturation is the point. */
-export const accentSoft: Record<Accent, string> = {
-  indigo: "bg-blue-500/10 text-blue-600 ring-1 ring-inset ring-blue-500/20 dark:bg-blue-400/10 dark:text-blue-300 dark:ring-blue-400/20",
-  cyan: "bg-teal-500/10 text-teal-600 ring-1 ring-inset ring-teal-500/20 dark:bg-teal-400/10 dark:text-teal-300 dark:ring-teal-400/20",
-  emerald: "bg-emerald-500/10 text-emerald-600 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/20",
-  violet: "bg-amber-500/10 text-amber-600 ring-1 ring-inset ring-amber-500/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/20",
-};
-
 /* A faint accent-tinted ambient shadow, layered on top of Card's own
  * elevation — a subtle premium touch so each stat tile's shadow echoes its
  * icon color instead of being perfectly neutral gray. */

@@ -304,20 +304,17 @@ body {
  * "raised" the way premium dashboards do rather than as a plain outline. */
 .glass {
   background-color: rgb(255 255 255);
-  border: 1px solid rgb(226 232 240 / 0.9);
+  border: 1px solid rgb(226 232 240);
   box-shadow:
     0 1px 2px 0 rgb(15 23 42 / 0.04),
     0 8px 24px -12px rgb(15 23 42 / 0.08);
 }
-/* Dark: a deep navy-charcoal surface with a hairline border and a faint
- * top highlight — reads as a machined panel rather than a flat grey box. */
 .dark .glass {
-  background-color: rgb(15 20 33);
-  border-color: rgb(255 255 255 / 0.07);
+  background-color: rgb(30 41 59);
+  border-color: rgb(51 65 85);
   box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.04) inset,
-    0 1px 2px 0 rgb(0 0 0 / 0.4),
-    0 16px 40px -20px rgb(0 0 0 / 0.7);
+    0 1px 2px 0 rgb(0 0 0 / 0.3),
+    0 12px 28px -14px rgb(0 0 0 / 0.5);
 }
 
 /* Elevation lift on hover — a slightly deeper shadow + 1px rise, used by
