@@ -24,8 +24,10 @@ import {
   type MaybeStat,
   type Period,
   type PeriodStat,
+  type TrendData,
 } from "../lib/analytics";
 import { getSupabase } from "../lib/supabase";
+import { AreaTrendChart } from "./charts";
 import { useSession } from "../lib/auth";
 import { fetchCompanySettings, toAnalyticsNorms, DEFAULT_COMPANY_SETTINGS } from "../lib/companySettings";
 
@@ -42,12 +44,15 @@ const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta uri
  * oladi; bu sahifa reference dizaynidagi ko'k/yashil-firuza/binafsha/to'q
  * sariq/pushti to'plamini talab qiladi — shuning uchun kartalar uchun
  * alohida, xom Tailwind ranglariga asoslangan mini-palitra. */
+/* Icon tiles are soft tints with a hairline ring (not solid gradient blocks)
+ * — the same restrained treatment premium analytics tools use; the color
+ * still identifies the metric, the line/sparkline carries the saturation. */
 const CARD_THEME = {
-  blue: { icon: "bg-linear-to-br from-blue-500 to-blue-600", text: "text-blue-600 dark:text-blue-400", line: "#2563eb" },
-  teal: { icon: "bg-linear-to-br from-emerald-500 to-teal-600", text: "text-emerald-600 dark:text-emerald-400", line: "#059669" },
-  purple: { icon: "bg-linear-to-br from-violet-500 to-purple-600", text: "text-violet-600 dark:text-violet-400", line: "#7c3aed" },
-  orange: { icon: "bg-linear-to-br from-orange-500 to-amber-600", text: "text-orange-600 dark:text-orange-400", line: "#ea580c" },
-  rose: { icon: "bg-linear-to-br from-rose-500 to-pink-600", text: "text-rose-600 dark:text-rose-400", line: "#e11d48" },
+  blue: { icon: "bg-blue-500/10 text-blue-600 ring-1 ring-inset ring-blue-500/20 dark:bg-blue-400/10 dark:text-blue-300 dark:ring-blue-400/20", text: "text-blue-600 dark:text-blue-400", line: "#3b82f6" },
+  teal: { icon: "bg-teal-500/10 text-teal-600 ring-1 ring-inset ring-teal-500/20 dark:bg-teal-400/10 dark:text-teal-300 dark:ring-teal-400/20", text: "text-teal-600 dark:text-teal-400", line: "#14b8a6" },
+  purple: { icon: "bg-violet-500/10 text-violet-600 ring-1 ring-inset ring-violet-500/20 dark:bg-violet-400/10 dark:text-violet-300 dark:ring-violet-400/20", text: "text-violet-600 dark:text-violet-400", line: "#8b5cf6" },
+  orange: { icon: "bg-amber-500/10 text-amber-600 ring-1 ring-inset ring-amber-500/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/20", text: "text-amber-600 dark:text-amber-400", line: "#f59e0b" },
+  rose: { icon: "bg-rose-500/10 text-rose-600 ring-1 ring-inset ring-rose-500/20 dark:bg-rose-400/10 dark:text-rose-300 dark:ring-rose-400/20", text: "text-rose-600 dark:text-rose-400", line: "#f43f5e" },
 } as const;
 type CardColor = keyof typeof CARD_THEME;
 
@@ -260,6 +265,8 @@ function AnalyticsBody({ data }: { data: AnalyticsData }) {
         />
       </div>
 
+      <TrendCard trend={data.trend} period={data.period} />
+
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <IncomingOutgoingCard incoming={data.incoming} outgoing={data.outgoing} />
         <ConversionFunnelCard funnel={data.funnel} leadToDealPct={leadToDealPct} saleToClosedPct={data.saleToClosedPct} />
@@ -273,6 +280,50 @@ function AnalyticsBody({ data }: { data: AnalyticsData }) {
 
       <TeamGrid employees={data.employees} period={data.period} />
     </div>
+  );
+}
+
+/* ============================ Sotuv / qo'ng'iroq dinamikasi (grafik) ============================ */
+const TREND_WINDOW_LABEL: Record<Period, string> = { day: "so'nggi 14 kun", week: "so'nggi 30 kun", month: "so'nggi 60 kun" };
+
+function TrendCard({ trend, period }: { trend: TrendData; period: Period }) {
+  const hasAny = trend.calls.some((v) => v > 0);
+  const series = [
+    { name: "Qo'ng'iroqlar", color: "#3b82f6", values: trend.calls },
+    { name: "Uzun qo'ng'iroqlar", color: "#14b8a6", values: trend.qualified, dashed: true },
+    ...(trend.deals ? [{ name: "Yopilgan bitimlar", color: "#8b5cf6", values: trend.deals }] : []),
+  ];
+  const g = trend.growthPct;
+  return (
+    <Card className="p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <SectionTitle title="Sotuv va qo'ng'iroqlar dinamikasi" subtitle={`Kunlik kesimda · ${TREND_WINDOW_LABEL[period]}`} />
+        <div className="flex items-center gap-4">
+          {g != null && (
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">O&apos;sish (oyna yarmiga nisbatan)</p>
+              <p className={`text-lg font-bold tabular-nums ${g >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                {g >= 0 ? "+" : ""}
+                {g.toFixed(1)}%
+              </p>
+            </div>
+          )}
+          <ul className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+            {series.map((s) => (
+              <li key={s.name} className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
+                {s.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      {hasAny ? (
+        <AreaTrendChart labels={trend.labels} series={series} height={260} />
+      ) : (
+        <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">Bu oynada hali qo&apos;ng&apos;iroq yo&apos;q.</p>
+      )}
+    </Card>
   );
 }
 
@@ -360,7 +411,7 @@ function TopStatCard({
   return (
     <Card hover className="p-5">
       <div className="flex items-start justify-between">
-        <span className={`grid h-11 w-11 place-items-center rounded-xl text-white shadow-md ${theme.icon}`}>
+        <span className={`grid h-11 w-11 place-items-center rounded-xl ${theme.icon}`}>
           <Icon className="h-5 w-5" />
         </span>
         <DeltaBadge changePct={stat?.changePct ?? null} />
@@ -532,7 +583,7 @@ function SmallBadgeCard({
           {stat ? stat.value.toLocaleString() : "—"}
         </p>
       </div>
-      <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-white shadow-md ${theme.icon}`}>
+      <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${theme.icon}`}>
         <Icon className="h-6 w-6" />
       </span>
     </Card>

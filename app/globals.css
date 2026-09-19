@@ -93,7 +93,13 @@
 /* ---------- Landing page ----------
  * Its own dark-navy-forward system, independent of the app's `.dark`
  * dashboard theme — see app/components/landing/. Light mode keeps the same
- * brand blue/teal but inverts background + text. */
+ * brand blue/teal but inverts background + text.
+ *
+ * Visual language: "precision instrument". Deep navy ground, soft aurora
+ * light behind key sections, hairline borders, glassy cards that lift on
+ * hover, gradient ink for the one word that matters in a headline, and the
+ * real product (dashboard screenshots) as the hero art instead of stock
+ * illustration. */
 .landing-glass {
   background-color: rgb(255 255 255 / 0.7);
   border: 1px solid rgb(15 23 42 / 0.08);
@@ -103,6 +109,140 @@
   background-color: rgb(255 255 255 / 0.03);
   border-color: rgb(255 255 255 / 0.1);
   backdrop-filter: blur(8px);
+}
+
+/* Card that reacts: hairline border → brand-tinted border + lift + soft
+ * glow on hover. Uses transform/box-shadow only (compositor-friendly). */
+.landing-card {
+  position: relative;
+  background-color: rgb(255 255 255 / 0.75);
+  border: 1px solid rgb(15 23 42 / 0.08);
+  border-radius: 1.25rem;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.35s ease, background-color 0.3s ease;
+}
+.dark .landing-card {
+  background-color: rgb(255 255 255 / 0.035);
+  border-color: rgb(255 255 255 / 0.09);
+}
+.landing-card:hover {
+  transform: translateY(-4px);
+  border-color: rgb(59 95 227 / 0.45);
+  box-shadow: 0 24px 60px -24px rgb(59 95 227 / 0.35), 0 0 0 1px rgb(59 95 227 / 0.08);
+}
+.dark .landing-card:hover {
+  background-color: rgb(255 255 255 / 0.05);
+  border-color: rgb(45 212 191 / 0.4);
+  box-shadow: 0 24px 60px -24px rgb(45 212 191 / 0.28), 0 0 0 1px rgb(45 212 191 / 0.08);
+}
+
+/* Aurora: two very soft radial glows that drift slowly. Placed behind the
+ * hero / CTA. Blur is on the element itself, so it stays cheap. */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  max-width: 900px;
+  max-height: 900px;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.aurora::before {
+  top: -20%;
+  left: -10%;
+  background: radial-gradient(closest-side, rgb(59 95 227 / 0.55), transparent 70%);
+  animation: aurora-a 22s ease-in-out infinite alternate;
+}
+.aurora::after {
+  bottom: -25%;
+  right: -10%;
+  background: radial-gradient(closest-side, rgb(45 212 191 / 0.45), transparent 70%);
+  animation: aurora-b 26s ease-in-out infinite alternate;
+}
+.dark .aurora::before { opacity: 0.5; }
+.dark .aurora::after { opacity: 0.4; }
+@keyframes aurora-a {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(12%, 10%) scale(1.12); }
+}
+@keyframes aurora-b {
+  from { transform: translate(0, 0) scale(1.05); }
+  to { transform: translate(-10%, -12%) scale(0.95); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before, .aurora::after { animation: none; }
+}
+
+/* Faint blueprint grid with a radial fade so it reads as texture, not lines. */
+.blueprint-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgb(15 23 42 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(15 23 42 / 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+}
+.dark .blueprint-grid,
+.blueprint-grid-on-dark {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+}
+
+/* Gradient ink — for the single emphasised phrase in a headline. */
+.text-ink-brand {
+  background-image: linear-gradient(100deg, #3b5fe3 0%, #5b7cf0 45%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Product frame: browser-window chrome around a dashboard screenshot. */
+.product-frame {
+  border-radius: 1.25rem;
+  border: 1px solid rgb(15 23 42 / 0.12);
+  background: rgb(255 255 255 / 0.6);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.6) inset,
+    0 30px 80px -30px rgb(15 23 42 / 0.35),
+    0 60px 120px -60px rgb(59 95 227 / 0.35);
+  overflow: hidden;
+}
+.dark .product-frame {
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(11 15 26 / 0.9);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.06) inset,
+    0 30px 80px -30px rgb(0 0 0 / 0.7),
+    0 60px 140px -60px rgb(59 95 227 / 0.45);
+}
+/* Slight 3D lean for the hero frame; flattens on hover so it feels alive. */
+.product-frame-tilt {
+  transform: perspective(1600px) rotateX(6deg);
+  transform-origin: center top;
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.product-frame-tilt:hover { transform: perspective(1600px) rotateX(0deg); }
+@media (prefers-reduced-motion: reduce) {
+  .product-frame-tilt, .product-frame-tilt:hover { transform: none; }
+}
+
+/* Thin animated highlight that runs along a divider (section headers). */
+.glow-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(59 95 227 / 0.7), rgb(45 212 191 / 0.7), transparent);
 }
 
 .waveform-bar {
@@ -164,17 +304,20 @@ body {
  * "raised" the way premium dashboards do rather than as a plain outline. */
 .glass {
   background-color: rgb(255 255 255);
-  border: 1px solid rgb(226 232 240);
+  border: 1px solid rgb(226 232 240 / 0.9);
   box-shadow:
     0 1px 2px 0 rgb(15 23 42 / 0.04),
     0 8px 24px -12px rgb(15 23 42 / 0.08);
 }
+/* Dark: a deep navy-charcoal surface with a hairline border and a faint
+ * top highlight — reads as a machined panel rather than a flat grey box. */
 .dark .glass {
-  background-color: rgb(30 41 59);
-  border-color: rgb(51 65 85);
+  background-color: rgb(15 20 33);
+  border-color: rgb(255 255 255 / 0.07);
   box-shadow:
-    0 1px 2px 0 rgb(0 0 0 / 0.3),
-    0 12px 28px -14px rgb(0 0 0 / 0.5);
+    0 1px 0 rgb(255 255 255 / 0.04) inset,
+    0 1px 2px 0 rgb(0 0 0 / 0.4),
+    0 16px 40px -20px rgb(0 0 0 / 0.7);
 }
 
 /* Elevation lift on hover — a slightly deeper shadow + 1px rise, used by

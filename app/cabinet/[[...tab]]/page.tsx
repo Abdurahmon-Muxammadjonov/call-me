@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { EmployeeDashboard, EMP_TAB_PATH, empTabFromSegments, type EmpTab } from "../../components/EmployeeDashboard";
-import { clearSession, useSession } from "../../lib/auth";
+import { clearSession, useHydrated, useSession } from "../../lib/auth";
 import { useTheme } from "../../lib/theme";
 import { CompanyProvider } from "../../lib/company";
 
@@ -14,11 +14,14 @@ export default function CabinetPage() {
   const router = useRouter();
   const params = useParams<{ tab?: string[] }>();
   const session = useSession();
+  const hydrated = useHydrated();
   const { isDark, toggle: toggleTheme } = useTheme();
 
   const activeTab = empTabFromSegments(params.tab);
 
   useEffect(() => {
+    // Not hydrated yet → session is the server's `null`, not a real logout.
+    if (!hydrated) return;
     if (session === null) {
       router.replace("/login");
       return;
@@ -26,7 +29,7 @@ export default function CabinetPage() {
     if (session && session.role === "director") {
       router.replace("/dashboard");
     }
-  }, [session, router]);
+  }, [session, hydrated, router]);
 
   function selectTab(id: EmpTab) {
     const segment = EMP_TAB_PATH[id];

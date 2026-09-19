@@ -21,7 +21,7 @@
 
 import { accentForId, initialsOf, type Accent } from "../components/ui";
 import { fetchCallAnalytics, fetchPopStats, type CallAnalytics, type PopBlock, type PopStats } from "./api";
-import { listCalls, listManagers, getCall, type CallDetail, type CallRow, type Manager, type Conversions } from "./calls";
+import { listCalls, listManagers, getCall, formatDayMonth, type CallDetail, type CallRow, type Manager, type Conversions } from "./calls";
 
 export type Period = "day" | "week" | "month";
 
@@ -98,8 +98,21 @@ export interface EmployeeAnalytics {
   belowNormReason: string | null;
 }
 
+/* Kunlik seriya — "Sotuv dinamikasi" grafigi uchun. Davrga qarab oyna:
+ * Kunlik → so'nggi 14 kun, Haftalik → 30 kun, Oylik → 60 kun. Eskisi → bugun. */
+export interface TrendData {
+  labels: string[];
+  calls: number[];
+  qualified: number[];
+  /* Faqat backend closed_deals_count'ni bera boshlagach — aks holda null. */
+  deals: number[] | null;
+  /* Oynaning ikkinchi yarmi vs birinchi yarmi (qo'ng'iroqlar) — o'sish %. */
+  growthPct: number | null;
+}
+
 export interface AnalyticsData {
   period: Period;
+  trend: TrendData;
   totalCalls: PeriodStat;
   newLeads: MaybeStat;
   sentToDealer: MaybeStat;
@@ -132,6 +145,7 @@ interface DayBucket {
   hasDealerData: boolean;
   hasUnansweredData: boolean;
   hasBadLeadData: boolean;
+  hasDealData: boolean;
 }
 
 function emptyDay(): DayBucket {
@@ -151,6 +165,7 @@ function emptyDay(): DayBucket {
     hasDealerData: false,
     hasUnansweredData: false,
     hasBadLeadData: false,
+    hasDealData: false,
   };
 }
 
@@ -188,6 +203,7 @@ function buildDays(calls: CallRow[], norms: AnalyticsNorms): DayBucket[] {
       b.sentToDealer += Number(c.sent_to_dealer_count) || 0;
     }
     if (c.closed_deals_count != null) {
+      b.hasDealData = true;
       b.closedDeals += Number(c.closed_deals_count) || 0;
     }
     if (c.unanswered_count != null) {
@@ -309,6 +325,31 @@ function buildFunnel(leadCount: number, ratios: { r12: number; r23: number; r34:
     { label: "Taklif", value: Math.min(offer, contact), hint: "Taklif yuborildi" },
     { label: "Kelishuv", value: Math.min(deal, offer), hint: "Yopilgan bitim" },
   ];
+}
+
+/* ---------- Trend seriyasi (grafik) ---------- */
+const TREND_DAYS: Record<Period, number> = { day: 14, week: 30, month: 60 };
+
+function buildTrend(days: DayBucket[], period: Period): TrendData {
+  const n = Math.min(TREND_DAYS[period], HISTORY_DAYS);
+  const labels: string[] = [];
+  const calls: number[] = [];
+  const qualified: number[] = [];
+  const dealsArr: number[] = [];
+  let anyDeal = false;
+  const today = startOfDay(new Date());
+  for (let i = n - 1; i >= 0; i--) {
+    const d = days[i];
+    labels.push(formatDayMonth(new Date(today - i * DAY_MS)));
+    calls.push(d.count);
+    qualified.push(d.qualified);
+    dealsArr.push(d.closedDeals);
+    if (d.hasDealData) anyDeal = true;
+  }
+  const half = Math.floor(n / 2);
+  const first = calls.slice(0, half).reduce((a, b) => a + b, 0);
+  const second = calls.slice(half).reduce((a, b) => a + b, 0);
+  return { labels, calls, qualified, deals: anyDeal ? dealsArr : null, growthPct: pctChange(second, first) };
 }
 
 /* ============================================================
@@ -488,6 +529,7 @@ export async function computeAnalyticsData(
 
   return {
     period,
+    trend: buildTrend(days, period),
     totalCalls,
     newLeads,
     sentToDealer,

@@ -11,6 +11,7 @@ import { CONTACT_PHONE_TEL, CONTACT_PHONE_DISPLAY } from "../../lib/contact";
 
 const LINKS: { key: DictKey; href: string }[] = [
   { key: "nav.home", href: "#top" },
+  { key: "nav.productLink", href: "#product" },
   { key: "nav.about", href: "#about" },
   { key: "nav.featuresLink", href: "#features" },
   { key: "nav.pricingLink", href: "#pricing" },

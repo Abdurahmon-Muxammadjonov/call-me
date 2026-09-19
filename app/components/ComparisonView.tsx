@@ -180,11 +180,6 @@ export function ComparisonView() {
 
   return (
     <div className="animate-slide-up space-y-6">
-      <SectionTitle
-        title="Solishtirish paneli"
-        subtitle="Kunlik, haftalik va oylik natijalar — oldingi davr bilan yonma-yon"
-      />
-
       {isLoading && !pop && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Skeleton className="h-56" />

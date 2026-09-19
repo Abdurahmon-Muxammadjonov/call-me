@@ -1,6 +1,7 @@
 import { LandingNavbar } from "./components/landing/LandingNavbar";
 import { Hero } from "./components/landing/sections/Hero";
 import { StatsBar } from "./components/landing/sections/StatsBar";
+import { ProductTour } from "./components/landing/sections/ProductTour";
 import { About } from "./components/landing/sections/About";
 import { ProblemSolution } from "./components/landing/sections/ProblemSolution";
 import { Features } from "./components/landing/sections/Features";
@@ -22,6 +23,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <StatsBar />
+        <ProductTour />
         <About />
         <ProblemSolution />
         <Features />

@@ -233,15 +233,20 @@ export function formatUZS(amount: number): string {
   return new Intl.NumberFormat("uz-UZ").format(Math.round(amount || 0)) + " so'm";
 }
 
+/* Chromium'ning uz-UZ ICU ma'lumotida qisqa oy nomlari yo'q — Intl "M09"
+ * kabi texnik shakl qaytaradi. O'zbekcha jadval bilan o'zimiz formatlaymiz. */
+export const UZ_MONTHS_SHORT = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
+
+export function formatDayMonth(d: Date): string {
+  return `${d.getDate().toString().padStart(2, "0")} ${UZ_MONTHS_SHORT[d.getMonth()]}`;
+}
+
 export function formatDateTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("uz-UZ", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+  const hh = d.getHours().toString().padStart(2, "0");
+  const mm = d.getMinutes().toString().padStart(2, "0");
+  return `${formatDayMonth(d)}, ${hh}:${mm}`;
 }
 
 export function formatSeconds(total: number): string {

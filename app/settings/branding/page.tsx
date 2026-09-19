@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SettingsShell } from "../../components/settings/SettingsShell";
 import { CompanyProvider, useCompany } from "../../lib/company";
-import { useSession } from "../../lib/auth";
+import { useHydrated, useSession } from "../../lib/auth";
 import { useHasRole } from "../../lib/useHasRole";
 import { showToast } from "../../lib/toast";
 import { ToastHost } from "../../components/ToastHost";
@@ -201,9 +201,11 @@ function BrandingContent() {
 export default function BrandingSettingsPage() {
   const router = useRouter();
   const session = useSession();
+  const hydrated = useHydrated();
   const canEdit = useHasRole(["director", "admin"]);
 
   useEffect(() => {
+    if (!hydrated) return; // hydration pass: session is the server's null
     if (session === null) {
       router.replace("/login");
       return;
@@ -213,7 +215,7 @@ export default function BrandingSettingsPage() {
     if (!canEdit) {
       router.replace(session.role === "director" ? "/dashboard" : "/cabinet");
     }
-  }, [session, canEdit, router]);
+  }, [session, hydrated, canEdit, router]);
 
   if (!session || !canEdit) return null;
 

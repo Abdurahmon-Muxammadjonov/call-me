@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AppShell, TAB_PATH, tabFromSegments } from "../../components/AppShell";
-import { clearSession, useSession } from "../../lib/auth";
+import { clearSession, useHydrated, useSession } from "../../lib/auth";
 import { useTheme } from "../../lib/theme";
 import { CompanyProvider } from "../../lib/company";
 import { SectionsProvider } from "../../lib/sections";
@@ -17,11 +17,14 @@ export default function DashboardPage() {
   const router = useRouter();
   const params = useParams<{ tab?: string[] }>();
   const session = useSession();
+  const hydrated = useHydrated();
   const { isDark, toggle: toggleTheme } = useTheme();
 
   const activeTab = tabFromSegments(params.tab);
 
   useEffect(() => {
+    // Not hydrated yet → session is the server's `null`, not a real logout.
+    if (!hydrated) return;
     if (session === null) {
       router.replace("/login");
       return;
@@ -29,7 +32,7 @@ export default function DashboardPage() {
     if (session && session.role !== "director") {
       router.replace("/cabinet");
     }
-  }, [session, router]);
+  }, [session, hydrated, router]);
 
   function selectTab(id: TabId) {
     const segment = TAB_PATH[id];

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "framer-motion";
 import { useT, useLocale, type DictKey } from "../../../lib/i18n";
-import { WaveformArt } from "../WaveformArt";
 import { Reveal, usePrefersReducedMotion } from "../Reveal";
 
 const INTL_LOCALE: Record<string, string> = { uz: "uz-UZ", ru: "ru-RU", en: "en-US" };
@@ -44,7 +43,7 @@ function AnimatedStat({ target, suffix }: { target: number; suffix: string }) {
   const formatted = new Intl.NumberFormat(INTL_LOCALE[locale] ?? "uz-UZ").format(value);
 
   return (
-    <p ref={ref} className="font-mono-stat text-3xl font-medium text-slate-900 dark:text-white">
+    <p ref={ref} className="font-heading text-ink-brand text-4xl font-bold tracking-tight sm:text-5xl">
       {formatted}
       {suffix}
     </p>
@@ -54,18 +53,19 @@ function AnimatedStat({ target, suffix }: { target: number; suffix: string }) {
 export function StatsBar() {
   const t = useT();
   return (
-    <section className="border-y border-slate-200 bg-white px-6 py-10 dark:border-white/10 dark:bg-white/2">
+    <section className="relative px-6 py-14">
+      <div className="glow-line mx-auto max-w-5xl" aria-hidden="true" />
       <Reveal>
-        <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 divide-y divide-slate-200/70 py-10 dark:divide-white/10 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {STATS.map((s, i) => (
-            <div key={i} className="flex flex-col items-center text-center">
-              <WaveformArt barCount={7} className="mb-3 h-4 text-brand-teal" />
+            <div key={i} className="flex flex-col items-center px-6 py-6 text-center sm:py-2">
               <AnimatedStat target={s.target} suffix={s.suffix} />
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t(s.labelKey)}</p>
+              <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">{t(s.labelKey)}</p>
             </div>
           ))}
         </div>
       </Reveal>
+      <div className="glow-line mx-auto max-w-5xl" aria-hidden="true" />
     </section>
   );
 }

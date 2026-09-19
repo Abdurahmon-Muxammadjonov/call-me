@@ -47,6 +47,7 @@ import {
   scoreAccent,
   accentText,
   accentGrad,
+  accentSoft,
   accentForId,
   initialsOf,
   type Accent,
@@ -2002,7 +2003,7 @@ function FlowStep({
   return (
     <div className="relative rounded-2xl border border-slate-200/60 bg-white/40 p-4 dark:border-slate-700/50 dark:bg-slate-800/30">
       <div className="flex items-center gap-2.5">
-        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-linear-to-br ${accentGrad[accent]} text-white shadow-sm`}>
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${accentSoft[accent]}`}>
           <Icon className="h-4 w-4" />
         </span>
         <span className="text-[11px] font-bold text-slate-300 dark:text-slate-600">0{n}</span>

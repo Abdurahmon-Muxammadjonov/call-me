@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icons } from "./Icons";
-import { SectionTitle, PillButton, Skeleton, ConfirmModal, accentForId, accentGrad, initialsOf } from "./ui";
+import { PillButton, Skeleton, ConfirmModal, accentForId, accentGrad, initialsOf } from "./ui";
 import { Portal } from "./Portal";
 import { showToast } from "../lib/toast";
 import { apiUrl } from "../lib/api";
@@ -153,15 +153,12 @@ export function StaffManager() {
 
   return (
     <div className="space-y-6">
-      <SectionTitle
-        title="Operatorlar boshqaruvi"
-        subtitle="Xodimlarni tahrirlash, smena va skriptlarni biriktirish"
-        action={
-          <PillButton icon="plus" onClick={() => setEditing("new")}>
-            Yangi operator
-          </PillButton>
-        }
-      />
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400">Xodimlarni tahrirlash, smena va skriptlarni biriktirish</p>
+        <PillButton icon="plus" onClick={() => setEditing("new")}>
+          Yangi operator
+        </PillButton>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

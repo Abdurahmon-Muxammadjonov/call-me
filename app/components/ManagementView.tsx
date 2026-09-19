@@ -9,6 +9,7 @@ import {
   Skeleton,
   PillButton,
   accentGrad,
+  accentSoft,
   accentText,
   accentGlow,
   scoreColor,
@@ -121,11 +122,9 @@ export function ManagementView() {
 
   return (
     <div key={platformId ?? "init"} className="animate-slide-up space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <SectionTitle
-          title="Boshqaruv paneli"
-          subtitle="Uch darajali rahbariyat ko'rinishi — jonli ko'rsatkichlar"
-        />
+      {/* Sahifa sarlavhasi AppShell header'ida — bu yerda faqat platforma
+          almashtirgich (takroriy sarlavha yo'q, Analitika bilan bir xil). */}
+      <div className="flex flex-wrap items-center justify-end gap-4">
         {platform && (
           <PlatformSwitcher
             platforms={platforms}
@@ -524,11 +523,11 @@ function GeneralPanel({ metrics }: { metrics: HealthMetric[] }) {
         return (
           <div
             key={m.key}
-            className={`rounded-2xl border border-slate-200/60 bg-white/50 p-5 transition-all duration-300 dark:border-slate-800/60 dark:bg-slate-900/30 ${accentGlow[m.accent]}`}
+            className={`rounded-2xl border border-slate-200/60 bg-white/60 p-5 transition-all duration-300 dark:border-white/[0.06] dark:bg-white/[0.03] ${accentGlow[m.accent]}`}
           >
             <div className="flex items-start justify-between">
               <span
-                className={`grid h-11 w-11 place-items-center rounded-xl bg-linear-to-br text-white shadow-md ${accentGrad[m.accent]}`}
+                className={`grid h-11 w-11 place-items-center rounded-xl ${accentSoft[m.accent]}`}
               >
                 <Icon className="h-5 w-5" />
               </span>
@@ -568,7 +567,7 @@ function StrategicPanel({ trends }: { trends: StrategicTrend[] }) {
         return (
           <div
             key={t.label}
-            className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/50 p-6 dark:border-slate-800/60 dark:bg-slate-900/30"
+            className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/60 p-6 dark:border-white/[0.06] dark:bg-white/[0.03]"
           >
             <div
               className={`pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-linear-to-br opacity-10 blur-2xl ${accentGrad[t.accent]}`}
@@ -675,7 +674,7 @@ function RopPanel({ sellers, accent }: { sellers: SellerKPI[]; accent: Accent })
         {sellers.map((s) => (
           <div
             key={s.id}
-            className="rounded-2xl border border-slate-200/60 bg-white/50 p-4 dark:border-slate-800/60 dark:bg-slate-900/30"
+            className="rounded-2xl border border-slate-200/60 bg-white/60 p-4 dark:border-white/[0.06] dark:bg-white/[0.03]"
           >
             <div className="flex items-center justify-between">
               <SellerIdentity seller={s} />
@@ -714,9 +713,9 @@ function SummaryStat({
 }) {
   const Icon = Icons[icon];
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-200/60 bg-white/50 p-3.5 dark:border-slate-800/60 dark:bg-slate-900/30">
+    <div className="flex items-center gap-3 rounded-2xl border border-slate-200/60 bg-white/60 p-3.5 dark:border-white/[0.06] dark:bg-white/[0.03]">
       <span
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-linear-to-br text-white shadow-sm ${accentGrad[accent]}`}
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${accentSoft[accent]}`}
       >
         <Icon className="h-4.5 w-4.5" />
       </span>

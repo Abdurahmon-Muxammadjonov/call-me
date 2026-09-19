@@ -119,6 +119,24 @@ export function useSession(): Session | null {
   return useSyncExternalStore(subscribeSession, getSessionSnapshot, getServerSessionSnapshot);
 }
 
+/* ---------- Hydration guard ----------
+ * useSession()'s server snapshot is `null`, and the passive effects of the
+ * hydration commit still observe that value before the client snapshot is
+ * swapped in. A page that redirects on `session === null` inside an effect
+ * therefore bounces every direct load / reload of a deep URL
+ * (/dashboard/management, /cabinet/calls, /settings/…) through /login and
+ * back to the root tab. Gate those redirects on this: it is `false` for the
+ * server render and the hydration pass, `true` once the client is actually
+ * in charge. */
+const noop = () => () => {};
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    noop,
+    () => true,
+    () => false
+  );
+}
+
 /* Verifies credentials against the backend and returns a Session, or `null` when
  * the backend rejects the email/password (HTTP 401/400). NETWORK/server errors
  * are NOT swallowed — they propagate so the caller can show a distinct
