@@ -9,9 +9,9 @@ const INTL_LOCALE: Record<string, string> = { uz: "uz-UZ", ru: "ru-RU", en: "en-
 
 // TODO: haqiqiy statistika bilan almashtirilsin (hozircha placeholder son).
 const STATS: { target: number; suffix: string; labelKey: DictKey }[] = [
-  { target: 2_000, suffix: "+", labelKey: "landing.stats.callsLabel" },
+  { target: 80_000, suffix: "+", labelKey: "landing.stats.callsLabel" },
   { target: 98, suffix: "%", labelKey: "landing.stats.accuracyLabel" },
-  { target: 10, suffix: "+", labelKey: "landing.stats.teamsLabel" },
+  { target: 40, suffix: "+", labelKey: "landing.stats.teamsLabel" },
 ];
 
 const COUNT_UP_MS = 1400;
