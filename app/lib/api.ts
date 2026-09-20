@@ -35,6 +35,25 @@ export function authHeaders(token?: string | null): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/* localStorage sessiyasidan token'ni AVTOMATIK olib Authorization header
+ * qaytaradi — argumentsiz. Backend'da /api/calls, /managers, /analytics/*,
+ * /api/management/*, /criteria, /crm/* endpoint'lariga requireAuth qo'shilgach
+ * (2026-09-20, kompaniyalararo ma'lumot oqishini yopish), to'g'ridan-to'g'ri
+ * fetch(apiUrl(...)) qiladigan har bir joy shu header'ni yuborishi SHART,
+ * aks holda 401 -> "Backend bilan aloqa yo'q". SSR'da window yo'q -> {}. */
+export function authHeadersAuto(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem("procell-session");
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as { session?: { token?: string } };
+    const token = parsed?.session?.token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 export interface ApiErrorDetails {
   status: number;
   statusText: string;

@@ -19,7 +19,7 @@
  * ===================================================================== */
 
 import { useEffect, useRef, useState } from "react";
-import { apiUrl } from "./api";
+import { apiUrl, authHeadersAuto } from "./api";
 
 /* ---------- Generic polling seam ----------
  * Calls `fetcher` immediately, then every `intervalMs`. Returns an unsubscribe.
@@ -62,7 +62,7 @@ function subscribe<T>(
 }
 
 async function getJson<T>(path: string, signal: AbortSignal): Promise<T | null> {
-  const res = await fetch(apiUrl(path), { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl(path), { headers: { Accept: "application/json", ...authHeadersAuto() }, signal });
   if (res.status === 404) return null; // endpoint/row not present yet → graceful
   const json = (await res.json()) as { success?: boolean; data?: T };
   if (!res.ok || json?.success === false) return null;
@@ -203,7 +203,7 @@ export function useNotifications(userId: string | undefined): NotificationsState
     if (!userId) return;
     void fetch(apiUrl("/manager-notifications/read"), {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "application/json", ...authHeadersAuto() },
       body: JSON.stringify({ user_id: userId }),
     }).catch(() => {});
   }

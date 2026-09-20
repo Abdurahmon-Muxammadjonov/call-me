@@ -99,6 +99,31 @@ async function parseErrorBody(res: Response): Promise<string> {
   }
 }
 
+// MULTI-TENANT AUTH (2026-09-20): backend'da /api/calls, /managers,
+// /analytics/*, /api/management/*, /criteria, /crm/* endpoint'lariga
+// requireAuth qo'shildi (kompaniyalararo ma'lumot oqishini yopish uchun).
+// Shu sabab apiClient endi HAR so'rovga session JWT'ni Authorization
+// sifatida qo'shishi SHART — aks holda 401 qaytadi va "Backend bilan
+// aloqa yo'q" ko'rinadi. Token localStorage'dagi sessiyada (auth.ts's
+// SESSION_KEY = "procell-session") saqlanadi; circular importni oldini
+// olish uchun to'g'ridan-to'g'ri o'qiymiz. SSR'da window yo'q -> null.
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem('procell-session');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { session?: { token?: string } };
+    return parsed?.session?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function authHeader(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export const apiClient = {
   async get<T>(endpoint: string, options?: RetryableOptions): Promise<T> {
     const res = await fetchWithTimeoutAndRetry(apiUrl(endpoint), {
@@ -106,6 +131,7 @@ export const apiClient = {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
+        ...authHeader(),
         ...options?.headers,
       },
       ...options,
@@ -128,6 +154,7 @@ export const apiClient = {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
+        ...authHeader(),
         ...options?.headers,
       },
       body: body ? JSON.stringify(body) : undefined,

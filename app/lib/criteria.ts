@@ -12,7 +12,7 @@
  * qo'shilgan har bir yangi qoida keyingi qo'ng'iroq tahlilida darhol amal
  * qiladi. Javob { success, data } konvertida. */
 
-import { apiUrl } from "./api";
+import { apiUrl, authHeadersAuto } from "./api";
 
 /* Mezon turi — baholashga qanday ta'sir qiladi. */
 export type CriterionType = "Majburiy" | "Jarima" | "Bonus";
@@ -73,7 +73,7 @@ async function parse<T>(res: Response): Promise<T> {
 
 /* GET /criteria — barcha qoidalar, backenddan jonli. */
 export async function listCriteria(signal?: AbortSignal): Promise<Criterion[]> {
-  const res = await fetch(apiUrl("/criteria"), { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl("/criteria"), { headers: { Accept: "application/json", ...authHeadersAuto() }, signal });
   return parse<Criterion[]>(res);
 }
 
@@ -82,7 +82,7 @@ export async function listCriteria(signal?: AbortSignal): Promise<Criterion[]> {
 export async function addCriterion(input: NewCriterion): Promise<Criterion> {
   const res = await fetch(apiUrl("/criteria"), {
     method: "POST",
-    headers: JSON_HEADERS,
+    headers: { ...JSON_HEADERS, ...authHeadersAuto() },
     body: JSON.stringify({
       title: input.title.trim(),
       description: input.description.trim(),
@@ -107,7 +107,7 @@ export async function updateCriterion(
 ): Promise<Criterion> {
   const res = await fetch(apiUrl(`/criteria/${id}`), {
     method: "PUT",
-    headers: JSON_HEADERS,
+    headers: { ...JSON_HEADERS, ...authHeadersAuto() },
     body: JSON.stringify(patch),
   });
   return parse<Criterion>(res);
@@ -117,7 +117,7 @@ export async function updateCriterion(
 export async function deleteCriterion(id: string): Promise<void> {
   const res = await fetch(apiUrl(`/criteria/${id}`), {
     method: "DELETE",
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", ...authHeadersAuto() },
   });
   await parse<unknown>(res);
 }
