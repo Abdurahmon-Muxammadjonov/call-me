@@ -42,7 +42,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: "overview", label: "Analitika", hint: "Jamoa samaradorligi va kunlik hisobot", icon: "grid", grad: "from-indigo-500 to-violet-500" },
       { id: "management", label: "Boshqaruv paneli", hint: "Rahbariyat ko'rinishi", icon: "trendingUp", grad: "from-violet-500 to-fuchsia-500", sectionKey: "reports" },
       { id: "comparison", label: "Solishtirish paneli", hint: "Kunlik/haftalik/oylik", icon: "trendingUp", grad: "from-amber-500 to-orange-500", sectionKey: "reports" },
-      { id: "staff", label: "Xodimlarni boshqarish", hint: "Barcha xodimlar", icon: "users", grad: "from-rose-500 to-pink-500", sectionKey: "staff" },
+      { id: "staff", label: "Xodimlarni boshqarish", hint: "Barcha xodimlar", icon: "users", grad: "from-rose-500 to-pink-500", sectionKey: "managers" },
       { id: "recordings", label: "Audio yozuvlar", hint: "Transkripsiya jurnali", icon: "waveform", grad: "from-cyan-500 to-sky-500", sectionKey: "call_analytics" },
       { id: "upload", label: "Audio yuklash", hint: "Yangi qo'ng'iroqlar", icon: "upload", grad: "from-emerald-500 to-teal-500", sectionKey: "call_analytics" },
       { id: "deep-audit", label: "Chuqur tahlil", hint: "Advanced Deep Audit", icon: "scan", grad: "from-fuchsia-500 to-pink-500", sectionKey: "call_analytics" },
@@ -51,8 +51,8 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "SOZLAMALAR",
     items: [
-      { id: "operators", label: "Operatorlar", hint: "Jamoa boshqaruvi", icon: "users", grad: "from-amber-500 to-orange-500", sectionKey: "operators" },
-      { id: "categories", label: "Mezon kategoriyalari", hint: "Guruhlash", icon: "layers", grad: "from-rose-500 to-red-500", sectionKey: "categories" },
+      { id: "operators", label: "Operatorlar", hint: "Jamoa boshqaruvi", icon: "users", grad: "from-amber-500 to-orange-500", sectionKey: "managers" },
+      { id: "categories", label: "Mezon kategoriyalari", hint: "Guruhlash", icon: "layers", grad: "from-rose-500 to-red-500", sectionKey: "criteria_categories" },
       { id: "criteria", label: "Baholash mezonlari", hint: "Ballash qoidalari", icon: "ruler", grad: "from-sky-500 to-blue-500", sectionKey: "criteria" },
       { id: "amocrm", label: "amoCRM ulanishi", hint: "Integratsiya", icon: "plug", grad: "from-teal-500 to-emerald-500" },
     ],
