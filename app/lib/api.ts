@@ -338,6 +338,43 @@ export async function fetchPopStats(platformId?: string | null, signal?: AbortSi
   }
 }
 
+/* ---------- Kunlik gaplashuv daqiqalari ---------- */
+export interface DailyMinutesOperator {
+  name: string;
+  calls: number;
+  minutes: number;
+}
+export interface DailyMinutesDay {
+  date: string;
+  calls: number;
+  seconds: number;
+  minutes: number;
+  operators: DailyMinutesOperator[];
+}
+export interface DailyMinutesResult {
+  days: DailyMinutesDay[];
+  summary: { days: number; calls: number; minutes: number };
+}
+
+/* GET /analytics/daily-minutes — har kunda jami necha daqiqa gaplashilgani.
+ * HAMMA audio hisobga olinadi (3 soniyalik ham, 40 daqiqalik ham), tahlil
+ * qilinganidan qat'i nazar. Kun chegarasi Toshkent vaqti bo'yicha. */
+export async function fetchDailyMinutes(days = 30, signal?: AbortSignal): Promise<DailyMinutesResult> {
+  const res = await fetch(apiUrl(`/analytics/daily-minutes?days=${days}`), {
+    method: "GET",
+    headers: { Accept: "application/json", ...authHeadersAuto() },
+    signal,
+  });
+  if (!res.ok) throw new Error(`daily-minutes ${res.status}`);
+  const json = (await res.json()) as {
+    success: boolean;
+    data: DailyMinutesDay[];
+    summary: DailyMinutesResult["summary"];
+  };
+  if (!json.success) throw new Error("daily-minutes: success=false");
+  return { days: json.data, summary: json.summary };
+}
+
 /* ---------- Kunlik tarix (hamma kunlar saqlanadi) ---------- */
 export interface ConversionDay {
   date: string;
