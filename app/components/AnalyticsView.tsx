@@ -639,7 +639,7 @@ function EmployeeCard({ emp }: { emp: EmployeeAnalytics }) {
           <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-100">{emp.name}</p>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
             <span className={`text-xs font-medium ${accentText[emp.accent]}`}>
-              Samaradorlik: {emp.efficiency != null ? `${emp.efficiency}%` : "—"}
+              Umumiy ball: {emp.efficiency != null ? `${(emp.efficiency / 10).toFixed(1)} / 10` : "—"}
             </span>
             {emp.belowNorm && (
               <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">

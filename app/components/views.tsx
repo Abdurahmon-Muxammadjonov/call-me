@@ -44,6 +44,7 @@ import {
   ConfirmModal,
   Logo,
   scoreColor,
+  score10,
   scoreAccent,
   accentText,
   accentGrad,
@@ -277,7 +278,7 @@ export function RecordingsView() {
                     <td className="px-6 py-4 font-mono text-slate-500 dark:text-slate-400">{formatSeconds(c.duration)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className={`w-8 font-bold ${scoreColor(c.kpi_score)}`}>{Math.round(c.kpi_score)}</span>
+                        <span className={`w-10 font-bold ${scoreColor(c.kpi_score)}`}>{score10(c.kpi_score)}</span>
                         <div className="w-20"><ScoreBar score={c.kpi_score} /></div>
                       </div>
                     </td>
@@ -369,7 +370,7 @@ function CallDetailModal({ id, managerName, onClose }: { id: string; managerName
             {/* Chap: ko'rsatkichlar */}
             <div className="space-y-5 border-slate-200/60 p-6 dark:border-slate-700/50 md:border-r">
               <div className="grid grid-cols-3 gap-3">
-                <StatBox label="KPI" value={String(Math.round(detail.kpi_score))} cls={scoreColor(detail.kpi_score)} />
+                <StatBox label="KPI (10 ballik)" value={score10(detail.kpi_score)} cls={scoreColor(detail.kpi_score)} />
                 <StatBox label="Davomiylik" value={formatSeconds(realDur ?? detail.duration)} />
                 <StatBox label="Jarima" value={detail.penalty_amount ? formatUZS(detail.penalty_amount) : "0"} cls="text-rose-500" />
               </div>
@@ -799,7 +800,7 @@ function AnalyzeResultCard({ result }: { result: AnalyzeResult }) {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <StatBox label="KPI baho" value={String(Math.round(a.kpi_score))} cls={scoreColor(a.kpi_score)} />
+        <StatBox label="KPI baho (10 ballik)" value={score10(a.kpi_score)} cls={scoreColor(a.kpi_score)} />
         <StatBox label="Jarima" value={a.penalty_amount ? formatUZS(a.penalty_amount) : "0"} cls="text-rose-500" />
         <StatBox label="Bonus" value={a.bonus_amount ? formatUZS(a.bonus_amount) : "0"} cls="text-emerald-500" />
       </div>
@@ -902,7 +903,7 @@ export function DeepAuditView() {
             {visibleCalls.length === 0 && <option value="">Qo&apos;ng&apos;iroqlar yo&apos;q</option>}
             {visibleCalls.map((c) => (
               <option key={c.id} value={c.id}>
-                {nameOf(c.manager_id)} · {formatDateTime(c.created_at)} · KPI {Math.round(c.kpi_score)}
+                {nameOf(c.manager_id)} · {formatDateTime(c.created_at)} · KPI {score10(c.kpi_score)}
               </option>
             ))}
           </select>
@@ -1157,8 +1158,8 @@ function RingGauge({ value }: { value: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-4xl font-bold ${scoreColor(value)}`}>{value}</span>
-        <span className="text-xs text-slate-400">/ 100</span>
+        <span className={`text-4xl font-bold ${scoreColor(value)}`}>{score10(value)}</span>
+        <span className="text-xs text-slate-400">/ 10</span>
       </div>
     </div>
   );

@@ -215,6 +215,16 @@ export function scoreAccent(score: number): Accent {
   return "indigo";
 }
 
+// Ball 10 BALLIK tizimda ko'rsatiladi (foydalanuvchi talabi 2026-09-23).
+// Baza va hisob-kitoblar ichida ball 0-100 bo'lib qoladi (analitika,
+// ranglar, normalar shunga moslangan) — faqat EKRANDA 10 ballik
+// ko'rinishga o'giriladi: 65 -> "6.5".
+export function score10(score: number | null | undefined): string {
+  const n = Number(score);
+  if (!Number.isFinite(n)) return "—";
+  return (n / 10).toFixed(1);
+}
+
 export function scoreColor(score: number): string {
   if (score >= 85) return "text-emerald-500 dark:text-emerald-400";
   if (score >= 70) return "text-cyan-500 dark:text-cyan-400";

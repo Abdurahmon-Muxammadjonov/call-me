@@ -518,7 +518,14 @@ export async function computeAnalyticsData(
     const empCalls = curCalls.filter((c) => c.manager_id === m.id);
     const callCount = empCalls.length;
     const qualifiedCalls = empCalls.filter((c) => (Number(c.duration) || 0) >= norms.qualifiedCallSeconds).length;
-    const efficiency = callCount ? Math.round(empCalls.reduce((s, c) => s + (Number(c.kpi_score) || 0), 0) / callCount) : null;
+    /* Umumiy ball FAQAT haqiqiy suhbat bo'lgan qo'ng'iroqlardan hisoblanadi
+     * (foydalanuvchi tanlovi 2026-09-23). Javobsiz/bo'sh qo'ng'iroqda KPI
+     * qo'yilmaydi (0 bo'lib qoladi) — ularni o'rtachaga qo'shsak, ko'p
+     * javobsiz qo'ng'iroq kelgan operatorning balli nohaq tushib ketardi. */
+    const scoredCalls = empCalls.filter((c) => (Number(c.kpi_score) || 0) > 0);
+    const efficiency = scoredCalls.length
+      ? Math.round(scoredCalls.reduce((s, c) => s + (Number(c.kpi_score) || 0), 0) / scoredCalls.length)
+      : null;
 
     const sumOpt = (sel: (c: CallRow) => number | null | undefined): number | null => {
       const withData = empCalls.filter((c) => sel(c) != null);
