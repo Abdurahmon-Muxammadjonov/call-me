@@ -86,7 +86,7 @@ export function AnalyticsView() {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    fetchAnalyticsRaw(ctrl.signal)
+    fetchAnalyticsRaw(ctrl.signal, reloadKey > 0)
       .then((r) => {
         setRaw(r);
         setRawStatus("online");

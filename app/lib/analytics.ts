@@ -375,14 +375,50 @@ export interface AnalyticsRaw {
   analytics: CallAnalytics | null;
 }
 
-export async function fetchAnalyticsRaw(signal?: AbortSignal): Promise<AnalyticsRaw> {
+/* Qisqa muddatli kesh (2026-09-23 optimallash): analitika/section'lar
+ * o'rtasida o'tganda AppShell komponentni qayta MOUNT qiladi (har tab boshqa
+ * komponent), shu sabab fetchAnalyticsRaw har safar qaytadan chaqirilar va
+ * har chaqiruv ~1.5-2s (backend + 4 parallel so'rov) — natijada "qotib
+ * qolgandek" tuyulardi. Endi natija sessiya (kompaniya) bo'yicha qisqa
+ * vaqt keshlanadi: tez ketma-ket qayta-o'tishlar DARHOL keshdan chiqadi,
+ * fon'da yangilanadi. forceReload=true (foydalanuvchi "yangilash"ni bossa)
+ * keshni chetlab o'tadi. limit 2000 -> 800: analitika oynasi (kunlik/
+ * haftalik/oylik, oxirgi ~2 oy) uchun yetarli, lekin payload va client-side
+ * hisob 2.5x yengil (ko'p qo'ng'iroqli kompaniyada sezilarli). */
+interface RawCacheEntry { key: string; at: number; data: AnalyticsRaw }
+let _rawCache: RawCacheEntry | null = null;
+const RAW_CACHE_TTL_MS = 30_000;
+
+function sessionCompanyKey(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const raw = window.localStorage.getItem("procell-session");
+    if (!raw) return "";
+    const p = JSON.parse(raw) as { session?: { token?: string; email?: string } };
+    return p?.session?.token || p?.session?.email || "";
+  } catch {
+    return "";
+  }
+}
+
+export function invalidateAnalyticsRawCache(): void {
+  _rawCache = null;
+}
+
+export async function fetchAnalyticsRaw(signal?: AbortSignal, forceReload = false): Promise<AnalyticsRaw> {
+  const key = sessionCompanyKey();
+  if (!forceReload && _rawCache && _rawCache.key === key && Date.now() - _rawCache.at < RAW_CACHE_TTL_MS) {
+    return _rawCache.data;
+  }
   const [calls, managers, pop, analytics] = await Promise.all([
-    listCalls({ limit: 2000 }, signal),
+    listCalls({ limit: 800 }, signal),
     listManagers(signal).catch(() => [] as Manager[]),
     fetchPopStats(null, signal).catch(() => null),
     fetchCallAnalytics(signal).catch(() => null),
   ]);
-  return { calls, managers, pop, analytics };
+  const data = { calls, managers, pop, analytics };
+  _rawCache = { key, at: Date.now(), data };
+  return data;
 }
 
 export async function computeAnalyticsData(
