@@ -200,7 +200,7 @@ export async function fetchBackendHealthWithFallback(signal?: AbortSignal): Prom
       const fullUrl = `${getApiBaseOrThrow()}${endpoint}`;
       const res = await fetch(fullUrl, {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers: { Accept: "application/json", ...authHeadersAuto() },
         signal,
       });
 
@@ -249,7 +249,7 @@ export async function fetchCallAnalytics(signal?: AbortSignal, platformId?: stri
   try {
     const res = await fetch(apiUrl(path), {
       method: "GET",
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...authHeadersAuto() },
       signal,
     });
 
@@ -311,7 +311,7 @@ export async function fetchPopStats(platformId?: string | null, signal?: AbortSi
   try {
     const res = await fetch(apiUrl(path), {
       method: "GET",
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...authHeadersAuto() },
       signal,
     });
 
@@ -357,7 +357,7 @@ export async function fetchConversionHistory(
   if (platformId && platformId !== "live") params.set("platform_id", platformId);
   const res = await fetch(apiUrl(`/api/management/conversion-history?${params.toString()}`), {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", ...authHeadersAuto() },
     signal,
   });
   if (!res.ok) throw new Error(`conversion-history ${res.status}`);

@@ -147,25 +147,32 @@ export function RecordingsView() {
   const [mgrFilter, setMgrFilter] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
 
+  // Real-time (2026-09-23): birinchi yuklashdan keyin har 15 soniyada fon
+  // rejimida qayta yuklaymiz — yangi qo'ng'iroqlar sahifani REFRESH qilmasdan
+  // avtomatik ko'rinadi (foydalanuvchi Cmd+R bosishi shart emas). Faqat
+  // birinchi yuklashda loading/xato ko'rsatiladi; fon yangilanishlari sokin.
   useEffect(() => {
+    let active = true;
     const ctrl = new AbortController();
-    (async () => {
+    const load = async (initial: boolean) => {
       try {
         const [rows, mgrs] = await Promise.all([
           listCalls({ limit: 100 }, ctrl.signal),
           listManagers(ctrl.signal).catch(() => [] as Manager[]),
         ]);
+        if (!active) return;
         setCalls(rows);
         setManagers(Object.fromEntries(mgrs.map((m) => [m.id, m.name])));
         setError(null);
       } catch (e) {
-        if ((e as Error)?.name !== "AbortError")
-          setError(BACKEND_UNREACHABLE_MESSAGE);
+        if (initial && (e as Error)?.name !== "AbortError") setError(BACKEND_UNREACHABLE_MESSAGE);
       } finally {
-        setLoading(false);
+        if (initial) setLoading(false);
       }
-    })();
-    return () => ctrl.abort();
+    };
+    load(true);
+    const timer = setInterval(() => load(false), 15000);
+    return () => { active = false; ctrl.abort(); clearInterval(timer); };
   }, []);
 
   const nameOf = (id: string | null | undefined) => (id && managers[id]) || (id ? `${id.slice(0, 8)}…` : "—");
