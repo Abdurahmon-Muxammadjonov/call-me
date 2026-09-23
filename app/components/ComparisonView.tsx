@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLiveRefresh } from "../lib/useLiveRefresh";
 import { Card, SectionTitle, Skeleton } from "./ui";
 import {
   fetchPopStats,
@@ -150,6 +151,9 @@ export function ComparisonView() {
   const [error, setError] = useState<AnalyticsError | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  // Avtomatik yangilanish: realtime ishlamasa ham panel eskirmaydi
+  // (qarang: lib/useLiveRefresh.ts).
+  useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 30000); 
 
   const handleRetry = () => {
     setReloadKey((k) => k + 1);

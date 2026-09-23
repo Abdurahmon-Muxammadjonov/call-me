@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useLiveRefresh } from "../lib/useLiveRefresh";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icons } from "./Icons";
 import { SectionTitle, PillButton, Skeleton, ConfirmModal, accentForId, accentGrad, initialsOf } from "./ui";
@@ -131,6 +132,9 @@ export function StaffManager() {
   // Bumped after a save/delete to re-pull the list (setState only in the
   // effect's async callback — project convention).
   const [reloadKey, setReloadKey] = useState(0);
+  // Avtomatik yangilanish: realtime ishlamasa ham panel eskirmaydi
+  // (qarang: lib/useLiveRefresh.ts).
+  useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 30000); 
 
   useEffect(() => {
     const ctrl = new AbortController();

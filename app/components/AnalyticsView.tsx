@@ -8,7 +8,8 @@
  * bu sahifa ham to'g'ridan-to'g'ri o'zbekcha matn ishlatadi (i18n lug'atisiz)
  * — faqat global nav yorlig'i/sarlavha (AppShell chrome) lug'atda qoladi. */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLiveRefresh } from "../lib/useLiveRefresh";
 import { Icons } from "./Icons";
 import { Card, SectionTitle, Sparkline, Skeleton, PillButton, accentGrad, accentText } from "./ui";
 import {
@@ -57,6 +58,9 @@ export function AnalyticsView() {
   const session = useSession();
   const [period, setPeriod] = useState<Period>("day");
   const [reloadKey, setReloadKey] = useState(0);
+  // Avtomatik yangilanish: realtime ishlamasa ham panel eskirmaydi
+  // (qarang: lib/useLiveRefresh.ts).
+  useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 20000); 
 
   // Kompaniyaning o'zi sozlagan KPI normalari (GET /company/settings) —
   // backend hali bermasa/bo'lmasa DEFAULT_COMPANY_SETTINGS bilan boshlanadi

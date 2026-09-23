@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLiveRefresh } from "../lib/useLiveRefresh";
 import { Icons } from "./Icons";
 import {
   Card,
@@ -83,6 +84,9 @@ export function ManagementView() {
   const [syncSummary] = useState<CrmSyncSummary | null>(initialSyncSummary);
   // Bumped to force a re-fetch on manual retry.
   const [reloadKey, setReloadKey] = useState(0);
+  // Avtomatik yangilanish: realtime ishlamasa ham panel eskirmaydi
+  // (qarang: lib/useLiveRefresh.ts).
+  useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 20000); 
 
   // Platformalar ro'yxati (backend bergach ko'p platforma; hozir bitta jonli).
   useEffect(() => {
