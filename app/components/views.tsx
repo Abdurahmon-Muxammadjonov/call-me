@@ -55,6 +55,80 @@ import { Portal } from "./Portal";
 import { showToast } from "../lib/toast";
 
 /* Small reusable empty-state line. */
+// Suhbat dialogi — sales-ai-front diarizatsiyasidan (transcript_segments)
+// sotuvchi va mijozni ALOHIDA, chat pufakchalari ko'rinishida chiqaradi.
+// Diarizatsiya faqat SPEAKER_00/SPEAKER_01 beradi (kim aynan sotuvchi ekanini
+// bilmaydi), shu sabab: birinchi so'zlagan tomon "Sotuvchi" (o'ng, ko'k),
+// ikkinchisi "Mijoz" (chap, kulrang) deb belgilanadi — aksariyat chiquvchi
+// qo'ng'iroqda operator boshlaydi. Segmentlar bo'lmasa, oddiy matn (fallback).
+function CallDialog({
+  segments,
+  fallbackText,
+}: {
+  segments?: Array<{ speaker?: string; text?: string; start?: number; end?: number; vaqt?: string }> | null;
+  fallbackText?: string | null;
+}) {
+  const rows = Array.isArray(segments) ? segments.filter((s) => (s?.text || "").trim()) : [];
+
+  if (rows.length === 0) {
+    if (fallbackText && fallbackText.trim()) {
+      return (
+        <p className="max-h-112 overflow-y-auto whitespace-pre-line rounded-xl border border-slate-200/60 bg-slate-50/60 p-4 text-sm leading-relaxed text-slate-600 dark:border-slate-700/50 dark:bg-slate-800/30 dark:text-slate-300">
+          {fallbackText}
+        </p>
+      );
+    }
+    return (
+      <p className="rounded-xl border border-dashed border-slate-300/60 bg-slate-500/5 px-4 py-3 text-xs text-slate-500 dark:border-slate-600/60 dark:text-slate-400">
+        Bu qo&apos;ng&apos;iroq uchun suhbat matni yo&apos;q (javobsiz yoki hali tahlil qilinmagan).
+      </p>
+    );
+  }
+
+  // Birinchi uchragan speaker -> Sotuvchi, keyingisi -> Mijoz.
+  const order: string[] = [];
+  for (const r of rows) {
+    const sp = r.speaker || "?";
+    if (!order.includes(sp)) order.push(sp);
+  }
+  const roleOf = (sp?: string) => (sp && order[0] === sp ? "seller" : "client");
+  const fmtTime = (r: { vaqt?: string; start?: number }) => {
+    if (r.vaqt) return r.vaqt;
+    if (typeof r.start === "number") {
+      const m = Math.floor(r.start / 60);
+      const sec = Math.floor(r.start % 60);
+      return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    }
+    return "";
+  };
+
+  return (
+    <div className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+      {rows.map((r, i) => {
+        const role = roleOf(r.speaker);
+        const isSeller = role === "seller";
+        return (
+          <div key={i} className={`flex ${isSeller ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+              isSeller
+                ? "rounded-br-md bg-indigo-500/10 text-slate-700 dark:bg-indigo-400/15 dark:text-slate-100"
+                : "rounded-bl-md bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+            }`}>
+              <div className="mb-1 flex items-center gap-2">
+                <span className={`text-xs font-semibold ${isSeller ? "text-indigo-600 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
+                  {isSeller ? "Sotuvchi" : "Mijoz"}
+                </span>
+                {fmtTime(r) && <span className="text-[10px] text-slate-400">{fmtTime(r)}</span>}
+              </div>
+              <div className="whitespace-pre-line">{r.text}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function Empty({ text }: { text: string }) {
   return (
     <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">{text}</div>
@@ -993,19 +1067,10 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
           )}
         </Card>
 
-        {/* Transkripsiya */}
+        {/* Transkripsiya — dialog (sotuvchi / mijoz alohida) */}
         <Card className="p-6">
-          <SectionTitle title="Transkripsiya" subtitle="AI auditor matni" />
-          {detail.transcript ? (
-            <p className="max-h-112 overflow-y-auto whitespace-pre-line rounded-xl border border-slate-200/60 bg-slate-50/60 p-4 text-sm leading-relaxed text-slate-600 dark:border-slate-700/50 dark:bg-slate-800/30 dark:text-slate-300">
-              {detail.transcript}
-            </p>
-          ) : (
-            <p className="rounded-xl border border-dashed border-slate-300/60 bg-slate-500/5 px-4 py-3 text-xs text-slate-500 dark:border-slate-600/60 dark:text-slate-400">
-              Transkripsiya bu qo&apos;ng&apos;iroq uchun saqlanmagan. Backend `calls` jadvaliga
-              `transcript` ustuni qo&apos;shilgach, bu yerda jonli ko&apos;rinadi (prompt&apos;ga qarang).
-            </p>
-          )}
+          <SectionTitle title="Suhbat matni" subtitle="Sotuvchi va mijoz alohida" />
+          <CallDialog segments={detail.transcript_segments} fallbackText={detail.transcript} />
         </Card>
       </div>
     </div>

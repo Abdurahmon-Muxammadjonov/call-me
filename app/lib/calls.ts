@@ -94,6 +94,10 @@ export interface CallDetail extends CallRow {
   conversions: Conversions | null;
   lost_reasons: LostReason[];
   transcript?: string | null;
+  /* sales-ai-front (Whisper) diarizatsiyasi — kim gapirgani ajratilgan
+   * segmentlar: [{speaker, text, start, end, vaqt}]. Dashboardda dialog
+   * (sotuvchi/mijoz alohida) ko'rinishida ishlatiladi. */
+  transcript_segments?: Array<{ speaker?: string; text?: string; start?: number; end?: number; vaqt?: string }> | null;
   sentiment?: string | null;
   risk?: string | null;
   criteria_scores?: CriterionScore[];
