@@ -171,7 +171,7 @@ function DailyMinutesCard({ result }: { result: DailyMinutesResult }) {
     <Card className="p-6">
       <SectionTitle
         title="Kunlik gaplashuv (daqiqa)"
-        subtitle={`Har kunda jami necha daqiqa gaplashilgan · ${result.summary.days} kun · ${result.summary.calls} qo'ng'iroq · jami ${fmtMinutes(result.summary.minutes)}`}
+        subtitle={`Faqat operator qo'ng'iroqlari · ${result.summary.days} kun · ${result.summary.calls} qo'ng'iroq · jami ${fmtMinutes(result.summary.minutes)}`}
       />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
