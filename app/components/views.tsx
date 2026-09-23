@@ -415,9 +415,11 @@ function CallDetailModal({ id, managerName, onClose }: { id: string; managerName
                 <span className="grid h-8 w-8 place-items-center rounded-lg bg-linear-to-br from-violet-500 to-fuchsia-500 text-white"><Icons.spark className="h-4 w-4" /></span>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">ROP Izohi (AI auditor)</p>
               </div>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                {detail.rop_comment || "Izoh berilmagan."}
-              </p>
+              {detail.rop_comment ? (
+                <AuditComment text={detail.rop_comment} />
+              ) : (
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">Izoh berilmagan.</p>
+              )}
 
               {/* To'liq transkripsiya shu yerda — izohning ostida
                   (foydalanuvchi talabi 2026-09-23). */}
@@ -1005,9 +1007,7 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
               <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">
                 Ball nega shunday qo&apos;yildi
               </p>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-200">
-                {detail.rop_comment}
-              </p>
+              <AuditComment text={detail.rop_comment} />
             </div>
           )}
 
@@ -1126,6 +1126,51 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
           <CallDialog segments={detail.transcript_segments} fallbackText={detail.transcript} />
         </Card>
       </div>
+    </div>
+  );
+}
+
+/* AI izohi: "XATOLAR:" bo'limidagi qatorlar (sotuvchining skript bo'yicha
+ * qo'yib yuborgan joylari) QIZIL rangda, yo'qotilgan ball bilan ko'rsatiladi.
+ * Backend har xato qatoriga "− 2.0 · Band nomi: nima qilmadi" ko'rinishini
+ * beradi (qarang: lib/evaluationScript.ts -> annotateMistakeLines). */
+function AuditComment({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => {
+        const t = line.trim();
+        if (!t) return <div key={i} className="h-2" />;
+        if (/^XATOLAR/i.test(t)) {
+          return (
+            <p key={i} className="mt-2 text-xs font-semibold uppercase tracking-wider text-rose-500 dark:text-rose-400">
+              {t}
+            </p>
+          );
+        }
+        if (t.startsWith("−") || t.startsWith("-")) {
+          const m = t.match(/^[−-]\s*([\d.]+)\s*·\s*(.+)$/);
+          return (
+            <p key={i} className="flex items-start gap-2 text-sm leading-relaxed text-rose-600 dark:text-rose-400">
+              {m ? (
+                <>
+                  <span className="mt-0.5 shrink-0 rounded-md bg-rose-500/10 px-1.5 py-0.5 text-xs font-bold tabular-nums">
+                    −{m[1]}
+                  </span>
+                  <span>{m[2]}</span>
+                </>
+              ) : (
+                <span>{t}</span>
+              )}
+            </p>
+          );
+        }
+        return (
+          <p key={i} className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+            {t}
+          </p>
+        );
+      })}
     </div>
   );
 }
