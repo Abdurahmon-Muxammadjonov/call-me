@@ -256,7 +256,7 @@ function AnalyticsBody({ data }: { data: AnalyticsData }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <TopStatCard label="Jami qo'ng'iroqlar" stat={data.totalCalls} color="blue" icon="phone" />
         <TopStatCard label="Yangi lidlar (Yangi Lid)" stat={data.newLeads} color="teal" icon="spark" />
-        <TopStatCard label="Avtosalonga yuborildi" stat={data.sentToDealer} color="purple" icon="building" />
+        <TopStatCard label="O'quv markazga taklif qilindi" stat={data.sentToDealer} color="purple" icon="building" />
         <TopStatCard
           label="Konversiya (Lid→Bitim)"
           stat={data.conversion}
@@ -276,7 +276,7 @@ function AnalyticsBody({ data }: { data: AnalyticsData }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SmallStatCard label="Lid ko'tarmadi" stat={data.didntAnswer} color="orange" />
         <SmallStatCard label="Sifatsiz lid" stat={data.poorLead} color="rose" />
-        <SmallBadgeCard label="Avtosalonga yuborilganlar" stat={data.sentToDealer} color="purple" icon="building" />
+        <SmallBadgeCard label="O'quv markazga taklif qilinganlar" stat={data.sentToDealer} color="purple" icon="building" />
       </div>
 
       <TeamGrid employees={data.employees} period={data.period} />

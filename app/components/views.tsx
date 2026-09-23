@@ -417,6 +417,22 @@ function CallDetailModal({ id, managerName, onClose }: { id: string; managerName
               <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                 {detail.rop_comment || "Izoh berilmagan."}
               </p>
+
+              {/* To'liq transkripsiya shu yerda — izohning ostida
+                  (foydalanuvchi talabi 2026-09-23). */}
+              {detail.transcript && (
+                <details open className="rounded-xl border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-900/30">
+                  <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    To&apos;liq transkripsiya · {detail.transcript.length.toLocaleString("uz-UZ")} belgi
+                  </summary>
+                  <div className="max-h-64 overflow-y-auto px-3 pb-3">
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                      {detail.transcript}
+                    </p>
+                  </div>
+                </details>
+              )}
+
               {detail.bonus_amount > 0 && (
                 <span className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                   <Icons.check className="h-3.5 w-3.5" /> Bonus: {formatUZS(detail.bonus_amount)}
@@ -980,6 +996,35 @@ function DeepAuditDetail({ id, nameOf }: { id: string; nameOf: (id: string) => s
           <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">
             {detail.summary || detail.rop_comment || "Izoh berilmagan."}
           </p>
+
+          {/* Ball SABABI — AI aynan nimaga qarab shu bahoni qo'yganini qisqa
+              izohlaydi (backend: operator_evaluation -> rop_comment). */}
+          {detail.rop_comment && detail.rop_comment !== detail.summary && (
+            <div className="mt-4 rounded-xl border border-violet-200/70 bg-violet-50/60 p-4 dark:border-violet-500/20 dark:bg-violet-500/5">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">
+                Ball nega shunday qo&apos;yildi
+              </p>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+                {detail.rop_comment}
+              </p>
+            </div>
+          )}
+
+          {/* To'liq transkripsiya — izohning yonida, shu yerda tursin
+              (foydalanuvchi talabi 2026-09-23). Uzun bo'lsa ichida scroll. */}
+          {detail.transcript && (
+            <details open className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-800/30">
+              <summary className="cursor-pointer select-none px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                To&apos;liq transkripsiya · {detail.transcript.length.toLocaleString("uz-UZ")} belgi
+              </summary>
+              <div className="max-h-72 overflow-y-auto px-4 pb-4">
+                <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  {detail.transcript}
+                </p>
+              </div>
+            </details>
+          )}
+
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <MiniStat label="Hissiyot" value={detail.sentiment || "—"} accent="violet" />
             <MiniStat label="Risk darajasi" value={detail.risk || "—"} accent="cyan" />
