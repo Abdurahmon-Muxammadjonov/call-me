@@ -54,6 +54,24 @@ export function authHeadersAuto(): Record<string, string> {
   }
 }
 
+/* HTTP xatosini TUSHUNARLI xabarga aylantiradi.
+ *
+ * Avval bu so'rovlar oddiy `Error("staff-stats 404")` tashlardi va ekranda
+ * chalkash xabar chiqardi — 404 (endpoint hali deploy bo'lmagan) 401
+ * (sessiya tugagan) bilan adashtirilardi. Endi sabab aniq yoziladi. */
+function httpError(name: string, status: number): Error {
+  if (status === 401 || status === 403) {
+    return new Error(`${name}: sessiya tugagan yoki ruxsat yo'q (${status}). Chiqib, qayta kiring.`);
+  }
+  if (status === 404) {
+    return new Error(`${name}: server bu funksiyani hali bilmaydi (404). Backend yangilanishi kerak.`);
+  }
+  if (status >= 500) {
+    return new Error(`${name}: server xatosi (${status}). Birozdan keyin qayta urinib ko'ring.`);
+  }
+  return new Error(`${name}: so'rov bajarilmadi (${status}).`);
+}
+
 export interface ApiErrorDetails {
   status: number;
   statusText: string;
@@ -364,7 +382,7 @@ export async function fetchAnalysisStatus(date?: string, signal?: AbortSignal): 
     headers: { Accept: "application/json", ...authHeadersAuto() },
     signal,
   });
-  if (!res.ok) throw new Error(`analysis-status ${res.status}`);
+  if (!res.ok) throw httpError("Tahlil holati", res.status);
   const json = (await res.json()) as { success: boolean; date: string; data: AnalysisStatus };
   if (!json.success) throw new Error("analysis-status: success=false");
   return { date: json.date, status: json.data };
@@ -398,7 +416,7 @@ export async function fetchDailySummary(days = 35, signal?: AbortSignal): Promis
     headers: { Accept: "application/json", ...authHeadersAuto() },
     signal,
   });
-  if (!res.ok) throw new Error(`daily-summary ${res.status}`);
+  if (!res.ok) throw httpError("Kunlik yakun", res.status);
   const json = (await res.json()) as { success: boolean; data: DailySummaryDay[] };
   if (!json.success) throw new Error("daily-summary: success=false");
   return json.data;
@@ -428,7 +446,7 @@ export async function fetchStaffStats(date?: string, signal?: AbortSignal): Prom
     headers: { Accept: "application/json", ...authHeadersAuto() },
     signal,
   });
-  if (!res.ok) throw new Error(`staff-stats ${res.status}`);
+  if (!res.ok) throw httpError("Xodimlar statistikasi", res.status);
   const json = (await res.json()) as { success: boolean; date: string; data: StaffStatRow[] };
   if (!json.success) throw new Error("staff-stats: success=false");
   return { date: json.date, rows: json.data };
@@ -461,7 +479,7 @@ export async function fetchDailyMinutes(days = 30, signal?: AbortSignal): Promis
     headers: { Accept: "application/json", ...authHeadersAuto() },
     signal,
   });
-  if (!res.ok) throw new Error(`daily-minutes ${res.status}`);
+  if (!res.ok) throw httpError("Kunlik daqiqalar", res.status);
   const json = (await res.json()) as {
     success: boolean;
     data: DailyMinutesDay[];
