@@ -396,6 +396,7 @@ export interface DailySummaryDay {
   analyzed: number;
   scored: number;
   avg_score: number; // 0-100
+  low_score: number; // ball < 5 (10 ballikda) — "diqqat talab qiladi"
   incoming: number;
   outgoing: number;
   leads: number;

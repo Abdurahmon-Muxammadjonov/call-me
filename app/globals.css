@@ -4,6 +4,81 @@
    OS preference, so the in-app toggle can flip every `dark:` utility. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ============================================================================
+ * "Audio yozuvlar" sahifasi dizayn tokenlari (2026-09-25).
+ *
+ * Tailwind v4 @theme'ga emas, oddiy CSS o'zgaruvchilari sifatida e'lon
+ * qilingan: bu ranglar FAQAT shu sahifa uchun va ikkala mavzuda aniq
+ * qiymatlar bilan berilishi kerak. Mavzu <html class="dark"> orqali
+ * almashadi, shu sabab ikkita blok.
+ * ==========================================================================*/
+:root {
+  --rec-bg: #F4F2EE;
+  --rec-sidebar: #FFFFFF;
+  --rec-card: #FFFFFF;
+  --rec-kpi: #FFFFFF;
+  --rec-border: #E7E2DA;
+  --rec-divider: #F1EDE6;
+  --rec-text: #16181D;
+  --rec-text-2: #5F6570;
+  --rec-text-3: #8A909B;
+  --rec-accent: #1D4ED8;
+  --rec-accent-text: #1D4ED8;
+  --rec-bar: #1D4ED8;
+
+  --rec-green: #0F7A4F;
+  --rec-green-bg: #E2F3EA;
+  --rec-yellow: #8A5A00;
+  --rec-yellow-bg: #FBF0D6;
+  --rec-yellow-bar: #C27803;
+  --rec-orange: #B4440E;
+  --rec-orange-bg: #FCE8DC;
+
+  --rec-view-bg: #E8EFFF;
+  --rec-view-text: #1D4ED8;
+  --rec-btn-bg: #FFFFFF;
+  --rec-btn-border: #E7E2DA;
+
+  --rec-player-bg: #F7F5F1;
+  --rec-wave-idle: #D5CFC4;
+  --rec-row-active: #EEF3FF;
+  --rec-segment-active: #E8EFFF;
+}
+
+:where(.dark) {
+  --rec-bg: #0B0D12;
+  --rec-sidebar: #0F1218;
+  --rec-card: #10141C;
+  --rec-kpi: #121620;
+  --rec-border: #1F2531;
+  --rec-divider: #181D27;
+  --rec-text: #E8ECF3;
+  --rec-text-2: #97A0B0;
+  --rec-text-3: #7F8898;
+  --rec-accent: #2563EB;
+  --rec-accent-text: #8AB6FF;
+  --rec-bar: #3B82F6;
+
+  --rec-green: #4ADE9A;
+  --rec-green-bg: rgba(74, 222, 154, 0.12);
+  --rec-yellow: #FACC15;
+  --rec-yellow-bg: rgba(250, 204, 21, 0.12);
+  --rec-yellow-bar: #FACC15;
+  --rec-orange: #FB923C;
+  --rec-orange-bg: rgba(251, 146, 60, 0.14);
+
+  --rec-view-bg: #1C2B47;
+  --rec-view-text: #D6E4FF;
+  --rec-btn-bg: #161B24;
+  --rec-btn-border: #252D3B;
+
+  --rec-player-bg: #0F1218;
+  --rec-wave-idle: #2A3140;
+  --rec-row-active: #18223A;
+  --rec-segment-active: #1E2738;
+}
+
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

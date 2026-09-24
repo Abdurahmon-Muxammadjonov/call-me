@@ -8,7 +8,6 @@ import { NAV_SECTIONS, type TabId } from "../lib/data";
 import { useT, type DictKey } from "../lib/i18n";
 import { useHasRole } from "../lib/useHasRole";
 import {
-  RecordingsView,
   UploadView,
   DeepAuditView,
   CategoriesView,
@@ -20,6 +19,7 @@ import { ManagementView } from "./ManagementView";
 import { ComparisonView } from "./ComparisonView";
 import { StaffStatsView } from "./StaffStatsView";
 import { AnalysisStatusView } from "./AnalysisStatusView";
+import { RecordingsView } from "./RecordingsView";
 import { StaffManager } from "./StaffManager";
 import { ManagersDashboard } from "./ManagersDashboard";
 import { ToastHost } from "./ToastHost";

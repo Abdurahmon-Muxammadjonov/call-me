@@ -53,6 +53,13 @@ export interface CallRow {
   rop_comment: string;
   /* Nega baholanmagani: "Javobsiz", "Kunlik limitdan oshdi" va h.k. */
   dropped_reason?: string | null;
+  /* Operatorning PBX ichki raqami (masalan "104") — xodim biriktirilmagan
+   * bo'lsa ham kim gaplashgani shundan bilinadi. */
+  operator_ext?: string | null;
+  /* PBX bergan haqiqiy yo'nalish: "incoming" | "outgoing" | "unknown". */
+  direction?: string | null;
+  /* Qo'ng'iroq holati: "done" | "processing" | "queued" | "failed". */
+  status?: string | null;
   created_at: string;
   incoming_count?: number | null;
   outgoing_count?: number | null;
