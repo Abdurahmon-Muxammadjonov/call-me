@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
+import { fetchDailySummary, type DailySummaryDay } from "../lib/api";
 import { Icons } from "./Icons";
 import { Card, SectionTitle, Sparkline, Skeleton, PillButton, accentGrad, accentText } from "./ui";
 import {
@@ -54,6 +55,60 @@ const CARD_THEME = {
 } as const;
 type CardColor = keyof typeof CARD_THEME;
 
+/* Serverdagi kunlik yakundan tanlangan davr (kun/hafta/oy) yig'indisini
+ * chiqaradi va dashboard raqamlarini shu bilan almashtiradi. Sparkline va
+ * voronka eski hisobdan qoladi — ular shakl uchun, raqam uchun emas. */
+function tashkentDayKey(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tashkent",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+function periodRange(period: Period): { from: string; to: string; prevFrom: string; prevTo: string } {
+  const now = new Date();
+  const today = tashkentDayKey(now);
+  const dayShift = (n: number) => tashkentDayKey(new Date(now.getTime() + n * 86400000));
+  if (period === "day") return { from: today, to: today, prevFrom: dayShift(-1), prevTo: dayShift(-1) };
+  if (period === "week") {
+    const dow = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7; // dushanba = 0
+    return { from: dayShift(-dow), to: today, prevFrom: dayShift(-dow - 7), prevTo: dayShift(-dow - 1) };
+  }
+  const first = `${today.slice(0, 7)}-01`;
+  const prevMonth = new Date(`${first}T12:00:00Z`);
+  prevMonth.setUTCMonth(prevMonth.getUTCMonth() - 1);
+  const prevFirst = tashkentDayKey(prevMonth).slice(0, 7) + "-01";
+  return { from: first, to: today, prevFrom: prevFirst, prevTo: tashkentDayKey(new Date(new Date(`${first}T12:00:00Z`).getTime() - 86400000)) };
+}
+
+function applyServerTotals(data: AnalyticsData, summary: DailySummaryDay[] | null, period: Period): AnalyticsData {
+  if (!summary || summary.length === 0) return data;
+  const { from, to, prevFrom, prevTo } = periodRange(period);
+  const inRange = (d: string, a: string, b: string) => d >= a && d <= b;
+  const sum = (a: string, b: string, k: keyof DailySummaryDay) =>
+    summary.filter((d) => inRange(d.date, a, b)).reduce((s, d) => s + (Number(d[k]) || 0), 0);
+
+  const stat = (k: keyof DailySummaryDay, prev: PeriodStat | null | undefined): PeriodStat => {
+    const cur = sum(from, to, k);
+    const before = sum(prevFrom, prevTo, k);
+    const changePct = before > 0 ? Math.round(((cur - before) / before) * 1000) / 10 : null;
+    return { value: cur, changePct, spark: prev?.spark ?? [] };
+  };
+
+  return {
+    ...data,
+    totalCalls: stat("calls", data.totalCalls),
+    newLeads: stat("leads", data.newLeads),
+    sentToDealer: stat("invited", data.sentToDealer),
+    didntAnswer: stat("unanswered", data.didntAnswer),
+    poorLead: stat("bad_leads", data.poorLead),
+    incoming: sum(from, to, "incoming"),
+    outgoing: sum(from, to, "outgoing"),
+  };
+}
+
 export function AnalyticsView() {
   const session = useSession();
   const [period, setPeriod] = useState<Period>("day");
@@ -86,6 +141,19 @@ export function AnalyticsView() {
   // Tanlangan davr uchun hisoblangan natija — `raw` xotirada tayyor bo'lgach
   // tarmoqqa deyarli tegmasdan (voronka namunasi asosan keshdan) hisoblanadi.
   const [data, setData] = useState<AnalyticsData | null>(null);
+
+  /* Asosiy raqamlar SERVERDAN — /api/calls ro'yxati ko'pi bilan 200 qator
+   * qaytaradi va kuniga 1000+ qo'ng'iroqda ko'rsatkichlar yangi qo'ng'iroq
+   * kelgani sari kamayib ketardi (2026-09-24). Endi kunlik yakun serverda,
+   * barcha qatorlar bo'yicha hisoblanadi va shu yerda ustiga qo'yiladi. */
+  const [summary, setSummary] = useState<DailySummaryDay[] | null>(null);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchDailySummary(35, ctrl.signal)
+      .then((d) => setSummary(d))
+      .catch(() => { /* server eski bo'lsa — eski hisob ishlayveradi */ });
+    return () => ctrl.abort();
+  }, [reloadKey]);
   const [dataStatus, setDataStatus] = useState<"loading" | "online" | "offline">("loading");
 
   useEffect(() => {
@@ -106,14 +174,14 @@ export function AnalyticsView() {
     const ctrl = new AbortController();
     computeAnalyticsData(raw, period, ctrl.signal, norms)
       .then((d) => {
-        setData(d);
+        setData(applyServerTotals(d, summary, period));
         setDataStatus("online");
       })
       .catch((e) => {
         if ((e as Error)?.name !== "AbortError") setDataStatus("offline");
       });
     return () => ctrl.abort();
-  }, [raw, period, norms]);
+  }, [raw, period, norms, summary]);
 
   /* Realtime: `calls`/`managers` o'zgarsa, xom ma'lumot qayta olinadi — lekin
    * bir nechta hodisa ketma-ket kelsa (band jamoada tez-tez bo'ladi),

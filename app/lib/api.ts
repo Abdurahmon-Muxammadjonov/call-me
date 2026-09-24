@@ -338,6 +338,40 @@ export async function fetchPopStats(platformId?: string | null, signal?: AbortSi
   }
 }
 
+/* ---------- Kunlik yakun (serverda, BARCHA qo'ng'iroqlar bo'yicha) ---------- */
+export interface DailySummaryDay {
+  date: string;
+  calls: number;
+  minutes: number;
+  analyzed: number;
+  scored: number;
+  avg_score: number; // 0-100
+  incoming: number;
+  outgoing: number;
+  leads: number;
+  invited: number;
+  closed: number;
+  bad_leads: number;
+  unanswered: number;
+}
+
+/* GET /analytics/daily-summary — dashboardning asosiy raqamlari.
+ * MUHIM: bu hisob SERVERDA, barcha qo'ng'iroqlar bo'yicha bajariladi.
+ * Ilgari raqamlar /api/calls ro'yxatidan hisoblanardi, u esa ko'pi bilan
+ * 200 qator qaytaradi — kuniga 1000+ qo'ng'iroq kelganda ko'rsatkichlar
+ * yangi qo'ng'iroq kelgani sari KAMAYIB borardi. */
+export async function fetchDailySummary(days = 35, signal?: AbortSignal): Promise<DailySummaryDay[]> {
+  const res = await fetch(apiUrl(`/analytics/daily-summary?days=${days}`), {
+    method: "GET",
+    headers: { Accept: "application/json", ...authHeadersAuto() },
+    signal,
+  });
+  if (!res.ok) throw new Error(`daily-summary ${res.status}`);
+  const json = (await res.json()) as { success: boolean; data: DailySummaryDay[] };
+  if (!json.success) throw new Error("daily-summary: success=false");
+  return json.data;
+}
+
 /* ---------- Xodimlar statistikasi (kunlik) ---------- */
 export interface StaffStage { title: string; pct: number }
 export interface StaffStatRow {
