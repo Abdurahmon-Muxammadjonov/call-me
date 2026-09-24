@@ -6,6 +6,7 @@ import { listCalls, listManagers, type CallRow } from "../lib/calls";
 import { fetchDailySummary, type DailySummaryDay } from "../lib/api";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
 import { useT } from "../lib/i18n";
+import { formatScore, normalizeScore } from "../lib/format";
 import { CallsTable } from "./calls/CallsTable";
 import { CallDetailPanel } from "./calls/CallDetailPanel";
 
@@ -143,7 +144,9 @@ export function RecordingsView() {
   const prev = summary?.find((d) => d.date === tashkentDay(-1));
   const pct = (cur: number, before: number) => (before > 0 ? Math.round(((cur - before) / before) * 100) : null);
   const callsPct = today && prev ? pct(today.calls, prev.calls) : null;
-  const scoreDiff = today && prev && prev.avg_score > 0 ? (today.avg_score - prev.avg_score) / 10 : null;
+  const todayScore = normalizeScore(today?.avg_score);
+  const prevScore = normalizeScore(prev?.avg_score);
+  const scoreDiff = todayScore !== null && prevScore !== null ? Math.round((todayScore - prevScore) * 10) / 10 : null;
 
   /* Operatorlar ro'yxati — filtr uchun (ichki raqamlar ham kiradi). */
   const operatorOptions = useMemo(() => {
@@ -221,7 +224,7 @@ export function RecordingsView() {
             />
             <KpiCard
               label={t("rec.kpi.avg")}
-              value={today && today.avg_score > 0 ? (today.avg_score / 10).toFixed(1) : "—"}
+              value={formatScore(today?.avg_score)}
               hint={scoreDiff === null ? undefined : {
                 text: t("rec.kpi.vsYesterday", { delta: `${scoreDiff > 0 ? "+" : ""}${scoreDiff.toFixed(1)}` }),
                 tone: scoreDiff > 0 ? "up" : scoreDiff < 0 ? "down" : "flat",

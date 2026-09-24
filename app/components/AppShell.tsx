@@ -2,10 +2,31 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Icons } from "./Icons";
-import { Logo, ThemeToggle, LocaleToggle, ConfirmModal } from "./ui";
+import { ThemeToggle, LocaleToggle, ConfirmModal } from "./ui";
 import { NAV_SECTIONS, type TabId } from "../lib/data";
 import { useT, type DictKey } from "../lib/i18n";
+import {
+  LayoutGrid, TrendingUp, ChartColumn, Users, ChartLine, ScanSearch, AudioLines,
+  Upload, Search, Layers, SquareCheck, Plug, Building2, Target, Lock, Menu, X,
+  LogOut, AudioWaveform,
+} from "lucide-react";
+
+/* Yon menyu ikonkalari — spetsifikatsiyadagi lucide nomlari bo'yicha. */
+const NAV_ICON: Record<string, typeof LayoutGrid> = {
+  overview: LayoutGrid,
+  management: TrendingUp,
+  comparison: ChartColumn,
+  staff: Users,
+  "staff-stats": ChartLine,
+  "analysis-status": ScanSearch,
+  recordings: AudioLines,
+  upload: Upload,
+  "deep-audit": Search,
+  operators: Users,
+  categories: Layers,
+  criteria: SquareCheck,
+  amocrm: Plug,
+};
 import { useHasRole } from "../lib/useHasRole";
 import {
   UploadView,
@@ -58,21 +79,6 @@ export function tabFromSegments(segments: string[] | undefined): TabId {
   return PATH_TO_TAB[path] ?? "overview";
 }
 
-const TAB_KEYS: Record<TabId, { title: DictKey; subtitle: DictKey }> = {
-  overview: { title: "tab.overview.title", subtitle: "tab.overview.subtitle" },
-  management: { title: "tab.management.title", subtitle: "tab.management.subtitle" },
-  comparison: { title: "tab.comparison.title", subtitle: "tab.comparison.subtitle" },
-  staff: { title: "tab.staff.title", subtitle: "tab.staff.subtitle" },
-  "staff-stats": { title: "tab.staff-stats.title", subtitle: "tab.staff-stats.subtitle" },
-  "analysis-status": { title: "tab.analysis-status.title", subtitle: "tab.analysis-status.subtitle" },
-  recordings: { title: "tab.recordings.title", subtitle: "tab.recordings.subtitle" },
-  upload: { title: "tab.upload.title", subtitle: "tab.upload.subtitle" },
-  "deep-audit": { title: "tab.deep-audit.title", subtitle: "tab.deep-audit.subtitle" },
-  operators: { title: "tab.operators.title", subtitle: "tab.operators.subtitle" },
-  categories: { title: "tab.categories.title", subtitle: "tab.categories.subtitle" },
-  criteria: { title: "tab.criteria.title", subtitle: "tab.criteria.subtitle" },
-  amocrm: { title: "tab.amocrm.title", subtitle: "tab.amocrm.subtitle" },
-};
 
 const NAV_LABEL_KEYS: Record<TabId, { label: DictKey; hint: DictKey }> = {
   overview: { label: "nav.overview.label", hint: "nav.overview.hint" },
@@ -140,8 +146,6 @@ export function AppShell({
   const [confirmOut, setConfirmOut] = useState(false);
   const [lockedTab, setLockedTab] = useState<TabId | null>(null);
 
-  const metaKeys = TAB_KEYS[activeTab];
-  const meta = { title: t(metaKeys.title), subtitle: t(metaKeys.subtitle) };
 
   function selectTab(id: TabId) {
     onSelectTab(id);
@@ -149,45 +153,65 @@ export function AppShell({
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200">
+    <div className="relative min-h-screen" style={{ background: "var(--bg)", color: "var(--text)" }}>
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
         />
       )}
 
       <div className="relative flex min-h-screen">
         {/* ===== Sidebar ===== */}
         <aside
-          className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900 lg:static lg:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
+          style={{ background: "var(--sidebar)", borderRight: "1px solid var(--sidebar-border)" }}
         >
-          <div className="flex items-center justify-between px-6 py-5">
-            <Logo />
+          {/* Logo */}
+          <div className="flex items-center gap-3 px-2 pb-4 pt-[22px]">
+            <span
+              className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+              style={{ background: "var(--accent)" }}
+            >
+              <AudioWaveform className="h-5 w-5" color="#FFFFFF" strokeWidth={1.8} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[17px] font-bold leading-tight tracking-[-0.01em]" style={{ color: "var(--text)" }}>
+                SalesPulse
+              </span>
+              <span className="block text-[10px] tracking-[0.18em]" style={{ color: "#8C95A6" }}>
+                AI AUDIT CORE
+              </span>
+            </span>
             <button
               onClick={() => setMobileOpen(false)}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-500/10 lg:hidden"
+              aria-label={t("common.cancel")}
+              className="grid h-9 w-9 place-items-center rounded-lg lg:hidden"
+              style={{ color: "var(--subtle)" }}
             >
-              <Icons.close className="h-5 w-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="border-y border-slate-100 px-6 py-3 dark:border-slate-800/60">
+          <div className="px-2 pb-[18px]">
             <CompanyBadge />
           </div>
 
-          <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-2">
+          <nav className="flex-1 overflow-y-auto px-2 pb-2">
             {NAV_SECTIONS.map((section, sIdx) => (
-              <div key={section.title}>
-                <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+              <div key={section.title} className={sIdx > 0 ? "mt-4" : ""}>
+                <p
+                  className="px-3 pb-1.5 text-[11px] uppercase tracking-[0.14em]"
+                  style={{ color: "var(--subtle)" }}
+                >
                   {t(NAV_SECTION_KEYS[sIdx] ?? "nav.section.main")}
                 </p>
-                <ul className="space-y-1">
+                <ul className="space-y-0.5">
                   {section.items.map((item) => {
-                    const Icon = Icons[item.icon as keyof typeof Icons];
+                    const Icon = NAV_ICON[item.id] ?? LayoutGrid;
                     const active = activeTab === item.id;
                     const navKeys = NAV_LABEL_KEYS[item.id];
                     const locked = !isUnlocked(item.sectionKey);
@@ -195,25 +219,26 @@ export function AppShell({
                     // section — see SectionsProvider's justUnlockedKeys.
                     const justUnlocked = !!item.sectionKey && justUnlockedKeys.has(item.sectionKey);
                     return (
-                      <li key={item.id} className="relative">
-                        {active && (
-                          <span className="absolute -left-4 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-600 dark:bg-blue-400" />
-                        )}
+                      <li key={item.id}>
                         <button
                           onClick={() => (locked ? setLockedTab(item.id) : selectTab(item.id))}
-                          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                          aria-current={active ? "page" : undefined}
+                          className={`flex h-11 w-full items-center gap-3 rounded-[10px] px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${
                             justUnlocked ? "animate-unlock" : ""
-                          } ${
-                            active
-                              ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
-                              : locked
-                              ? "text-slate-400 hover:bg-slate-100 hover:text-slate-500 dark:text-slate-500 dark:hover:bg-slate-800"
-                              : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                          }`}
+                          } ${active ? "font-medium" : ""} ${!active ? "hover:bg-[var(--surface-4)]" : ""}`}
+                          style={{
+                            background: active ? "var(--nav-active)" : "transparent",
+                            color: active ? "#FFFFFF" : "var(--text-3)",
+                            outlineColor: "var(--accent-text)",
+                          }}
                         >
-                          <Icon className="h-4 w-4 shrink-0" />
+                          <Icon
+                            className="h-[18px] w-[18px] shrink-0"
+                            strokeWidth={1.8}
+                            color={active ? "var(--accent-icon)" : "var(--subtle)"}
+                          />
                           <span className="flex-1 text-left">{t(navKeys.label)}</span>
-                          {locked && <Icons.lock className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />}
+                          {locked && <Lock className="h-3.5 w-3.5 shrink-0" color="var(--subtle)" />}
                         </button>
                       </li>
                     );
@@ -223,41 +248,51 @@ export function AppShell({
             ))}
           </nav>
 
+          {/* Brend va KPI normalari — SOZLAMALAR bo'limining davomi, menyu
+              bandlari bilan bir xil uslubda (spetsifikatsiya 2.1). */}
           {canEditBranding && (
-            <div className="space-y-1 px-4">
-              <Link
-                href="/settings/branding"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              >
-                <Icons.building className="h-4 w-4 shrink-0" />
-                Brend sozlamalari
-              </Link>
-              <Link
-                href="/settings/norms"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              >
-                <Icons.ruler className="h-4 w-4 shrink-0" />
-                KPI normalari
-              </Link>
-            </div>
+            <ul className="space-y-0.5 px-2 pb-2">
+              {[
+                { href: "/settings/branding", icon: Building2, label: "Brend sozlamalari" },
+                { href: "/settings/norms", icon: Target, label: "KPI normalari" },
+              ].map(({ href, icon: LinkIcon, label }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="flex h-11 items-center gap-3 rounded-[10px] px-3 text-sm transition-colors hover:bg-[var(--surface-4)]"
+                    style={{ color: "var(--text-3)" }}
+                  >
+                    <LinkIcon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} color="var(--subtle)" />
+                    <span className="flex-1">{label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
 
           {/* Profile */}
-          <div className="border-t border-slate-200 p-4 dark:border-slate-800">
-            <div className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-blue-600 text-sm font-bold text-white">
+          <div className="p-2" style={{ borderTop: "1px solid var(--sidebar-border)" }}>
+            <div
+              className="flex items-center gap-3 rounded-xl p-2.5"
+              style={{ background: "var(--surface-4)" }}
+            >
+              <span
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold"
+                style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
+              >
                 {initials}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-100">{session.name}</p>
-                <p className="truncate text-xs text-slate-400">{session.title}</p>
+                <p className="truncate text-[13px] font-semibold" style={{ color: "var(--text)" }}>{session.name}</p>
+                <p className="truncate text-xs" style={{ color: "var(--subtle)" }}>{session.title}</p>
               </div>
               <button
                 onClick={() => setConfirmOut(true)}
-                title={t("common.logout")}
-                className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-rose-500/10 hover:text-rose-500"
+                aria-label={t("common.logout")}
+                className="grid h-9 w-9 place-items-center rounded-lg transition-colors hover:opacity-80"
+                style={{ color: "var(--subtle)" }}
               >
-                <Icons.logout className="h-4 w-4" />
+                <LogOut className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -266,20 +301,22 @@ export function AppShell({
         {/* ===== Main ===== */}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Header */}
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3.5 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
+          {/* Yuqori bar: sahifa nomi bu yerda TAKRORLANMAYDI — u har bir
+              sahifaning o'z PageHeader'ida (spetsifikatsiya 2.2). */}
+          <header
+            className="sticky top-0 z-20 flex items-center gap-3 px-4 py-3 sm:px-9"
+            style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)" }}
+          >
             <button
               onClick={() => setMobileOpen(true)}
-              className="rounded-lg p-2 text-slate-500 hover:bg-slate-500/10 lg:hidden"
+              aria-label="Menyu"
+              className="grid h-11 w-11 place-items-center rounded-xl lg:hidden"
+              style={{ background: "var(--control)", border: "1px solid var(--border-control)", color: "var(--text-3)" }}
             >
-              <Icons.menu className="h-5 w-5" />
+              <Menu className="h-5 w-5" />
             </button>
 
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100">
-                {meta.title}
-              </h1>
-              <p className="hidden truncate text-xs text-slate-400 sm:block">{meta.subtitle}</p>
-            </div>
+            <div className="min-w-0 flex-1" />
 
             <div className="flex items-center gap-2 sm:gap-3">
               <CallNotificationBell />
@@ -289,8 +326,8 @@ export function AppShell({
           </header>
 
           {/* Content */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div key={activeTab} className="mx-auto max-w-7xl animate-slide-up">
+          <main className="flex-1 overflow-y-auto p-4 sm:px-9 sm:py-7">
+            <div key={activeTab} className="mx-auto max-w-[1600px] animate-slide-up">
               {renderTab(activeTab)}
             </div>
           </main>

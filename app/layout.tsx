@@ -6,11 +6,15 @@ import { ClientBootstrap } from "./components/ClientBootstrap";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  // Dashboard dizayni 400/500/600/700 og'irliklarini ishlatadi.
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  // Raqamlar, vaqt, ball, pul — 400/500/600.
+  weight: ["400", "500", "600"],
 });
 
 // Landing-page-only type system (see app/components/landing): Sora for

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
-import { Card, SectionTitle, Skeleton, score10, scoreColor } from "./ui";
+import { Card, SectionTitle, Skeleton, scoreColor } from "./ui";
+import { formatScore } from "../lib/format";
 import { fetchStaffStats, type StaffStatRow } from "../lib/api";
 import { AnalyticsErrorUI, categorizeError, type AnalyticsError } from "./AnalyticsErrorUI";
 
@@ -65,7 +66,7 @@ function StaffCard({ row }: { row: StaffStatRow }) {
 
         <span className="shrink-0 text-right">
           <span className={`block text-2xl font-bold tabular-nums ${hasScore ? scoreColor(row.avg_score) : "text-slate-400"}`}>
-            {hasScore ? score10(row.avg_score) : "—"}
+            {formatScore(row.avg_score)}
           </span>
           <span className="block text-xs text-slate-400">/ 10</span>
         </span>

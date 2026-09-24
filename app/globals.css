@@ -5,85 +5,225 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================================================
- * "Audio yozuvlar" sahifasi dizayn tokenlari (2026-09-25).
+ * DASHBOARD DIZAYN TOKENLARI (2026-09-25).
  *
- * Tailwind v4 @theme'ga emas, oddiy CSS o'zgaruvchilari sifatida e'lon
- * qilingan: bu ranglar FAQAT shu sahifa uchun va ikkala mavzuda aniq
- * qiymatlar bilan berilishi kerak. Mavzu <html class="dark"> orqali
- * almashadi, shu sabab ikkita blok.
+ * Semantik nomlar :root / :root.dark da e'lon qilinadi — mavzu almashganda
+ * shu o'zgaruvchilar qiymati almashadi. Tailwind'ga @theme inline orqali
+ * uzatiladi (pastda), shunda `bg-surface`, `text-muted` kabi yordamchilar
+ * ham ishlaydi VA mavzu almashuvi buzilmaydi.
+ *
+ * DIQQAT: :where(.dark) ISHLATIB BO'LMAYDI — maxsuslik darajasi nol,
+ * :root (0,1,0) uni bosib ketadi (2026-09-25 da shu xato bo'lgan edi).
  * ==========================================================================*/
 :root {
-  --rec-bg: #F4F2EE;
-  --rec-sidebar: #FFFFFF;
-  --rec-card: #FFFFFF;
-  --rec-kpi: #FFFFFF;
-  --rec-border: #E7E2DA;
-  --rec-divider: #F1EDE6;
-  --rec-text: #16181D;
-  --rec-text-2: #5F6570;
-  --rec-text-3: #8A909B;
-  --rec-accent: #1D4ED8;
-  --rec-accent-text: #1D4ED8;
-  --rec-bar: #1D4ED8;
+  /* Fonlar */
+  --bg: #F4F2EE;
+  --sidebar: #FBFAF7;
+  --sidebar-border: #E6E2DA;
+  --surface: #FFFFFF;
+  --surface-2: #FFFFFF;
+  --surface-3: #F7F5F1;
+  --surface-4: #F2EFEA;
+  --field: #FFFFFF;
+  --control: #FFFFFF;
+  --nav-active: #E8EEFD;
+  --seg-active: #E8EEFD;
+  --row-open: #FAF8F4;
+  --row-selected: #EEF3FF;
+  --badge: #F2EFEA;
 
-  --rec-green: #0F7A4F;
-  --rec-green-bg: #E2F3EA;
-  --rec-yellow: #8A5A00;
-  --rec-yellow-bg: #FBF0D6;
-  --rec-yellow-bar: #C27803;
-  --rec-orange: #B4440E;
-  --rec-orange-bg: #FCE8DC;
+  /* Chegaralar */
+  --border: #E7E2DA;
+  --border-control: #E2DDD5;
+  --border-chip: #E2DDD5;
+  --border-company: #E2DDD5;
+  --divider: #F1EDE6;
+  --divider-strong: #EFEBE4;
+  --track: #EFEBE4;
+  --track-audio: #EFEBE4;
+  --grid-line: #F1EDE6;
+  --axis-line: #E2DDD5;
 
-  --rec-view-bg: #E8EFFF;
-  --rec-view-text: #1D4ED8;
-  --rec-btn-bg: #FFFFFF;
-  --rec-btn-border: #E7E2DA;
+  /* Matn */
+  --text: #16181D;
+  --text-2: #2C3038;
+  --text-3: #3F4550;
+  --muted: #5F6570;
+  --subtle: #6B7280;
+  --faint: #9A958D;
 
-  --rec-player-bg: #F7F5F1;
-  --rec-wave-idle: #D5CFC4;
-  --rec-row-active: #EEF3FF;
-  --rec-segment-active: #E8EFFF;
+  /* Aksent */
+  --accent: #1D4ED8;
+  --accent-fg: #FFFFFF;
+  --accent-text: #1D4ED8;
+  --accent-icon: #1D4ED8;
+  --accent-badge: #1D4ED8;
+  --chart: #1D4ED8;
+  --chart-dim: #C7D2FE;
+  --bar-dim: #D5CFC4;
+  --view-btn-bg: #E8EEFD;
+  --view-btn-text: #1D4ED8;
+  --date-active-bg: #E8EEFD;
+  --date-active-border: #1D4ED8;
+  --company-avatar: #0E7490;
+
+  /* Holat ranglari */
+  --green: #0F7A4F;
+  --green-tint: #E2F3EA;
+  --amber: #8A5A00;
+  --amber-tint: #FBF0D6;
+  --amber-bar: #C27803;
+  --orange: #B4440E;
+  --orange-tint: #FCE8DC;
+  --orange-soft: #B4440E;
+  --violet: #6D28D9;
+  --violet-tint: #EDE9FE;
+  --violet-soft: #6D28D9;
+  --teal: #0F766E;
+  --teal-tint: #CCFBF1;
+  --blue-tint: rgba(29, 78, 216, 0.1);
+  --pink: #BE185D;
+  --slate: #475569;
+  --slate-2: #64748B;
+  --not-analyzed-bar: #D6C089;
+
+  --alert-bg: rgba(180, 68, 14, 0.06);
+  --alert-border: rgba(180, 68, 14, 0.25);
 }
 
-/* DIQQAT: bu yerda :where(.dark) ISHLATIB BO'LMAYDI — uning maxsuslik
- * darajasi NOL, shu sabab yuqoridagi :root (0,1,0) doim ustun kelib,
- * qorong'i mavzuda ham yorug' ranglar qolib ketardi (2026-09-25).
- * :root.dark — (0,2,0), ya'ni aniq ustun. */
 :root.dark {
-  --rec-bg: #0B0D12;
-  --rec-sidebar: #0F1218;
-  --rec-card: #10141C;
-  --rec-kpi: #121620;
-  --rec-border: #1F2531;
-  --rec-divider: #181D27;
-  --rec-text: #E8ECF3;
-  --rec-text-2: #97A0B0;
-  --rec-text-3: #7F8898;
-  --rec-accent: #2563EB;
-  --rec-accent-text: #8AB6FF;
-  --rec-bar: #3B82F6;
+  --bg: #0B0D12;
+  --sidebar: #0F1218;
+  --sidebar-border: #1C222D;
+  --surface: #10141C;
+  --surface-2: #121620;
+  --surface-3: #141923;
+  --surface-4: #161B24;
+  --field: #0B0E14;
+  --control: #131821;
+  --nav-active: #1A2233;
+  --seg-active: #1E2738;
+  --row-open: #121824;
+  --row-selected: #18223A;
+  --badge: #19202C;
 
-  --rec-green: #4ADE9A;
-  --rec-green-bg: rgba(74, 222, 154, 0.12);
-  --rec-yellow: #FACC15;
-  --rec-yellow-bg: rgba(250, 204, 21, 0.12);
-  --rec-yellow-bar: #FACC15;
-  --rec-orange: #FB923C;
-  --rec-orange-bg: rgba(251, 146, 60, 0.14);
+  --border: #1F2531;
+  --border-control: #232A37;
+  --border-chip: #252D3B;
+  --border-company: #1F2633;
+  --divider: #181D27;
+  --divider-strong: #1C222D;
+  --track: #1A1F29;
+  --track-audio: #222836;
+  --grid-line: #1A1F29;
+  --axis-line: #262C38;
 
-  --rec-view-bg: #1C2B47;
-  --rec-view-text: #D6E4FF;
-  --rec-btn-bg: #161B24;
-  --rec-btn-border: #252D3B;
+  --text: #E8ECF3;
+  --text-2: #C9D0DC;
+  --text-3: #A7B0C0;
+  --muted: #97A0B0;
+  --subtle: #7F8898;
+  --faint: #5D6677;
 
-  --rec-player-bg: #0F1218;
-  --rec-wave-idle: #2A3140;
-  --rec-row-active: #18223A;
-  --rec-segment-active: #1E2738;
+  --accent: #2563EB;
+  --accent-fg: #FFFFFF;
+  --accent-text: #8AB6FF;
+  --accent-icon: #6EA8FF;
+  --accent-badge: #9CC0FF;
+  --chart: #3B82F6;
+  --chart-dim: #24406E;
+  --bar-dim: #2A3140;
+  --view-btn-bg: #1C2B47;
+  --view-btn-text: #D6E4FF;
+  --date-active-bg: #1B2A45;
+  --date-active-border: #2B4A80;
+  --company-avatar: #0E7490;
+
+  --green: #4ADE9A;
+  --green-tint: rgba(74, 222, 154, 0.12);
+  --amber: #FACC15;
+  --amber-tint: rgba(250, 204, 21, 0.12);
+  --amber-bar: #FACC15;
+  --orange: #FB923C;
+  --orange-tint: rgba(251, 146, 60, 0.14);
+  --orange-soft: #FDBA74;
+  --violet: #A78BFA;
+  --violet-tint: rgba(167, 139, 250, 0.14);
+  --violet-soft: #C4B5FD;
+  --teal: #2DD4BF;
+  --teal-tint: rgba(45, 212, 191, 0.12);
+  --blue-tint: rgba(59, 130, 246, 0.14);
+  --pink: #F472B6;
+  --slate: #94A3B8;
+  --slate-2: #64748B;
+  --not-analyzed-bar: #6B5A1E;
+
+  --alert-bg: rgba(251, 146, 60, 0.07);
+  --alert-border: rgba(251, 146, 60, 0.28);
 }
 
+
+
+/* "Audio yozuvlar" sahifasining eski --rec-* nomlari yangi semantik
+ * tokenlarga bog'lanadi. var() ishlatish paytida hisoblangani uchun
+ * bitta e'lon ikkala mavzuda ham to'g'ri ishlaydi. 2-bosqichda sahifa
+ * qayta yozilgach, bu blok olib tashlanadi. */
+:root {
+  --rec-bg: var(--bg);
+  --rec-card: var(--surface);
+  --rec-kpi: var(--surface-2);
+  --rec-border: var(--border);
+  --rec-divider: var(--divider);
+  --rec-text: var(--text);
+  --rec-text-2: var(--text-2);
+  --rec-text-3: var(--subtle);
+  --rec-accent: var(--accent);
+  --rec-accent-text: var(--accent-text);
+  --rec-bar: var(--chart);
+  --rec-green: var(--green);
+  --rec-green-bg: var(--green-tint);
+  --rec-yellow: var(--amber);
+  --rec-yellow-bg: var(--amber-tint);
+  --rec-yellow-bar: var(--amber-bar);
+  --rec-orange: var(--orange);
+  --rec-orange-bg: var(--orange-tint);
+  --rec-view-bg: var(--view-btn-bg);
+  --rec-view-text: var(--view-btn-text);
+  --rec-btn-bg: var(--surface-4);
+  --rec-btn-border: var(--border-chip);
+  --rec-player-bg: var(--surface-4);
+  --rec-wave-idle: var(--bar-dim);
+  --rec-row-active: var(--row-selected);
+  --rec-segment-active: var(--seg-active);
+}
 
 @theme inline {
+  /* Dashboard semantik ranglari — `bg-surface`, `text-muted`, `border-border`
+   * kabi yordamchilar uchun. Qiymatlar :root / :root.dark dan keladi. */
+  --color-bg: var(--bg);
+  --color-sidebar: var(--sidebar);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-field: var(--field);
+  --color-control: var(--control);
+  --color-border: var(--border);
+  --color-divider: var(--divider);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-chart: var(--chart);
+  --color-green: var(--green);
+  --color-amber: var(--amber);
+  --color-orange: var(--orange);
+  --color-violet: var(--violet);
+  --color-teal: var(--teal);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 

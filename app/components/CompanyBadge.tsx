@@ -1,34 +1,15 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
+
 import { useCompany } from "../lib/company";
 import { Skeleton } from "./ui";
 
-const AVATAR_COLORS = [
-  "#3B5FE3", // brand blue
-  "#2DD4BF", // brand teal
-  "#F59E0B", // amber
-  "#EF4444", // rose
-  "#8B5CF6", // violet
-  "#10B981", // emerald
-  "#EC4899", // pink
-  "#0EA5E9", // sky
-];
 
 /* Deterministic: the same company.id always lands on the same color, on
  * every device and every reload — nothing here depends on render order or
  * random state. */
-function hashCode(str: string): number {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = (h << 5) - h + str.charCodeAt(i);
-    h |= 0;
-  }
-  return Math.abs(h);
-}
 
-function colorForCompany(id: string): string {
-  return AVATAR_COLORS[hashCode(id) % AVATAR_COLORS.length] ?? AVATAR_COLORS[0]!;
-}
 
 function initialsFor(name: string): string {
   return (
@@ -61,24 +42,32 @@ export function CompanyBadge() {
 
   if (!company) return null;
 
+  /* Yon menyudagi kompaniya tanlagichi (spetsifikatsiya 2.1): balandlik
+     48px, radius 12px, chapda 28px belgi, o'ngda pastga strelka. */
   return (
-    <div className="flex items-center gap-2.5 px-1">
+    <div
+      className="flex h-12 items-center gap-2.5 rounded-xl px-2.5"
+      style={{ background: "var(--control)", border: "1px solid var(--border-company)" }}
+    >
       {company.logo_url ? (
         // eslint-disable-next-line @next/next/no-img-element -- company logos are arbitrary external URLs, not a known-optimizable local/remote pattern
         <img
           src={company.logo_url}
           alt={company.name}
-          className="h-8 w-8 shrink-0 rounded-lg object-cover"
+          className="h-7 w-7 shrink-0 rounded-lg object-cover"
         />
       ) : (
         <span
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold text-white"
-          style={{ backgroundColor: colorForCompany(company.id) }}
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[11px] font-bold text-white"
+          style={{ backgroundColor: "var(--company-avatar)" }}
         >
           {initialsFor(company.name)}
         </span>
       )}
-      <span className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{company.name}</span>
+      <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" style={{ color: "var(--text)" }}>
+        {company.name}
+      </span>
+      <ChevronDown className="h-4 w-4 shrink-0" color="#8C95A6" aria-hidden />
     </div>
   );
 }

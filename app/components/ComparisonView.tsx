@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
+import { formatScore } from "../lib/format";
 import { Card, SectionTitle, Skeleton } from "./ui";
 import {
   fetchPopStats,
@@ -39,10 +40,13 @@ function Delta({ pct }: { pct: number }) {
   );
 }
 
-const ROWS: { label: string; unit: string; key: keyof PopBlock }[] = [
+/* `score: true` — qiymat 0–100 shkalasida keladi va ekranda 10 ballik
+ * tizimga o'tkaziladi (normalizeScore). Ilgari shunday belgilanmagani
+ * uchun "O'rtacha KPI" 20.5 ball bo'lib ko'ringan edi — aslida 2.1/10. */
+const ROWS: { label: string; unit: string; key: keyof PopBlock; score?: boolean }[] = [
   { label: "Qo'ng'iroqlar", unit: "ta", key: "calls" },
   { label: "Davomiylik", unit: "min", key: "duration_minutes" },
-  { label: "O'rtacha KPI", unit: "ball", key: "avg_kpi" },
+  { label: "O'rtacha KPI", unit: "/ 10", key: "avg_kpi", score: true },
 ];
 
 function ComparisonCard({
@@ -75,10 +79,10 @@ function ComparisonCard({
               <tr key={r.key} className="border-t border-slate-100 dark:border-slate-800">
                 <td className="py-2.5 text-slate-600 dark:text-slate-300">{r.label}</td>
                 <td className="py-2.5 text-right tabular-nums text-slate-400 dark:text-slate-500">
-                  {NUM.format(m.previous)} <span className="text-xs">{r.unit}</span>
+                  {r.score ? formatScore(m.previous) : NUM.format(m.previous)} <span className="text-xs">{r.unit}</span>
                 </td>
                 <td className="py-2.5 text-right font-semibold tabular-nums text-slate-900 dark:text-white">
-                  {NUM.format(m.current)} <span className="text-xs font-normal text-slate-400">{r.unit}</span>
+                  {r.score ? formatScore(m.current) : NUM.format(m.current)} <span className="text-xs font-normal text-slate-400">{r.unit}</span>
                 </td>
                 <td className="py-2.5 text-right">
                   <Delta pct={m.change_pct} />
