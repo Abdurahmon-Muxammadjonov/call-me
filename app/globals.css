@@ -45,7 +45,11 @@
   --rec-segment-active: #E8EFFF;
 }
 
-:where(.dark) {
+/* DIQQAT: bu yerda :where(.dark) ISHLATIB BO'LMAYDI — uning maxsuslik
+ * darajasi NOL, shu sabab yuqoridagi :root (0,1,0) doim ustun kelib,
+ * qorong'i mavzuda ham yorug' ranglar qolib ketardi (2026-09-25).
+ * :root.dark — (0,2,0), ya'ni aniq ustun. */
+:root.dark {
   --rec-bg: #0B0D12;
   --rec-sidebar: #0F1218;
   --rec-card: #10141C;
