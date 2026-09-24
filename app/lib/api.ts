@@ -338,6 +338,36 @@ export async function fetchPopStats(platformId?: string | null, signal?: AbortSi
   }
 }
 
+/* ---------- Xodimlar statistikasi (kunlik) ---------- */
+export interface StaffStage { title: string; pct: number }
+export interface StaffStatRow {
+  key: string;
+  name: string;
+  calls: number;
+  minutes: number;
+  scored_calls: number;
+  avg_score: number; // 0-100
+  stages: StaffStage[];
+  faults: string[];
+  advice: string[];
+  reasons: { reason: string; count: number }[];
+}
+
+/* GET /analytics/staff-stats — har operatorning kunlik bali, kuchsiz
+ * tomonlari (ayb) va ularni tuzatish uchun tavsiya. */
+export async function fetchStaffStats(date?: string, signal?: AbortSignal): Promise<{ date: string; rows: StaffStatRow[] }> {
+  const qs = date ? `?date=${encodeURIComponent(date)}` : "";
+  const res = await fetch(apiUrl(`/analytics/staff-stats${qs}`), {
+    method: "GET",
+    headers: { Accept: "application/json", ...authHeadersAuto() },
+    signal,
+  });
+  if (!res.ok) throw new Error(`staff-stats ${res.status}`);
+  const json = (await res.json()) as { success: boolean; date: string; data: StaffStatRow[] };
+  if (!json.success) throw new Error("staff-stats: success=false");
+  return { date: json.date, rows: json.data };
+}
+
 /* ---------- Kunlik gaplashuv daqiqalari ---------- */
 export interface DailyMinutesOperator {
   name: string;

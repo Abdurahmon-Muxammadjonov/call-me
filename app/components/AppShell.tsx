@@ -18,6 +18,7 @@ import {
 import { AnalyticsView } from "./AnalyticsView";
 import { ManagementView } from "./ManagementView";
 import { ComparisonView } from "./ComparisonView";
+import { StaffStatsView } from "./StaffStatsView";
 import { StaffManager } from "./StaffManager";
 import { ManagersDashboard } from "./ManagersDashboard";
 import { ToastHost } from "./ToastHost";
@@ -34,6 +35,7 @@ export const TAB_PATH: Record<TabId, string> = {
   management: "management",
   comparison: "comparison",
   staff: "staff",
+  "staff-stats": "staff-stats",
   recordings: "recordings",
   upload: "upload",
   "deep-audit": "deep-audit",
@@ -59,6 +61,7 @@ const TAB_KEYS: Record<TabId, { title: DictKey; subtitle: DictKey }> = {
   management: { title: "tab.management.title", subtitle: "tab.management.subtitle" },
   comparison: { title: "tab.comparison.title", subtitle: "tab.comparison.subtitle" },
   staff: { title: "tab.staff.title", subtitle: "tab.staff.subtitle" },
+  "staff-stats": { title: "tab.staff-stats.title", subtitle: "tab.staff-stats.subtitle" },
   recordings: { title: "tab.recordings.title", subtitle: "tab.recordings.subtitle" },
   upload: { title: "tab.upload.title", subtitle: "tab.upload.subtitle" },
   "deep-audit": { title: "tab.deep-audit.title", subtitle: "tab.deep-audit.subtitle" },
@@ -73,6 +76,7 @@ const NAV_LABEL_KEYS: Record<TabId, { label: DictKey; hint: DictKey }> = {
   management: { label: "nav.management.label", hint: "nav.management.hint" },
   comparison: { label: "nav.comparison.label", hint: "nav.comparison.hint" },
   staff: { label: "nav.staff.label", hint: "nav.staff.hint" },
+  "staff-stats": { label: "nav.staff-stats.label", hint: "nav.staff-stats.hint" },
   recordings: { label: "nav.recordings.label", hint: "nav.recordings.hint" },
   upload: { label: "nav.upload.label", hint: "nav.upload.hint" },
   "deep-audit": { label: "nav.deep-audit.label", hint: "nav.deep-audit.hint" },
@@ -96,6 +100,7 @@ function renderTab(tab: TabId) {
     case "overview": return <AnalyticsView />;
     case "management": return <ManagementView />;
     case "comparison": return <ComparisonView />;
+    case "staff-stats": return <StaffStatsView />;
     case "staff": return <StaffManager />;
     case "recordings": return <RecordingsView />;
     case "upload": return <UploadView />;

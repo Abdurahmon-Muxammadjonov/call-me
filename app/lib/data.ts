@@ -6,6 +6,7 @@ export type TabId =
   | "management"
   | "comparison"
   | "staff"
+  | "staff-stats"
   | "recordings"
   | "upload"
   | "deep-audit"
@@ -43,6 +44,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: "management", label: "Boshqaruv paneli", hint: "Rahbariyat ko'rinishi", icon: "trendingUp", grad: "from-violet-500 to-fuchsia-500", sectionKey: "reports" },
       { id: "comparison", label: "Solishtirish paneli", hint: "Kunlik/haftalik/oylik", icon: "trendingUp", grad: "from-amber-500 to-orange-500", sectionKey: "reports" },
       { id: "staff", label: "Xodimlarni boshqarish", hint: "Barcha xodimlar", icon: "users", grad: "from-rose-500 to-pink-500", sectionKey: "managers" },
+      { id: "staff-stats", label: "Xodimlar statistikasi", hint: "Kunlik ball, ayb va tavsiya", icon: "users", grad: "from-indigo-500 to-violet-500", sectionKey: "managers" },
       { id: "recordings", label: "Audio yozuvlar", hint: "Transkripsiya jurnali", icon: "waveform", grad: "from-cyan-500 to-sky-500", sectionKey: "call_analytics" },
       { id: "upload", label: "Audio yuklash", hint: "Yangi qo'ng'iroqlar", icon: "upload", grad: "from-emerald-500 to-teal-500", sectionKey: "call_analytics" },
       { id: "deep-audit", label: "Chuqur tahlil", hint: "Advanced Deep Audit", icon: "scan", grad: "from-fuchsia-500 to-pink-500", sectionKey: "call_analytics" },
