@@ -277,12 +277,24 @@ export function RecordingsView() {
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{formatDateTime(c.created_at)}</td>
                     <td className="px-6 py-4 font-mono text-slate-500 dark:text-slate-400">{formatSeconds(c.duration)}</td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-10 font-bold ${c.kpi_score > 0 ? scoreColor(c.kpi_score) : "text-slate-400"}`}>
-                          {c.kpi_score > 0 ? score10(c.kpi_score) : "—"}
+                      {c.kpi_score > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <span className={`w-10 font-bold ${scoreColor(c.kpi_score)}`}>{score10(c.kpi_score)}</span>
+                          <div className="w-20"><ScoreBar score={c.kpi_score} /></div>
+                        </div>
+                      ) : (
+                        /* Ball yo'q bo'lsa — NEGA yo'qligi yoziladi ("Javobsiz",
+                           "Kunlik limitdan oshdi" va h.k.), quruq 0.0 emas. */
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                            c.dropped_reason === "Kunlik limitdan oshdi"
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                          }`}
+                        >
+                          {c.dropped_reason || "—"}
                         </span>
-                        <div className="w-20"><ScoreBar score={c.kpi_score} /></div>
-                      </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 font-medium text-rose-500">{c.penalty_amount ? `−${formatUZS(c.penalty_amount)}` : "—"}</td>
                     <td className="px-6 py-4 font-medium text-emerald-500">{c.bonus_amount ? `+${formatUZS(c.bonus_amount)}` : "—"}</td>

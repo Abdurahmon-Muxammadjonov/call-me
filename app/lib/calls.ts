@@ -51,6 +51,8 @@ export interface CallRow {
   penalty_amount: number;
   bonus_amount: number;
   rop_comment: string;
+  /* Nega baholanmagani: "Javobsiz", "Kunlik limitdan oshdi" va h.k. */
+  dropped_reason?: string | null;
   created_at: string;
   incoming_count?: number | null;
   outgoing_count?: number | null;
