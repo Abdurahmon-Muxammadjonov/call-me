@@ -19,6 +19,7 @@ import { AnalyticsView } from "./AnalyticsView";
 import { ManagementView } from "./ManagementView";
 import { ComparisonView } from "./ComparisonView";
 import { StaffStatsView } from "./StaffStatsView";
+import { AnalysisStatusView } from "./AnalysisStatusView";
 import { StaffManager } from "./StaffManager";
 import { ManagersDashboard } from "./ManagersDashboard";
 import { ToastHost } from "./ToastHost";
@@ -36,6 +37,7 @@ export const TAB_PATH: Record<TabId, string> = {
   comparison: "comparison",
   staff: "staff",
   "staff-stats": "staff-stats",
+  "analysis-status": "analysis-status",
   recordings: "recordings",
   upload: "upload",
   "deep-audit": "deep-audit",
@@ -62,6 +64,7 @@ const TAB_KEYS: Record<TabId, { title: DictKey; subtitle: DictKey }> = {
   comparison: { title: "tab.comparison.title", subtitle: "tab.comparison.subtitle" },
   staff: { title: "tab.staff.title", subtitle: "tab.staff.subtitle" },
   "staff-stats": { title: "tab.staff-stats.title", subtitle: "tab.staff-stats.subtitle" },
+  "analysis-status": { title: "tab.analysis-status.title", subtitle: "tab.analysis-status.subtitle" },
   recordings: { title: "tab.recordings.title", subtitle: "tab.recordings.subtitle" },
   upload: { title: "tab.upload.title", subtitle: "tab.upload.subtitle" },
   "deep-audit": { title: "tab.deep-audit.title", subtitle: "tab.deep-audit.subtitle" },
@@ -77,6 +80,7 @@ const NAV_LABEL_KEYS: Record<TabId, { label: DictKey; hint: DictKey }> = {
   comparison: { label: "nav.comparison.label", hint: "nav.comparison.hint" },
   staff: { label: "nav.staff.label", hint: "nav.staff.hint" },
   "staff-stats": { label: "nav.staff-stats.label", hint: "nav.staff-stats.hint" },
+  "analysis-status": { label: "nav.analysis-status.label", hint: "nav.analysis-status.hint" },
   recordings: { label: "nav.recordings.label", hint: "nav.recordings.hint" },
   upload: { label: "nav.upload.label", hint: "nav.upload.hint" },
   "deep-audit": { label: "nav.deep-audit.label", hint: "nav.deep-audit.hint" },
@@ -101,6 +105,7 @@ function renderTab(tab: TabId) {
     case "management": return <ManagementView />;
     case "comparison": return <ComparisonView />;
     case "staff-stats": return <StaffStatsView />;
+    case "analysis-status": return <AnalysisStatusView />;
     case "staff": return <StaffManager />;
     case "recordings": return <RecordingsView />;
     case "upload": return <UploadView />;

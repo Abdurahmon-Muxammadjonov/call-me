@@ -338,6 +338,38 @@ export async function fetchPopStats(platformId?: string | null, signal?: AbortSi
   }
 }
 
+/* ---------- Tahlil holati (qilingan / qilinmagan + sabablari) ---------- */
+export interface AnalysisStatusReason { reason: string; count: number; minutes: number }
+export interface AnalysisStatusOperator {
+  operator: string;
+  analyzed: number;
+  skipped: number;
+  analyzed_minutes: number;
+  limit_reached: boolean;
+}
+export interface AnalysisStatus {
+  total: number;
+  analyzed: number;
+  analyzed_minutes: number;
+  not_analyzed: number;
+  not_analyzed_minutes: number;
+  reasons: AnalysisStatusReason[];
+  operators: AnalysisStatusOperator[];
+}
+
+export async function fetchAnalysisStatus(date?: string, signal?: AbortSignal): Promise<{ date: string; status: AnalysisStatus }> {
+  const qs = date ? `?date=${encodeURIComponent(date)}` : "";
+  const res = await fetch(apiUrl(`/analytics/analysis-status${qs}`), {
+    method: "GET",
+    headers: { Accept: "application/json", ...authHeadersAuto() },
+    signal,
+  });
+  if (!res.ok) throw new Error(`analysis-status ${res.status}`);
+  const json = (await res.json()) as { success: boolean; date: string; data: AnalysisStatus };
+  if (!json.success) throw new Error("analysis-status: success=false");
+  return { date: json.date, status: json.data };
+}
+
 /* ---------- Kunlik yakun (serverda, BARCHA qo'ng'iroqlar bo'yicha) ---------- */
 export interface DailySummaryDay {
   date: string;

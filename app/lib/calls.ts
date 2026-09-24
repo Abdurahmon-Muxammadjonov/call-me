@@ -172,13 +172,24 @@ export async function getManagerStats(id: string, signal?: AbortSignal, platform
 /* ---------- Calls ---------- */
 
 export async function listCalls(
-  opts: { managerId?: string; limit?: number; platformId?: string | null } = {},
+  opts: {
+    managerId?: string;
+    limit?: number;
+    platformId?: string | null;
+    /* Tahlil holati bo'yicha filtr — "Tahlil holati" bo'limi uchun. */
+    analyzed?: boolean;
+    reason?: string;
+    date?: string;
+  } = {},
   signal?: AbortSignal
 ): Promise<CallRow[]> {
   const params = new URLSearchParams();
   if (opts.managerId) params.set("manager_id", opts.managerId);
   if (opts.platformId && opts.platformId !== "live") params.set("platform_id", opts.platformId);
   params.set("limit", String(opts.limit ?? 50));
+  if (opts.analyzed !== undefined) params.set("analyzed", String(opts.analyzed));
+  if (opts.reason) params.set("reason", opts.reason);
+  if (opts.date) params.set("date", opts.date);
   return unwrapData<CallRow[]>(apiClient.get<{ success?: boolean; data?: CallRow[]; error?: string; message?: string }>(`/api/calls?${params.toString()}`, { signal }));
 }
 
