@@ -356,6 +356,30 @@ export async function fetchPopStats(platformId?: string | null, signal?: AbortSi
   }
 }
 
+/* ---------- Soatlik kesim ---------- */
+export interface HourlyRow {
+  hour: number;
+  calls: number;
+  operator_calls: number;
+  long_calls: number;
+  analyzed: number;
+  talk_seconds: number;
+}
+
+/* GET /analytics/hourly — 0–23 soatning har biri uchun qator. */
+export async function fetchHourly(date?: string, signal?: AbortSignal): Promise<HourlyRow[]> {
+  const qs = date ? `?date=${encodeURIComponent(date)}` : "";
+  const res = await fetch(apiUrl(`/analytics/hourly${qs}`), {
+    method: "GET",
+    headers: { Accept: "application/json", ...authHeadersAuto() },
+    signal,
+  });
+  if (!res.ok) throw httpError("Soatlik kesim", res.status);
+  const json = (await res.json()) as { success: boolean; data: HourlyRow[] };
+  if (!json.success) throw new Error("hourly: success=false");
+  return json.data;
+}
+
 /* ---------- Tahlil holati (qilingan / qilinmagan + sabablari) ---------- */
 export interface AnalysisStatusReason { reason: string; count: number; minutes: number }
 export interface AnalysisStatusOperator {
@@ -397,6 +421,10 @@ export interface DailySummaryDay {
   scored: number;
   avg_score: number; // 0-100
   low_score: number; // ball < 5 (10 ballikda) — "diqqat talab qiladi"
+  long_calls: number;     // KPI normasidagi chegaradan uzun qo'ng'iroqlar
+  operator_calls: number; // operatori aniqlangan qo'ng'iroqlar
+  penalty_sum: number;
+  bonus_sum: number;
   incoming: number;
   outgoing: number;
   leads: number;
@@ -411,8 +439,9 @@ export interface DailySummaryDay {
  * Ilgari raqamlar /api/calls ro'yxatidan hisoblanardi, u esa ko'pi bilan
  * 200 qator qaytaradi — kuniga 1000+ qo'ng'iroq kelganda ko'rsatkichlar
  * yangi qo'ng'iroq kelgani sari KAMAYIB borardi. */
-export async function fetchDailySummary(days = 35, signal?: AbortSignal): Promise<DailySummaryDay[]> {
-  const res = await fetch(apiUrl(`/analytics/daily-summary?days=${days}`), {
+export async function fetchDailySummary(days = 35, signal?: AbortSignal, until?: string): Promise<DailySummaryDay[]> {
+  const qs = `days=${days}${until ? `&until=${encodeURIComponent(until)}` : ""}`;
+  const res = await fetch(apiUrl(`/analytics/daily-summary?${qs}`), {
     method: "GET",
     headers: { Accept: "application/json", ...authHeadersAuto() },
     signal,
@@ -429,7 +458,7 @@ export interface StaffStatRow {
   key: string;
   name: string;
   calls: number;
-  minutes: number;
+  minutes: number; // gaplashgan vaqti (daqiqa)
   scored_calls: number;
   avg_score: number; // 0-100
   stages: StaffStage[];

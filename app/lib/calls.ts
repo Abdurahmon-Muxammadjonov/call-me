@@ -187,6 +187,8 @@ export async function listCalls(
     analyzed?: boolean;
     reason?: string;
     date?: string;
+    /* Sahifalash — eksport uchun (backend 200 tadan ko'p bermaydi). */
+    offset?: number;
   } = {},
   signal?: AbortSignal
 ): Promise<CallRow[]> {
@@ -197,6 +199,7 @@ export async function listCalls(
   if (opts.analyzed !== undefined) params.set("analyzed", String(opts.analyzed));
   if (opts.reason) params.set("reason", opts.reason);
   if (opts.date) params.set("date", opts.date);
+  if (opts.offset) params.set("offset", String(opts.offset));
   return unwrapData<CallRow[]>(apiClient.get<{ success?: boolean; data?: CallRow[]; error?: string; message?: string }>(`/api/calls?${params.toString()}`, { signal }));
 }
 

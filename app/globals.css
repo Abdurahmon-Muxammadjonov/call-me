@@ -164,38 +164,6 @@
 
 
 
-/* "Audio yozuvlar" sahifasining eski --rec-* nomlari yangi semantik
- * tokenlarga bog'lanadi. var() ishlatish paytida hisoblangani uchun
- * bitta e'lon ikkala mavzuda ham to'g'ri ishlaydi. 2-bosqichda sahifa
- * qayta yozilgach, bu blok olib tashlanadi. */
-:root {
-  --rec-bg: var(--bg);
-  --rec-card: var(--surface);
-  --rec-kpi: var(--surface-2);
-  --rec-border: var(--border);
-  --rec-divider: var(--divider);
-  --rec-text: var(--text);
-  --rec-text-2: var(--text-2);
-  --rec-text-3: var(--subtle);
-  --rec-accent: var(--accent);
-  --rec-accent-text: var(--accent-text);
-  --rec-bar: var(--chart);
-  --rec-green: var(--green);
-  --rec-green-bg: var(--green-tint);
-  --rec-yellow: var(--amber);
-  --rec-yellow-bg: var(--amber-tint);
-  --rec-yellow-bar: var(--amber-bar);
-  --rec-orange: var(--orange);
-  --rec-orange-bg: var(--orange-tint);
-  --rec-view-bg: var(--view-btn-bg);
-  --rec-view-text: var(--view-btn-text);
-  --rec-btn-bg: var(--surface-4);
-  --rec-btn-border: var(--border-chip);
-  --rec-player-bg: var(--surface-4);
-  --rec-wave-idle: var(--bar-dim);
-  --rec-row-active: var(--row-selected);
-  --rec-segment-active: var(--seg-active);
-}
 
 @theme inline {
   /* Dashboard semantik ranglari — `bg-surface`, `text-muted`, `border-border`

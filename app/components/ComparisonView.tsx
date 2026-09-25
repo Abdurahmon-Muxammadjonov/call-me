@@ -1,308 +1,307 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useLiveRefresh } from "../lib/useLiveRefresh";
-import { formatScore } from "../lib/format";
-import { Card, SectionTitle, Skeleton } from "./ui";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import {
-  fetchPopStats,
-  fetchConversionHistory,
-  fetchDailyMinutes,
-  type PopStats,
-  type PopBlock,
-  type ConversionDay,
-  type DailyMinutesResult,
+  fetchConversionHistory, fetchDailyMinutes, fetchDailySummary, fetchHourly,
+  type ConversionDay, type DailyMinutesResult, type DailySummaryDay, type HourlyRow,
 } from "../lib/api";
-import { AnalyticsErrorUI, categorizeError, type AnalyticsError } from "./AnalyticsErrorUI";
+import { useLiveRefresh } from "../lib/useLiveRefresh";
+import { useT } from "../lib/i18n";
+import {
+  formatMinutes, formatNumber, formatPercent, formatScore, normalizeScore,
+  tashkentDay, tashkentNowHm,
+} from "../lib/format";
+import { Card, CardHeader, DeltaChip, EmptyState, PageHeader, ProgressBar, SegmentedControl, Skeleton, deltaOf } from "./kit";
+import { LineChart } from "./kit/charts";
 
 /* =====================================================================
- * Solishtirish paneli — alohida nav bo'limi.
+ * SOLISHTIRISH PANELI (spetsifikatsiya 3.3)
  *
- * Kunlik / Haftalik / Oylik natijalar oldingi davr bilan YONMA-YON
- * solishtiriladi (jonli /analytics/pop). Pastda — har kunlik tarix
- * (/api/management/conversion-history) saqlanib turadi.
+ * Uch ko'rsatkich kartasi (joriy vs oldingi), soatlik grafik va kunlik
+ * jadval. Jadval ASOSI — hamma qo'ng'iroqlar (daily-summary); operatorli
+ * soni alohida kichik yozuvda ko'rsatiladi, shunda boshqa sahifalardagi
+ * raqamlar bilan mos keladi.
  * ===================================================================== */
 
-const NUM = new Intl.NumberFormat("uz-UZ", { maximumFractionDigits: 1 });
+type Period = "day" | "week" | "month";
 
-function Delta({ pct }: { pct: number }) {
-  const flat = Math.abs(pct) < 0.05;
-  const up = pct > 0;
-  const tone = flat
-    ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-    : up
-    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
-    : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400";
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${tone}`}>
-      {flat ? "0%" : `${up ? "+" : ""}${pct.toFixed(1)}%`}
-    </span>
-  );
+function periodDays(period: Period): { cur: string[]; prev: string[] } {
+  const today = tashkentDay();
+  if (period === "day") return { cur: [today], prev: [tashkentDay(-1)] };
+  if (period === "week") {
+    const dow = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7;
+    const cur = Array.from({ length: dow + 1 }, (_, i) => tashkentDay(-dow + i));
+    return { cur, prev: cur.map((_, i) => tashkentDay(-dow - 7 + i)) };
+  }
+  const dayNum = Number(today.slice(8, 10));
+  const cur = Array.from({ length: dayNum }, (_, i) => tashkentDay(-(dayNum - 1) + i));
+  return { cur, prev: cur.map((_, i) => tashkentDay(-(dayNum - 1) - 30 + i)) };
 }
 
-/* `score: true` — qiymat 0–100 shkalasida keladi va ekranda 10 ballik
- * tizimga o'tkaziladi (normalizeScore). Ilgari shunday belgilanmagani
- * uchun "O'rtacha KPI" 20.5 ball bo'lib ko'ringan edi — aslida 2.1/10. */
-const ROWS: { label: string; unit: string; key: keyof PopBlock; score?: boolean }[] = [
-  { label: "Qo'ng'iroqlar", unit: "ta", key: "calls" },
-  { label: "Davomiylik", unit: "min", key: "duration_minutes" },
-  { label: "O'rtacha KPI", unit: "/ 10", key: "avg_kpi", score: true },
-];
+const sumBy = (rows: DailySummaryDay[], days: string[], key: keyof DailySummaryDay) =>
+  rows.filter((r) => days.includes(r.date)).reduce((s, r) => s + (Number(r[key]) || 0), 0);
 
-function ComparisonCard({
-  title,
-  prevLabel,
-  curLabel,
-  block,
+/** 3.3 A — ko'rsatkich kartasi: oldingi va joriy davr yonma-yon. */
+function MetricCard({
+  label, unit, prevLabel, curLabel, prev, cur, isScore,
 }: {
-  title: string;
-  prevLabel: string;
-  curLabel: string;
-  block: PopBlock;
+  label: string; unit: string; prevLabel: string; curLabel: string;
+  prev: number; cur: number; isScore?: boolean;
 }) {
-  return (
-    <Card className="p-5 sm:p-6">
-      <h3 className="mb-4 text-base font-semibold tracking-tight text-slate-900 dark:text-white">{title}</h3>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
-            <th className="pb-2 text-left font-medium">Ko&apos;rsatkich</th>
-            <th className="pb-2 text-right font-medium">{prevLabel}</th>
-            <th className="pb-2 text-right font-medium">{curLabel}</th>
-            <th className="pb-2 text-right font-medium">Farq</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ROWS.map((r) => {
-            const m = block[r.key];
-            return (
-              <tr key={r.key} className="border-t border-slate-100 dark:border-slate-800">
-                <td className="py-2.5 text-slate-600 dark:text-slate-300">{r.label}</td>
-                <td className="py-2.5 text-right tabular-nums text-slate-400 dark:text-slate-500">
-                  {r.score ? formatScore(m.previous) : NUM.format(m.previous)} <span className="text-xs">{r.unit}</span>
-                </td>
-                <td className="py-2.5 text-right font-semibold tabular-nums text-slate-900 dark:text-white">
-                  {r.score ? formatScore(m.current) : NUM.format(m.current)} <span className="text-xs font-normal text-slate-400">{r.unit}</span>
-                </td>
-                <td className="py-2.5 text-right">
-                  <Delta pct={m.change_pct} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </Card>
-  );
-}
+  const max = Math.max(prev, cur, 1);
+  const fmt = (v: number) => (isScore ? formatScore(v) : formatNumber(v, unit.includes("daq") ? 1 : 0));
+  const delta = deltaOf(cur, prev);
+  const good = delta.tone !== "orange";
 
-const HISTORY_COLLAPSED = 4; // bosilmaganda nechta kun ko'rinadi
-
-function HistoryCard({ days }: { days: ConversionDay[] }) {
-  const [expanded, setExpanded] = useState(false);
-  const all = [...days].reverse(); // eng so'nggi kun yuqorida
-  const rows = expanded ? all : all.slice(0, HISTORY_COLLAPSED);
-  const canToggle = all.length > HISTORY_COLLAPSED;
   return (
-    <Card className="p-5 sm:p-6">
+    <Card>
       <div className="flex items-start justify-between gap-3">
-        <SectionTitle title="Kunlik tarix" subtitle="Har kunlik natijalar saqlanadi — so'nggi kunlar" />
-        {canToggle && (
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-            title={expanded ? "Yig'ish" : "Hammasini ko'rsatish"}
-            className="shrink-0 rounded-full border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-          >
-            <svg
-              viewBox="0 0 16 16"
-              aria-hidden
-              className={`h-4 w-4 transition-transform duration-300 ${expanded ? "" : "rotate-180"}`}
-            >
-              <path d="M3.5 10.5 8 6l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        )}
+        <span className="text-sm" style={{ color: "var(--muted)" }}>{label}</span>
+        <DeltaChip delta={delta} padded />
       </div>
-      <div className="mt-3 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              <th className="pb-2 text-left font-medium">Sana</th>
-              <th className="pb-2 text-right font-medium">Qo&apos;ng&apos;iroqlar</th>
-              <th className="pb-2 text-right font-medium">Trafik konv.</th>
-              <th className="pb-2 text-right font-medium">Sotuv konv.</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((d) => (
-              <tr key={d.date} className="border-t border-slate-100 dark:border-slate-800">
-                <td className="py-2.5 text-slate-600 dark:text-slate-300">{d.date}</td>
-                <td className="py-2.5 text-right tabular-nums text-slate-900 dark:text-white">{d.calls}</td>
-                <td className="py-2.5 text-right tabular-nums text-slate-500 dark:text-slate-400">{NUM.format(d.traffic_conversion)}%</td>
-                <td className="py-2.5 text-right tabular-nums text-slate-500 dark:text-slate-400">{NUM.format(d.sales_conversion)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  );
-}
-
-/* Kunlik gaplashuv daqiqalari — har kunda jami necha daqiqa gaplashilgan.
- * HAMMA audio hisobga olinadi (3 soniyalik ham, 40 daqiqalik ham), tahlil
- * qilingan-qilinmaganidan qat'i nazar. Kun Toshkent vaqti bo'yicha, shuning
- * uchun kechki (21:00 dagi) qo'ng'iroqlar ham SHU kunga tushadi. */
-function fmtMinutes(min: number): string {
-  if (min < 60) return `${NUM.format(min)} daq`;
-  const h = Math.floor(min / 60);
-  const m = Math.round(min - h * 60);
-  return `${h} soat ${m} daq`;
-}
-
-function DailyMinutesCard({ result }: { result: DailyMinutesResult }) {
-  const [openDay, setOpenDay] = useState<string | null>(null);
-  const todayKey = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tashkent",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-
-  return (
-    <Card className="p-6">
-      <SectionTitle
-        title="Kunlik gaplashuv (daqiqa)"
-        subtitle={`Faqat operator qo'ng'iroqlari · ${result.summary.days} kun · ${result.summary.calls} qo'ng'iroq · jami ${fmtMinutes(result.summary.minutes)}`}
-      />
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-400 dark:border-slate-700">
-              <th className="pb-2 font-medium">Kun</th>
-              <th className="pb-2 text-right font-medium">Qo&apos;ng&apos;iroq</th>
-              <th className="pb-2 text-right font-medium">Jami gaplashuv</th>
-              <th className="pb-2 text-right font-medium">O&apos;rtacha</th>
-            </tr>
-          </thead>
-          <tbody>
-            {result.days.map((d) => {
-              const avg = d.calls ? Math.round((d.minutes / d.calls) * 10) / 10 : 0;
-              const isOpen = openDay === d.date;
-              return (
-                <tr
-                  key={d.date}
-                  onClick={() => setOpenDay(isOpen ? null : d.date)}
-                  className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
-                >
-                  <td className="py-2.5">
-                    <span className={d.date === todayKey ? "font-semibold text-indigo-600 dark:text-indigo-400" : "text-slate-600 dark:text-slate-300"}>
-                      {d.date}
-                      {d.date === todayKey && " · bugun"}
-                    </span>
-                    {isOpen && d.operators.length > 0 && (
-                      <ul className="mt-2 space-y-1">
-                        {d.operators.map((o) => (
-                          <li key={o.name} className="flex justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-                            <span>{o.name}</span>
-                            <span className="tabular-nums">
-                              {o.calls} ta · {fmtMinutes(o.minutes)}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </td>
-                  <td className="py-2.5 text-right tabular-nums text-slate-600 dark:text-slate-300">{d.calls}</td>
-                  <td className="py-2.5 text-right font-semibold tabular-nums text-slate-900 dark:text-white">{fmtMinutes(d.minutes)}</td>
-                  <td className="py-2.5 text-right tabular-nums text-slate-500 dark:text-slate-400">{NUM.format(avg)} daq</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-3 text-xs text-slate-400">
-        Kunni bosing — o&apos;sha kuni har bir operator qancha gaplashgani ko&apos;rinadi.
+      <p className="mt-2 flex items-baseline gap-2">
+        <span className="font-mono text-4xl font-semibold leading-none" style={{ color: "var(--text)" }}>{fmt(cur)}</span>
+        <span className="text-sm" style={{ color: "var(--subtle)" }}>{unit}</span>
       </p>
+
+      <div className="mt-4 space-y-2.5">
+        {[
+          { name: prevLabel, value: prev, color: "#3A4252", text: "var(--text-3)" },
+          { name: curLabel, value: cur, color: good ? "var(--chart)" : "var(--orange)", text: "var(--text)" },
+        ].map((r) => (
+          <div key={r.name} className="grid items-center gap-2.5" style={{ gridTemplateColumns: "52px 1fr 76px" }}>
+            <span className="truncate text-xs" style={{ color: r.text }}>{r.name}</span>
+            <ProgressBar value={r.value} max={max} color={r.color} height={8} />
+            <span className="text-right font-mono text-xs" style={{ color: r.text }}>{fmt(r.value)}</span>
+          </div>
+        ))}
+      </div>
     </Card>
   );
 }
 
 export function ComparisonView() {
-  const [pop, setPop] = useState<PopStats | null>(null);
+  const t = useT();
+  const [period, setPeriod] = useState<Period>("day");
+  const [days, setDays] = useState<DailySummaryDay[] | null>(null);
+  const [untilDays, setUntilDays] = useState<DailySummaryDay[] | null>(null);
+  const [today, setToday] = useState<HourlyRow[] | null>(null);
+  const [yesterday, setYesterday] = useState<HourlyRow[] | null>(null);
+  const [minutes, setMinutes] = useState<DailyMinutesResult | null>(null);
   const [history, setHistory] = useState<ConversionDay[] | null>(null);
-  const [daily, setDaily] = useState<DailyMinutesResult | null>(null);
-  const [error, setError] = useState<AnalyticsError | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [openDay, setOpenDay] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  // Avtomatik yangilanish: realtime ishlamasa ham panel eskirmaydi
-  // (qarang: lib/useLiveRefresh.ts).
-  useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 30000); 
 
-  const handleRetry = () => {
-    setReloadKey((k) => k + 1);
-  };
+  useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 30000);
 
   useEffect(() => {
     const ctrl = new AbortController();
-
-    Promise.all([
-      fetchPopStats(null, ctrl.signal),
-      fetchConversionHistory(null, 30, ctrl.signal),
-      // Kunlik daqiqalar alohida: backend eski bo'lsa ham panel ishlayversin.
-      fetchDailyMinutes(30, ctrl.signal).catch(() => null),
-    ])
-      .then(([p, h, dm]) => {
-        if (!ctrl.signal.aborted) {
-          setError(null);
-          setPop(p);
-          setHistory(h);
-          setDaily(dm);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!ctrl.signal.aborted) {
-          const analyticsError = categorizeError(err);
-          setError(analyticsError);
-          setIsLoading(false);
-        }
-      });
-
+    void (async () => {
+      const [d, u, h1, h2, m, hist] = await Promise.all([
+        fetchDailySummary(40, ctrl.signal).catch(() => null),
+        fetchDailySummary(40, ctrl.signal, tashkentNowHm()).catch(() => null),
+        fetchHourly(tashkentDay(), ctrl.signal).catch(() => null),
+        fetchHourly(tashkentDay(-1), ctrl.signal).catch(() => null),
+        fetchDailyMinutes(30, ctrl.signal).catch(() => null),
+        fetchConversionHistory(null, 30, ctrl.signal).catch(() => null),
+      ]);
+      if (ctrl.signal.aborted) return;
+      setDays(d); setUntilDays(u); setToday(h1); setYesterday(h2); setMinutes(m); setHistory(hist);
+    })();
     return () => ctrl.abort();
   }, [reloadKey]);
 
+  const { cur, prev } = useMemo(() => periodDays(period), [period]);
+  const rows = days ?? [];
+  const prevRows = untilDays ?? rows;
+
+  const callsCur = sumBy(rows, cur, "calls");
+  const callsPrev = sumBy(prevRows, prev, "calls");
+  const minCur = sumBy(rows, cur, "minutes");
+  const minPrev = sumBy(prevRows, prev, "minutes");
+
+  const scored = (src: DailySummaryDay[], ds: string[]) => {
+    const list = src.filter((r) => ds.includes(r.date) && r.scored > 0);
+    const total = list.reduce((s, r) => s + r.avg_score * r.scored, 0);
+    const n = list.reduce((s, r) => s + r.scored, 0);
+    return n > 0 ? total / n : 0;
+  };
+  const kpiCur = normalizeScore(scored(rows, cur)) ?? 0;
+  const kpiPrev = normalizeScore(scored(prevRows, prev)) ?? 0;
+
+  const vsLabel = period === "day" ? t("cmp.vs.day") : period === "week" ? t("cmp.vs.week") : t("cmp.vs.month");
+  const prevLabel = period === "day" ? t("cmp.prev") : period === "week" ? t("cmp.prevWeek") : t("cmp.prevMonth");
+  const curLabel = period === "day" ? t("cmp.cur") : period === "week" ? t("cmp.curWeek") : t("cmp.curMonth");
+
+  /* Soatlik grafik — 09:00 dan 23:00 gacha. */
+  const hourLabels = Array.from({ length: 15 }, (_, i) => String(i + 9).padStart(2, "0"));
+  const hourSeries = (src: HourlyRow[] | null) =>
+    hourLabels.map((h) => src?.find((x) => x.hour === Number(h))?.calls ?? 0);
+  const peakHour = (today ?? []).slice().sort((a, b) => b.calls - a.calls)[0];
+
+  /* Kunlik jadval — ASOS: hamma qo'ng'iroqlar. */
+  const tableRows = rows.slice(0, 14);
+  const maxMinutes = Math.max(1, ...tableRows.map((r) => r.minutes));
+  const byDayOps = new Map(minutes?.days.map((d) => [d.date, d.operators]) ?? []);
+  const convByDay = new Map(history?.map((h) => [h.date, h]) ?? []);
+
+  const loading = days === null;
+
   return (
-    <div className="animate-slide-up space-y-6">
-      <SectionTitle
-        title="Solishtirish paneli"
-        subtitle="Kunlik, haftalik va oylik natijalar — oldingi davr bilan yonma-yon"
+    <div className="space-y-5">
+      <PageHeader
+        title={t("nav.comparison.label")}
+        hint={t("cmp.hint")}
+        right={
+          <>
+            <SegmentedControl<Period>
+              value={period}
+              onChange={setPeriod}
+              options={[
+                { value: "day", label: t("an.period.day") },
+                { value: "week", label: t("an.period.week") },
+                { value: "month", label: t("an.period.month") },
+              ]}
+            />
+            <span
+              className="inline-flex h-11 items-center rounded-xl px-3.5 text-[13px]"
+              style={{ background: "var(--control)", border: "1px solid var(--border-control)", color: "var(--text-3)" }}
+            >
+              {vsLabel}
+            </span>
+          </>
+        }
       />
 
-      {isLoading && !pop && (
+      {loading ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Skeleton className="h-56" />
-          <Skeleton className="h-56" />
-          <Skeleton className="h-56" />
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} height={220} />)}
         </div>
+      ) : (
+        <>
+          {/* A) Uch ko'rsatkich */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <MetricCard label={t("cmp.calls")} unit={t("cmp.unit.calls")} prevLabel={prevLabel} curLabel={curLabel} prev={callsPrev} cur={callsCur} />
+            <MetricCard label={t("cmp.duration")} unit={t("cmp.unit.min")} prevLabel={prevLabel} curLabel={curLabel} prev={minPrev} cur={minCur} />
+            <MetricCard label={t("cmp.kpi")} unit={t("cmp.unit.score")} prevLabel={prevLabel} curLabel={curLabel} prev={kpiPrev} cur={kpiCur} isScore />
+          </div>
+
+          {/* B) Soatlik grafik */}
+          <Card>
+            <CardHeader
+              title={t("cmp.chart.hours")}
+              hint={peakHour && peakHour.calls > 0 ? t("cmp.chart.peak", { hour: `${String(peakHour.hour).padStart(2, "0")}:00` }) : undefined}
+              right={
+                <div className="flex items-center gap-4 text-xs" style={{ color: "var(--text-3)" }}>
+                  <span className="flex items-center gap-1.5"><span className="h-0.5 w-4" style={{ background: "var(--chart)" }} />{t("cmp.legend.today")}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-0.5 w-4" style={{ backgroundImage: "repeating-linear-gradient(90deg, var(--subtle) 0 5px, transparent 5px 10px)" }} />
+                    {t("cmp.legend.yesterday")}
+                  </span>
+                </div>
+              }
+            />
+            <div className="mt-4">
+              <LineChart labels={hourLabels} current={hourSeries(today)} previous={hourSeries(yesterday)} />
+            </div>
+          </Card>
+
+          {/* C) Kunlik gaplashuv jadvali */}
+          <Card padded={false}>
+            <div className="px-[22px] py-5">
+              <CardHeader title={t("cmp.table.title")} hint={t("cmp.table.hint")} />
+            </div>
+
+            {tableRows.length === 0 ? (
+              <EmptyState text={t("an.empty")} />
+            ) : (
+              <div className="overflow-x-auto">
+                <div className="min-w-[860px]">
+                  <div
+                    className="grid items-center px-[22px] text-[11px] font-medium uppercase tracking-[0.1em]"
+                    style={{ gridTemplateColumns: "1.2fr 0.8fr 2.4fr 0.8fr 0.8fr 0.8fr 24px", columnGap: 16, height: 38, color: "var(--subtle)", borderTop: "1px solid var(--divider-strong)", borderBottom: "1px solid var(--divider-strong)" }}
+                  >
+                    <span>{t("cmp.col.day")}</span>
+                    <span>{t("cmp.col.calls")}</span>
+                    <span>{t("cmp.col.talk")}</span>
+                    <span>{t("cmp.col.avg")}</span>
+                    <span className="hidden xl:block">{t("cmp.col.traffic")}</span>
+                    <span className="hidden xl:block">{t("cmp.col.sales")}</span>
+                    <span />
+                  </div>
+
+                  {tableRows.map((d) => {
+                    const open = openDay === d.date;
+                    const ops = byDayOps.get(d.date) ?? [];
+                    const conv = convByDay.get(d.date);
+                    const unknownCalls = d.calls - d.operator_calls;
+                    return (
+                      <div key={d.date} style={{ background: open ? "var(--row-open)" : undefined }}>
+                        <button
+                          type="button"
+                          onClick={() => setOpenDay(open ? null : d.date)}
+                          aria-expanded={open}
+                          className="grid w-full items-center px-[22px] text-left"
+                          style={{ gridTemplateColumns: "1.2fr 0.8fr 2.4fr 0.8fr 0.8fr 0.8fr 24px", columnGap: 16, height: 52, borderBottom: "1px solid var(--divider)" }}
+                        >
+                          <span className="min-w-0">
+                            <span className="block font-mono text-sm" style={{ color: "var(--text)" }}>{d.date.slice(8, 10)}-{d.date.slice(5, 7)}</span>
+                            <span className="block text-[13px]" style={{ color: "var(--subtle)" }}>
+                              {new Intl.DateTimeFormat("uz-UZ", { timeZone: "Asia/Tashkent", weekday: "short" }).format(new Date(`${d.date}T12:00:00Z`))}
+                            </span>
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block font-mono text-sm" style={{ color: "var(--text-2)" }}>{formatNumber(d.calls)}</span>
+                            {unknownCalls > 0 && (
+                              <span className="block text-xs" style={{ color: "var(--subtle)" }}>
+                                {t("cmp.operatorCalls", { n: formatNumber(d.operator_calls) })}
+                              </span>
+                            )}
+                          </span>
+                          <span className="flex min-w-0 items-center gap-3">
+                            <span className="min-w-0 flex-1">
+                              <ProgressBar value={d.minutes} max={maxMinutes} color={open ? "var(--chart)" : "var(--chart-dim)"} height={8} />
+                            </span>
+                            <span className="shrink-0 font-mono text-[13px]" style={{ color: "var(--text-2)" }}>{formatMinutes(d.minutes)}</span>
+                          </span>
+                          <span className="font-mono text-[13px]" style={{ color: "var(--text-2)" }}>
+                            {d.calls > 0 ? `${Math.round((d.minutes * 60) / d.calls)}s` : "—"}
+                          </span>
+                          <span className="hidden font-mono text-[13px] xl:block" style={{ color: "var(--text-2)" }}>
+                            {conv ? formatPercent(conv.traffic_conversion) : "—"}
+                          </span>
+                          <span className="hidden font-mono text-[13px] xl:block" style={{ color: "var(--text-2)" }}>
+                            {conv ? formatPercent(conv.sales_conversion) : "—"}
+                          </span>
+                          <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} style={{ color: "var(--subtle)" }} />
+                        </button>
+
+                        {open && (
+                          <div className="grid gap-3 px-[22px] pb-[18px] pt-1 sm:grid-cols-2 xl:grid-cols-5">
+                            {[...ops, ...(unknownCalls > 0 ? [{ name: t("cmp.unknown"), calls: unknownCalls, minutes: Math.max(0, d.minutes - ops.reduce((s, o) => s + o.minutes, 0)) }] : [])]
+                              .sort((a, b) => b.minutes - a.minutes)
+                              .map((o) => (
+                                <div key={o.name} className="rounded-xl p-3.5" style={{ background: "var(--surface-3)", border: "1px solid var(--border)" }}>
+                                  <p className="flex items-baseline justify-between gap-2">
+                                    <span className="truncate text-[13px]" style={{ color: "var(--text-2)" }}>{o.name}</span>
+                                    <span className="font-mono text-xs" style={{ color: "var(--muted)" }}>{formatNumber(o.calls)}</span>
+                                  </p>
+                                  <p className="mt-1 font-mono text-[17px] font-semibold" style={{ color: "var(--text)" }}>{formatMinutes(o.minutes)}</p>
+                                  <div className="mt-2"><ProgressBar value={o.minutes} max={Math.max(1, d.minutes)} color="var(--chart)" height={4} /></div>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </Card>
+        </>
       )}
-
-      {error && <AnalyticsErrorUI error={error} onRetry={handleRetry} />}
-
-      {pop && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <ComparisonCard title="Kunlik" prevLabel="Kecha" curLabel="Bugun" block={pop.daily} />
-          <ComparisonCard title="Haftalik" prevLabel="O'tgan hafta" curLabel="Bu hafta" block={pop.weekly} />
-          <ComparisonCard title="Oylik" prevLabel="O'tgan oy" curLabel="Bu oy" block={pop.monthly} />
-        </div>
-      )}
-
-      {daily && daily.days.length > 0 && <DailyMinutesCard result={daily} />}
-
-      {history && history.length > 0 && <HistoryCard days={history} />}
     </div>
   );
 }

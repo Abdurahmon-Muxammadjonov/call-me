@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
+import { ManagementOverview } from "./ManagementOverview";
 import { Icons } from "./Icons";
 import {
   Card,
@@ -124,12 +125,13 @@ export function ManagementView() {
   const accent: Accent = platform?.accent ?? "indigo";
 
   return (
-    <div key={platformId ?? "init"} className="animate-slide-up space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <SectionTitle
-          title="Boshqaruv paneli"
-          subtitle="Uch darajali rahbariyat ko'rinishi — jonli ko'rsatkichlar"
-        />
+    <div key={platformId ?? "init"} className="animate-slide-up space-y-5">
+      {/* Sarlavha, daraja segmenti va "Umumiy" darajasining butun tuzilmasi
+          ManagementOverview'da (spetsifikatsiya 3.2). Bu yerda faqat qolgan
+          ikki daraja va platforma tanlagichi qoladi. */}
+      <ManagementOverview level={tab} onLevel={setTab} />
+
+      <div className="flex flex-wrap items-center justify-end gap-4">
         {platform && (
           <PlatformSwitcher
             platforms={platforms}
@@ -175,22 +177,24 @@ export function ManagementView() {
             </Card>
           )}
 
-          {/* 2. Period analytics */}
-          <PeriodAnalytics comparison={data.comparison} timeBuckets={data.timeBuckets} />
+          {/* Eski davr tahlili faqat "Umumiy"dan tashqari darajalarda */}
+          {tab !== "general" && (
+            <PeriodAnalytics comparison={data.comparison} timeBuckets={data.timeBuckets} />
+          )}
 
 
-          {/* 3. Three-tier dashboards */}
-          <Card className="overflow-hidden">
-            <TabBar tab={tab} onChange={setTab} accent={accent} />
-            <div key={tab} className="animate-fade-in p-5 sm:p-6">
-              {tab === "general" && <GeneralPanel metrics={data.general} />}
-              {tab === "strategic" && <StrategicPanel trends={data.strategic} />}
-              {tab === "rop" && <RopPanel sellers={data.sellers} accent={accent} />}
-            </div>
-          </Card>
-
-          {/* 4. Sales funnel */}
-          <SalesFunnel stages={data.funnel} accent={accent} />
+          {/* Qolgan ikki daraja — mantiqi o'zgarmadi. "Umumiy" endi
+              ManagementOverview'da chiziladi (spetsifikatsiya 3.2), shu
+              sabab bu yerda TabBar, GeneralPanel va eski SalesFunnel
+              ishlatilmaydi. */}
+          {tab !== "general" && (
+            <Card className="overflow-hidden">
+              <div key={tab} className="animate-fade-in p-5 sm:p-6">
+                {tab === "strategic" && <StrategicPanel trends={data.strategic} />}
+                {tab === "rop" && <RopPanel sellers={data.sellers} accent={accent} />}
+              </div>
+            </Card>
+          )}
         </>
       )}
     </div>
@@ -479,6 +483,7 @@ function TimeIntervalCard({ buckets }: { buckets: TimeBucket[] }) {
 }
 
 /* ============================ 3. TAB BAR + PANELS ============================ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- "Umumiy" daraja ManagementOverview'ga ko'chdi; bu eski ko'rinish zaxira sifatida qoldi
 function TabBar({
   tab,
   onChange,
@@ -519,6 +524,7 @@ function TabBar({
 }
 
 /* ---------- 3a. Umumiy (operational health) ---------- */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- "Umumiy" daraja ManagementOverview'ga ko'chdi; bu eski ko'rinish zaxira sifatida qoldi
 function GeneralPanel({ metrics }: { metrics: HealthMetric[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -820,6 +826,7 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 /* ============================ 4. SALES FUNNEL ============================ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- "Umumiy" daraja ManagementOverview'ga ko'chdi; bu eski ko'rinish zaxira sifatida qoldi
 function SalesFunnel({ stages, accent }: { stages: FunnelStage[]; accent: Accent }) {
   const top = stages[0]?.value || 1;
   const overall = stages.length

@@ -4,7 +4,7 @@
  * "Audio yozuvlar" sahifasining kichik qismlari: ball belgisi, holat
  * tabletkasi, yo'nalish ko'rsatkichi va formatlash yordamchilari.
  *
- * Ranglar globals.css'dagi --rec-* o'zgaruvchilaridan olinadi — ular
+ * Ranglar globals.css'dagi semantik tokenlardan olinadi — ular
  * qorong'i va yorug' mavzu uchun alohida belgilangan, shu sabab bu
  * komponentlarda `dark:` variantlari kerak emas.
  * ===================================================================== */
@@ -20,10 +20,10 @@ export function gradeOf(score100: number): Grade {
 }
 
 export const GRADE_STYLE: Record<Grade, { color: string; bg: string }> = {
-  excellent: { color: "var(--rec-green)", bg: "var(--rec-green-bg)" },
-  good: { color: "var(--rec-yellow)", bg: "var(--rec-yellow-bg)" },
-  average: { color: "var(--rec-yellow)", bg: "var(--rec-yellow-bg)" },
-  low: { color: "var(--rec-orange)", bg: "var(--rec-orange-bg)" },
+  excellent: { color: "var(--green)", bg: "var(--green-tint)" },
+  good: { color: "var(--amber)", bg: "var(--amber-tint)" },
+  average: { color: "var(--amber)", bg: "var(--amber-tint)" },
+  low: { color: "var(--orange)", bg: "var(--orange-tint)" },
 };
 
 /* Ball 0-100 saqlanadi, ekranda 10 ballik ko'rinadi. */
@@ -71,8 +71,8 @@ export function CallStatusBadge({
 }) {
   if (processing) {
     return (
-      <span className="inline-flex items-center gap-2 text-sm" style={{ color: "var(--rec-text-2)" }}>
-        <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: "var(--rec-bar)" }} />
+      <span className="inline-flex items-center gap-2 text-sm" style={{ color: "var(--text-2)" }}>
+        <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: "var(--chart)" }} />
         {labels.processing}
       </span>
     );
@@ -80,7 +80,7 @@ export function CallStatusBadge({
   return (
     <span
       className="inline-flex rounded-lg px-2.5 py-1 text-xs font-medium"
-      style={{ background: "var(--rec-btn-bg)", color: "var(--rec-text-2)", border: "1px solid var(--rec-btn-border)" }}
+      style={{ background: "var(--surface-4)", color: "var(--text-2)", border: "1px solid var(--border-chip)" }}
     >
       {reason || labels.unscored}
     </span>
@@ -93,7 +93,7 @@ export function DirectionCell({ direction, labels }: { direction?: string | null
   return (
     <span
       className="inline-flex items-center gap-1.5 text-sm"
-      style={{ color: incoming ? "var(--rec-accent-text)" : "var(--rec-text-3)" }}
+      style={{ color: incoming ? "var(--accent-text)" : "var(--subtle)" }}
     >
       <span aria-hidden>{incoming ? "↙" : unknown ? "•" : "↗"}</span>
       {unknown ? "—" : incoming ? labels.incoming : labels.outgoing}
@@ -106,6 +106,6 @@ export function DurationBar({ seconds, max }: { seconds: number; max: number }) 
   const ratio = max > 0 ? Math.sqrt(Math.max(0, seconds) / max) : 0;
   const width = Math.max(3, Math.round(ratio * 56));
   return (
-    <span className="inline-block h-1 rounded-full" style={{ width, background: "var(--rec-bar)" }} aria-hidden />
+    <span className="inline-block h-1 rounded-full" style={{ width, background: "var(--chart)" }} aria-hidden />
   );
 }

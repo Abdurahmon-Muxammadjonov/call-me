@@ -26,7 +26,7 @@ function Skeleton() {
   return (
     <div className="space-y-4 p-6">
       {[64, 96, 120, 180].map((h, i) => (
-        <div key={i} className="animate-pulse rounded-2xl" style={{ height: h, background: "var(--rec-divider)" }} />
+        <div key={i} className="animate-pulse rounded-2xl" style={{ height: h, background: "var(--divider-strong)" }} />
       ))}
     </div>
   );
@@ -60,21 +60,21 @@ function CriteriaList({ items }: { items: { title: string; score: number }[] }) 
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold" style={{ color: "var(--rec-text)" }}>{t("rec.panel.criteria")}</h3>
-        <span className="font-mono text-xs tabular-nums" style={{ color: "var(--rec-text-2)" }}>
+        <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>{t("rec.panel.criteria")}</h3>
+        <span className="font-mono text-xs tabular-nums" style={{ color: "var(--text-2)" }}>
           {done}/{items.length}
         </span>
       </div>
       <ul className="space-y-3">
         {shown.map((c) => {
-          const color = c.score >= 80 ? "var(--rec-green)" : c.score >= 50 ? "var(--rec-yellow-bar)" : "var(--rec-orange)";
+          const color = c.score >= 80 ? "var(--green)" : c.score >= 50 ? "var(--amber-bar)" : "var(--orange)";
           return (
             <li key={c.title}>
               <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                <span className="truncate text-sm" style={{ color: "var(--rec-text-2)" }}>{c.title}</span>
+                <span className="truncate text-sm" style={{ color: "var(--text-2)" }}>{c.title}</span>
                 <span className="font-mono text-xs tabular-nums" style={{ color }}>{c.score}%</span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full" style={{ background: "var(--rec-divider)" }}>
+              <div className="h-1.5 overflow-hidden rounded-full" style={{ background: "var(--divider-strong)" }}>
                 <div className="h-full rounded-full" style={{ width: `${Math.max(2, c.score)}%`, background: color }} />
               </div>
             </li>
@@ -86,7 +86,7 @@ function CriteriaList({ items }: { items: { title: string; score: number }[] }) 
           type="button"
           onClick={() => setAll((v) => !v)}
           className="mt-3 min-h-11 text-sm font-medium"
-          style={{ color: "var(--rec-accent-text)" }}
+          style={{ color: "var(--accent-text)" }}
         >
           {all ? t("rec.panel.showLess") : t("rec.panel.showAll", { n: items.length })}
         </button>
@@ -100,7 +100,7 @@ function TranscriptView({ detail, onSeek }: { detail: CallDetail; onSeek: (sec: 
   const segments = Array.isArray(detail.transcript_segments) ? detail.transcript_segments : [];
   if (segments.length === 0) {
     return (
-      <p className="whitespace-pre-line text-sm leading-relaxed" style={{ color: "var(--rec-text-2)" }}>
+      <p className="whitespace-pre-line text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
         {detail.transcript || t("rec.panel.noTranscript")}
       </p>
     );
@@ -113,7 +113,7 @@ function TranscriptView({ detail, onSeek }: { detail: CallDetail; onSeek: (sec: 
         return (
           <li key={i} className={isOperator ? "pr-6" : "pl-6"}>
             <div className="mb-1 flex items-center gap-2">
-              <span className="text-xs font-semibold" style={{ color: isOperator ? "var(--rec-accent-text)" : "var(--rec-text-3)" }}>
+              <span className="text-xs font-semibold" style={{ color: isOperator ? "var(--accent-text)" : "var(--subtle)" }}>
                 {isOperator ? t("rec.panel.seller") : t("rec.panel.client")}
               </span>
               {typeof s.start === "number" && (
@@ -121,7 +121,7 @@ function TranscriptView({ detail, onSeek }: { detail: CallDetail; onSeek: (sec: 
                   type="button"
                   onClick={() => onSeek(Number(s.start))}
                   className="font-mono text-xs tabular-nums underline-offset-2 hover:underline"
-                  style={{ color: "var(--rec-text-3)" }}
+                  style={{ color: "var(--subtle)" }}
                 >
                   {fmtClock(s.start)}
                 </button>
@@ -130,8 +130,8 @@ function TranscriptView({ detail, onSeek }: { detail: CallDetail; onSeek: (sec: 
             <p
               className="rounded-xl px-3 py-2 text-sm leading-relaxed"
               style={{
-                background: isOperator ? "var(--rec-segment-active)" : "var(--rec-btn-bg)",
-                color: "var(--rec-text)",
+                background: isOperator ? "var(--seg-active)" : "var(--surface-4)",
+                color: "var(--text)",
               }}
             >
               {s.text}
@@ -215,20 +215,20 @@ export function CallDetailPanel({
         role="dialog"
         aria-label="Qo'ng'iroq tafsiloti"
         className="fixed inset-x-0 bottom-0 top-16 z-50 flex animate-slide-up flex-col outline-none md:inset-y-0 md:left-auto md:right-0 md:w-[440px] xl:sticky xl:top-6 xl:z-0 xl:h-[calc(100vh-3rem)] xl:animate-none"
-        style={{ background: "var(--rec-card)", borderLeft: "1px solid var(--rec-border)" }}
+        style={{ background: "var(--surface)", borderLeft: "1px solid var(--border)" }}
       >
         {/* a) Sarlavha */}
         <header className="flex items-start gap-3 p-6 pb-4">
           <span
             className="grid h-12 w-12 shrink-0 place-items-center rounded-xl font-mono text-sm font-semibold text-white"
-            style={{ background: "var(--rec-accent)" }}
+            style={{ background: "var(--accent)" }}
           >
             {detail?.operator_ext || "—"}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[17px] font-semibold" style={{ color: "var(--rec-text)" }}>{managerName}</p>
+            <p className="truncate text-[17px] font-semibold" style={{ color: "var(--text)" }}>{managerName}</p>
             {detail && (
-              <p className="mt-0.5 truncate text-sm" style={{ color: "var(--rec-text-2)" }}>
+              <p className="mt-0.5 truncate text-sm" style={{ color: "var(--text-2)" }}>
                 {detail.direction === "incoming" ? t("rec.incoming") : detail.direction === "outgoing" ? t("rec.outgoing") : "—"}
                 {scriptNameOf(detail.rop_comment) ? ` · ${scriptNameOf(detail.rop_comment)}` : ""}
                 {` · ${fmtWhen(detail.created_at)}`}
@@ -240,7 +240,7 @@ export function CallDetailPanel({
             onClick={onClose}
             aria-label={t("rec.panel.close")}
             className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg transition hover:opacity-80"
-            style={{ background: "var(--rec-btn-bg)", border: "1px solid var(--rec-btn-border)", color: "var(--rec-text-2)" }}
+            style={{ background: "var(--surface-4)", border: "1px solid var(--border-chip)", color: "var(--text-2)" }}
           >
             ×
           </button>
@@ -263,26 +263,26 @@ export function CallDetailPanel({
                   type="button"
                   onClick={() => setTab("analysis")}
                   className="mb-4 min-h-11 text-sm font-medium"
-                  style={{ color: "var(--rec-accent-text)" }}
+                  style={{ color: "var(--accent-text)" }}
                 >
                   {t("rec.panel.backToAnalysis")}
                 </button>
                 <TranscriptView detail={detail} onSeek={seek} />
               </section>
             ) : processing ? (
-              <p className="text-sm" style={{ color: "var(--rec-text-2)" }}>
+              <p className="text-sm" style={{ color: "var(--text-2)" }}>
                 {t("rec.processing")}
               </p>
             ) : !scored ? (
               <section
                 className="rounded-2xl p-4"
-                style={{ background: "var(--rec-btn-bg)", border: "1px solid var(--rec-btn-border)" }}
+                style={{ background: "var(--surface-4)", border: "1px solid var(--border-chip)" }}
               >
-                <p className="text-sm font-semibold" style={{ color: "var(--rec-text)" }}>
+                <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
                   {t("rec.panel.notScored", { reason: detail.dropped_reason || "—" })}
                 </p>
                 {detail.summary && (
-                  <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--rec-text-2)" }}>{detail.summary}</p>
+                  <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>{detail.summary}</p>
                 )}
               </section>
             ) : (
@@ -290,10 +290,10 @@ export function CallDetailPanel({
                 {/* c) Ball */}
                 <section className="flex items-end justify-between">
                   <div className="flex items-end gap-2">
-                    <span className="font-mono text-[44px] font-semibold leading-none tabular-nums" style={{ color: "var(--rec-text)" }}>
+                    <span className="font-mono text-[44px] font-semibold leading-none tabular-nums" style={{ color: "var(--text)" }}>
                       {toTen(detail.kpi_score)}
                     </span>
-                    <span className="pb-1 text-sm" style={{ color: "var(--rec-text-3)" }}>/ 10</span>
+                    <span className="pb-1 text-sm" style={{ color: "var(--subtle)" }}>/ 10</span>
                     <span className="pb-1 pl-2">
                       <ScoreBadge
                         score={detail.kpi_score}
@@ -303,12 +303,12 @@ export function CallDetailPanel({
                   </div>
                   {(detail.bonus_amount > 0 || detail.penalty_amount > 0) && (
                     <div className="text-right">
-                      <p className="text-xs" style={{ color: "var(--rec-text-3)" }}>
+                      <p className="text-xs" style={{ color: "var(--subtle)" }}>
                         {detail.bonus_amount > 0 ? t("rec.panel.bonus") : t("rec.panel.penalty")}
                       </p>
                       <p
                         className="font-mono text-sm font-semibold tabular-nums"
-                        style={{ color: detail.bonus_amount > 0 ? "var(--rec-green)" : "var(--rec-orange)" }}
+                        style={{ color: detail.bonus_amount > 0 ? "var(--green)" : "var(--orange)" }}
                       >
                         {detail.bonus_amount > 0
                           ? `+${fmtMoney(detail.bonus_amount)}`
@@ -318,7 +318,7 @@ export function CallDetailPanel({
                   )}
                 </section>
 
-                <hr style={{ borderColor: "var(--rec-divider)" }} />
+                <hr style={{ borderColor: "var(--divider-strong)" }} />
 
                 {/* d) Skript bandlari */}
                 {criteria.length > 0 && <CriteriaList items={criteria} />}
@@ -326,28 +326,28 @@ export function CallDetailPanel({
                 {/* e) Izohlar */}
                 {parsed.result && (
                   <section>
-                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--rec-text-3)" }}>{t("rec.panel.result")}</h4>
-                    <p className="text-sm leading-relaxed" style={{ color: "var(--rec-text)" }}>{parsed.result}</p>
+                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--subtle)" }}>{t("rec.panel.result")}</h4>
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>{parsed.result}</p>
                   </section>
                 )}
                 {parsed.strong && (
                   <section>
-                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--rec-green)" }}>{t("rec.panel.strong")}</h4>
-                    <p className="text-sm leading-relaxed" style={{ color: "var(--rec-text-2)" }}>{parsed.strong}</p>
+                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--green)" }}>{t("rec.panel.strong")}</h4>
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>{parsed.strong}</p>
                   </section>
                 )}
                 {parsed.improve && (
                   <section>
-                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--rec-orange)" }}>{t("rec.panel.improve")}</h4>
-                    <p className="text-sm leading-relaxed" style={{ color: "var(--rec-text-2)" }}>{parsed.improve}</p>
+                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--orange)" }}>{t("rec.panel.improve")}</h4>
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>{parsed.improve}</p>
                   </section>
                 )}
                 {parsed.mistakes.length > 0 && (
                   <section>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--rec-orange)" }}>{t("rec.panel.mistakes")}</h4>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--orange)" }}>{t("rec.panel.mistakes")}</h4>
                     <ul className="space-y-1.5">
                       {parsed.mistakes.map((m, i) => (
-                        <li key={i} className="flex gap-2 text-sm leading-relaxed" style={{ color: "var(--rec-orange)" }}>
+                        <li key={i} className="flex gap-2 text-sm leading-relaxed" style={{ color: "var(--orange)" }}>
                           {m.minus && (
                             <span className="shrink-0 font-mono text-xs tabular-nums">−{t("rec.panel.points", { n: m.minus })}</span>
                           )}
@@ -366,12 +366,12 @@ export function CallDetailPanel({
         {detail && tab === "analysis" && (
           <div
             className="sticky bottom-0 flex gap-2 p-4"
-            style={{ background: "var(--rec-card)", borderTop: "1px solid var(--rec-border)" }}
+            style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}
           >
             <a
               href={`/dashboard/deep-audit?call=${detail.id}`}
               className="grid min-h-11 flex-1 place-items-center rounded-xl text-sm font-semibold text-white transition hover:opacity-90"
-              style={{ background: "var(--rec-accent)" }}
+              style={{ background: "var(--accent)" }}
             >
               {t("rec.panel.deepAudit")}
             </a>
@@ -379,7 +379,7 @@ export function CallDetailPanel({
               type="button"
               onClick={() => setTab("transcript")}
               className="min-h-11 flex-1 rounded-xl text-sm font-medium transition hover:opacity-80"
-              style={{ background: "var(--rec-btn-bg)", border: "1px solid var(--rec-btn-border)", color: "var(--rec-text)" }}
+              style={{ background: "var(--surface-4)", border: "1px solid var(--border-chip)", color: "var(--text)" }}
             >
               {t("rec.panel.transcript")}
             </button>

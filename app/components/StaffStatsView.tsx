@@ -1,240 +1,283 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { ChevronDown } from "lucide-react";
+import { fetchDailySummary, fetchStaffStats, type StaffStatRow } from "../lib/api";
+import { fetchCompanySettings, DEFAULT_COMPANY_SETTINGS, type CompanySettings } from "../lib/companySettings";
+import { useSession } from "../lib/auth";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
-import { Card, SectionTitle, Skeleton, scoreColor } from "./ui";
-import { formatScore } from "../lib/format";
-import { fetchStaffStats, type StaffStatRow } from "../lib/api";
-import { AnalyticsErrorUI, categorizeError, type AnalyticsError } from "./AnalyticsErrorUI";
+import { useT } from "../lib/i18n";
+import { formatMinutes, formatNumber, formatScore, normalizeScore, percentTone, scoreGrade, tashkentDay } from "../lib/format";
+import {
+  Card, CardHeader, DateChips, EmptyState, PageHeader, PrimaryButton,
+  ProgressBar, SecondaryButton, Skeleton, Sparkline, TONE,
+} from "./kit";
 
 /* =====================================================================
- * XODIMLAR STATISTIKASI
+ * XODIMLAR STATISTIKASI (spetsifikatsiya 3.4)
  *
- * Maqsad: sotuvchining aybini topib, sotuvga yordam berish. Har xodim
- * uchun karta: kunlik ball (10 ballik), qo'ng'iroqlar soni va gaplashgan
- * vaqti. Kartani bosganda pastda ochiladi:
- *   - QIZIL bo'lim: aybi (nima noto'g'ri ketyapti, raqam bilan)
- *   - YASHIL bo'lim: buni qanday tuzatish (amaliy, aytiladigan gap bilan)
- *
- * Raqamlar kun davomida yangilanib boradi; ish vaqti tugagach (23:00)
- * o'zgarmaydi — ya'ni kun yakunidagi holat shu yerda qoladi.
+ * Ball taqsimoti (0–10 shkala, uch zona) + operatorlar ro'yxati. Qator
+ * ochilganda uch blok: aybi, tuzatish yo'li, skript bandlari.
  * ===================================================================== */
 
-/** Toshkent kunini YYYY-MM-DD ko'rinishida beradi. */
-function tashkentDay(offsetDays = 0): string {
-  const d = new Date(Date.now() + offsetDays * 86400000);
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tashkent",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(d);
+const SCORE_TONE = { excellent: "green", good: "amber", average: "amber", low: "orange" } as const;
+
+function scoreColorOf(score: number): string {
+  const g = scoreGrade(score);
+  return g ? TONE[SCORE_TONE[g]].color : "var(--subtle)";
 }
 
-function fmtMin(min: number): string {
-  if (min < 60) return `${min.toFixed(1)} daq`;
-  return `${Math.floor(min / 60)} soat ${Math.round(min % 60)} daq`;
-}
+/** 3.4 A — ball taqsimoti. */
+function Distribution({ rows, goal }: { rows: StaffStatRow[]; goal: number }) {
+  const t = useT();
+  const scores = rows.map((r) => normalizeScore(r.avg_score)).filter((v): v is number => v !== null);
+  if (scores.length === 0) return null;
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.replace(/\D/g, "").slice(-2) || name.slice(0, 2).toUpperCase();
-}
-
-function StaffCard({ row }: { row: StaffStatRow }) {
-  const [open, setOpen] = useState(false);
-  const hasScore = row.avg_score > 0;
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const avg = scores.reduce((s, v) => s + v, 0) / scores.length;
+  const pos = (v: number) => `${(v / 10) * 100}%`;
 
   return (
-    <Card className="overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-4 p-5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/40"
-      >
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-500 text-sm font-bold text-white">
-          {initials(row.name)}
-        </span>
-
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-semibold text-slate-900 dark:text-white">{row.name}</span>
-          <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
-            {row.calls} qo&apos;ng&apos;iroq · {fmtMin(row.minutes)} · {row.scored_calls} tasi baholangan
+    <Card>
+      <CardHeader
+        title={t("st.dist.title")}
+        right={
+          <span className="text-[13px]" style={{ color: "var(--muted)" }}>
+            {t("st.dist.range", {
+              min: min.toFixed(1), max: max.toFixed(1), goal: goal.toFixed(1),
+            })}
           </span>
-        </span>
-
-        <span className="shrink-0 text-right">
-          <span className={`block text-2xl font-bold tabular-nums ${hasScore ? scoreColor(row.avg_score) : "text-slate-400"}`}>
-            {formatScore(row.avg_score)}
-          </span>
-          <span className="block text-xs text-slate-400">/ 10</span>
-        </span>
-
-        <span className={`shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`}>▾</span>
-      </button>
-
-      {open && (
-        <div className="space-y-4 border-t border-slate-200 p-5 dark:border-slate-700">
-          {/* AYBI — qizil */}
-          <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-4 dark:border-rose-500/20 dark:bg-rose-500/5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-              Aybi — nima noto&apos;g&apos;ri ketyapti
-            </p>
-            <ul className="space-y-1.5">
-              {row.faults.map((f, i) => (
-                <li key={i} className="flex gap-2 text-sm leading-relaxed text-rose-700 dark:text-rose-300">
-                  <span className="shrink-0">•</span>
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* TAVSIYA — yashil */}
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              Qanday tuzatish kerak
-            </p>
-            <ul className="space-y-1.5">
-              {row.advice.map((a, i) => (
-                <li key={i} className="flex gap-2 text-sm leading-relaxed text-emerald-700 dark:text-emerald-300">
-                  <span className="shrink-0">✓</span>
-                  <span>{a}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Skript bandlari bo'yicha bajarish */}
-          {row.stages.length > 0 && (
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Skript bandlari (o&apos;rtacha bajarish)
-              </p>
-              <ul className="space-y-1.5">
-                {row.stages.map((s) => (
-                  <li key={s.title} className="flex items-center gap-3 text-sm">
-                    <span className="w-10 shrink-0 text-right font-semibold tabular-nums text-slate-600 dark:text-slate-300">
-                      {s.pct}%
-                    </span>
-                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                      <span
-                        className={`block h-full rounded-full ${s.pct >= 80 ? "bg-emerald-500" : s.pct >= 50 ? "bg-amber-500" : "bg-rose-500"}`}
-                        style={{ width: `${Math.max(2, s.pct)}%` }}
-                      />
-                    </span>
-                    <span className="w-52 shrink-0 truncate text-slate-500 dark:text-slate-400">{s.title}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Baholanmagan qo'ng'iroqlar sabablari */}
-          {row.reasons.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {row.reasons.map((r) => (
-                <span
-                  key={r.reason}
-                  className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                >
-                  {r.reason}: {r.count} ta
-                </span>
-              ))}
-            </div>
-          )}
+        }
+      />
+      <div className="relative mt-5" style={{ height: 56 }}>
+        {/* Uch zona */}
+        <div className="absolute inset-x-0 top-1/2 flex h-3 -translate-y-1/2 overflow-hidden rounded-md" aria-hidden>
+          <span style={{ width: "50%", background: "rgba(251,146,60,0.16)" }} />
+          <span style={{ width: "30%", background: "rgba(250,204,21,0.12)" }} />
+          <span style={{ width: "20%", background: "rgba(74,222,154,0.14)" }} />
         </div>
-      )}
+
+        {/* Maqsad */}
+        <span className="absolute top-0 h-full" style={{ left: pos(goal), borderLeft: "2px dashed var(--green)" }} aria-hidden />
+        <span className="absolute -top-1 font-mono text-[11px]" style={{ left: pos(goal), transform: "translateX(-50%)", color: "var(--green)" }}>
+          {t("st.dist.goal", { v: goal.toFixed(1) })}
+        </span>
+
+        {/* Jamoa o'rtachasi */}
+        <span className="absolute top-0 h-full" style={{ left: pos(avg), borderLeft: "2px solid var(--text)" }} aria-hidden />
+        <span className="absolute -top-1 font-mono text-[11px]" style={{ left: pos(avg), transform: "translateX(-50%)", color: "var(--text)" }}>
+          {t("st.dist.avg", { v: avg.toFixed(1) })}
+        </span>
+
+        {/* Operatorlar */}
+        {rows.map((r) => {
+          const v = normalizeScore(r.avg_score);
+          if (v === null) return null;
+          return (
+            <span
+              key={r.key}
+              title={`${r.name} · ${v.toFixed(1)}`}
+              className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{ left: pos(v), background: scoreColorOf(r.avg_score), border: "2px solid var(--surface)" }}
+            />
+          );
+        })}
+      </div>
+      <div className="mt-1 flex justify-between font-mono text-[11px]" style={{ color: "var(--subtle)" }}>
+        {Array.from({ length: 11 }, (_, i) => <span key={i}>{i}</span>)}
+      </div>
     </Card>
   );
 }
 
+function StaffRow({ row, index, trend, date }: { row: StaffStatRow; index: number; trend: number[]; date: string }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [allStages, setAllStages] = useState(false);
+  const score = normalizeScore(row.avg_score);
+  const color = scoreColorOf(row.avg_score);
+  const ext = row.name.replace(/\D/g, "");
+  const stages = allStages ? row.stages : row.stages.slice(0, 5);
+
+  return (
+    <div style={{ background: open ? "var(--row-open)" : undefined }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="grid w-full items-center px-[22px] text-left"
+        style={{ gridTemplateColumns: "36px 2.2fr 140px 1.6fr 32px", columnGap: 20, height: 64, borderBottom: "1px solid var(--divider)" }}
+      >
+        <span className="font-mono text-sm font-semibold" style={{ color: "var(--subtle)" }}>{index + 1}</span>
+
+        <span className="flex min-w-0 items-center gap-3">
+          <span
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl font-mono text-sm font-semibold"
+            style={{ background: "var(--blue-tint)", color: "var(--accent-text)" }}
+          >
+            {ext || "—"}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[15px] font-medium" style={{ color: "var(--text)" }}>{row.name}</span>
+            <span className="block truncate text-[13px]" style={{ color: "var(--muted)" }}>
+              {t("st.calls", { n: formatNumber(row.calls) })} · {formatMinutes(row.minutes)} · {t("st.scored", { n: row.scored_calls })}
+            </span>
+          </span>
+        </span>
+
+        <span className="hidden xl:block"><Sparkline values={trend} /></span>
+
+        <span className="flex min-w-0 items-center gap-3">
+          <span className="min-w-0 flex-1"><ProgressBar value={score ?? 0} max={10} color={color} height={8} /></span>
+          <span className="shrink-0 font-mono text-xl font-semibold" style={{ color }}>{formatScore(row.avg_score)}</span>
+          <span className="shrink-0 text-xs" style={{ color: "var(--subtle)" }}>/ 10</span>
+        </span>
+
+        <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} style={{ color: "var(--subtle)" }} />
+      </button>
+
+      {open && (
+        <div className="pb-5 pl-[78px] pr-[22px] pt-1">
+          <div className="grid gap-4 xl:grid-cols-3">
+            {/* Aybi */}
+            <div className="rounded-xl p-4" style={{ background: "var(--surface-3)", border: "1px solid var(--border)" }}>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--orange)" }}>{t("st.faults")}</p>
+              <ul className="space-y-2">
+                {row.faults.slice(0, 3).map((f, i) => (
+                  <li key={i} className="flex items-start justify-between gap-3 text-sm" style={{ color: "var(--text-2)" }}>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Tuzatish yo'li */}
+            <div className="rounded-xl p-4" style={{ background: "var(--surface-3)", border: "1px solid var(--border)" }}>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--green)" }}>{t("st.advice")}</p>
+              <ol className="space-y-2">
+                {row.advice.map((a, i) => (
+                  <li key={i} className="flex gap-2 text-sm" style={{ color: "var(--text-2)" }}>
+                    <span className="shrink-0 font-mono text-xs font-semibold" style={{ color: "var(--green)" }}>{i + 1}</span>
+                    <span>{a}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {/* Skript bandlari */}
+            <div className="rounded-xl p-4" style={{ background: "var(--surface-3)", border: "1px solid var(--border)" }}>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--muted)" }}>{t("st.stages")}</p>
+              <ul className="space-y-2">
+                {stages.map((s) => {
+                  const tone = TONE[percentTone(s.pct)];
+                  return (
+                    <li key={s.title} className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr 90px 36px" }}>
+                      <span className="truncate text-[13px]" style={{ color: "var(--text-2)" }}>{s.title}</span>
+                      <ProgressBar value={s.pct} color={tone.color} height={6} />
+                      <span className="text-right font-mono text-xs" style={{ color: tone.color }}>{s.pct}%</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {row.stages.length > 5 && (
+                <button type="button" onClick={() => setAllStages((v) => !v)} className="mt-3 text-[13px] font-medium" style={{ color: "var(--accent-text)" }}>
+                  {t("st.stagesAll", { n: row.stages.length })}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            <Link href={`/dashboard/recordings?operator=${encodeURIComponent(ext)}&date=${date}`}>
+              <PrimaryButton>{t("st.viewCalls")}</PrimaryButton>
+            </Link>
+            <Link href={`/dashboard/recordings?date=${date}&lowest=${encodeURIComponent(ext)}`}>
+              <SecondaryButton>{t("st.lowest")}</SecondaryButton>
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function StaffStatsView() {
-  const [date, setDate] = useState<string>(() => tashkentDay());
+  const t = useT();
+  const session = useSession();
+  const [date, setDate] = useState(() => tashkentDay());
   const [rows, setRows] = useState<StaffStatRow[] | null>(null);
-  const [error, setError] = useState<AnalyticsError | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [norms, setNorms] = useState<CompanySettings>(DEFAULT_COMPANY_SETTINGS);
   const [reloadKey, setReloadKey] = useState(0);
 
-  // Kun davomida yangilanib tursin (kun tugagach raqamlar o'zgarmaydi).
   useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 60000);
 
   useEffect(() => {
     const ctrl = new AbortController();
-    setLoading(true);
-    fetchStaffStats(date, ctrl.signal)
-      .then((r) => {
-        if (ctrl.signal.aborted) return;
-        setRows(r.rows);
-        setError(null);
-        setLoading(false);
-      })
-      .catch((e) => {
-        if (ctrl.signal.aborted) return;
-        setError(categorizeError(e));
-        setLoading(false);
-      });
+    void (async () => {
+      const [r, n] = await Promise.all([
+        fetchStaffStats(date, ctrl.signal).then((x) => x.rows).catch(() => null),
+        fetchCompanySettings(session?.token, ctrl.signal).catch(() => DEFAULT_COMPANY_SETTINGS),
+      ]);
+      if (ctrl.signal.aborted) return;
+      setRows(r);
+      setNorms(n);
+    })();
     return () => ctrl.abort();
-  }, [date, reloadKey]);
+  }, [date, reloadKey, session?.token]);
 
-  const total = rows?.reduce((s, r) => s + r.calls, 0) ?? 0;
+  /* 7 kunlik trend — kunlik yakundan (o'rtacha ball). */
+  const [trend, setTrend] = useState<number[]>([]);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    void fetchDailySummary(7, ctrl.signal)
+      .then((d) => setTrend(d.slice(0, 7).reverse().map((x) => normalizeScore(x.avg_score) ?? 0)))
+      .catch(() => { /* trend — qo'shimcha, xatosi sahifani buzmaydi */ });
+    return () => ctrl.abort();
+  }, [reloadKey]);
+
+  const sorted = useMemo(() => (rows ?? []).slice().sort((a, b) => b.avg_score - a.avg_score), [rows]);
+  const totalCalls = sorted.reduce((s, r) => s + r.calls, 0);
+  const goal = normalizeScore(norms.min_efficiency_score) ?? 8;
 
   return (
-    <div className="animate-slide-up space-y-6">
-      <SectionTitle
-        title="Xodimlar statistikasi"
-        subtitle="Har bir operatorning kunlik bali, aybi va uni tuzatish yo'li — kartani bosing"
+    <div className="space-y-5">
+      <PageHeader
+        title={t("nav.staff-stats.label")}
+        hint={t("st.hint", { n: sorted.length, m: formatNumber(totalCalls) })}
+        right={
+          <DateChips
+            value={date}
+            days={[0, -1, -2, -3].map((o) => tashkentDay(o))}
+            labels={(d, i) => (i === 0 ? t("rec.today") : i === 1 ? t("rec.yesterday") : d.slice(5))}
+            onChange={setDate}
+          />
+        }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        {[0, -1, -2, -3].map((off) => {
-          const d = tashkentDay(off);
-          const label = off === 0 ? "Bugun" : off === -1 ? "Kecha" : d.slice(5);
-          return (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDate(d)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                date === d
-                  ? "bg-indigo-600 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-              }`}
+      {rows === null ? (
+        <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} height={64} />)}</div>
+      ) : sorted.length === 0 ? (
+        <Card><EmptyState text={t("st.empty")} /></Card>
+      ) : (
+        <>
+          <Distribution rows={sorted} goal={goal} />
+
+          <Card padded={false}>
+            <div
+              className="grid items-center px-[22px] text-[11px] font-medium uppercase tracking-[0.1em]"
+              style={{ gridTemplateColumns: "36px 2.2fr 140px 1.6fr 32px", columnGap: 20, height: 38, color: "var(--subtle)", borderBottom: "1px solid var(--divider-strong)" }}
             >
-              {label}
-            </button>
-          );
-        })}
-        {rows && (
-          <span className="ml-auto text-sm text-slate-500 dark:text-slate-400">
-            {rows.length} operator · {total} qo&apos;ng&apos;iroq
-          </span>
-        )}
-      </div>
-
-      {loading && !rows && (
-        <div className="space-y-3">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
-      )}
-
-      {error && <AnalyticsErrorUI error={error} onRetry={() => setReloadKey((k) => k + 1)} />}
-
-      {rows && rows.length === 0 && !loading && (
-        <Card className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-          Bu kunda operator qo&apos;ng&apos;iroqlari topilmadi.
-        </Card>
-      )}
-
-      {rows && rows.length > 0 && (
-        <div className="space-y-3">
-          {rows.map((r) => (
-            <StaffCard key={r.key} row={r} />
-          ))}
-        </div>
+              <span>#</span>
+              <span>{t("st.col.operator")}</span>
+              <span className="hidden xl:block">{t("st.col.trend")}</span>
+              <span>{t("st.col.score")}</span>
+              <span />
+            </div>
+            {sorted.map((r, i) => <StaffRow key={r.key} row={r} index={i} trend={trend} date={date} />)}
+          </Card>
+        </>
       )}
     </div>
   );

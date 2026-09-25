@@ -48,8 +48,6 @@ import {
   scoreAccent,
   accentText,
   accentGrad,
-  accentForId,
-  initialsOf,
   type Accent,
 } from "./ui";
 import { Portal } from "./Portal";
@@ -145,6 +143,7 @@ const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta uri
 
 /* Split-pane modal: chap tomonda metrikalar/lost reasons, o'ng tomonda ROP
  * izohi. Bitta qo'ng'iroq backenddan to'liq (GET /api/calls/:id) olinadi. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- "Audio yozuvlar" endi CallDetailPanel ishlatadi; bu eski modal zaxira
 function CallDetailModal({ id, managerName, onClose }: { id: string; managerName: string; onClose: () => void }) {
   const [detail, setDetail] = useState<CallDetail | null>(null);
   const [loading, setLoading] = useState(true);

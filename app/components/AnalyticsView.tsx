@@ -1,742 +1,418 @@
 "use client";
 
-/* "Analitika" — ilgari "Umumiy ko'rinish" (director-level company dashboard,
- * /dashboard root). Kunlik/Haftalik/Oylik almashtirgichi bosilganda backendga
- * qayta so'rov yubormaymiz — bir marta xom ma'lumot olinadi va tanlangan davr
- * oynasiga qarab CLIENT-side qayta hisoblanadi (qarang ../lib/analytics.ts —
- * shu faylning to'liq izohi bilan). ManagementView/ComparisonView'dagi kabi
- * bu sahifa ham to'g'ridan-to'g'ri o'zbekcha matn ishlatadi (i18n lug'atisiz)
- * — faqat global nav yorlig'i/sarlavha (AppShell chrome) lug'atda qoladi. */
-
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useLiveRefresh } from "../lib/useLiveRefresh";
-import { fetchDailySummary, type DailySummaryDay } from "../lib/api";
-import { Icons } from "./Icons";
-import { Card, SectionTitle, Sparkline, Skeleton, PillButton, accentGrad, accentText } from "./ui";
-import {
-  fetchAnalyticsRaw,
-  computeAnalyticsData,
-  PERIOD_LABEL,
-  type AnalyticsData,
-  type AnalyticsNorms,
-  type AnalyticsRaw,
-  type EmployeeAnalytics,
-  type FunnelStage,
-  type KpiAlert,
-  type MaybeStat,
-  type Period,
-  type PeriodStat,
-  type TrendData,
-} from "../lib/analytics";
-import { getSupabase } from "../lib/supabase";
-import { AreaTrendChart } from "./charts";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Bell, Building2, Filter, Phone, TriangleAlert, UserPlus } from "lucide-react";
+import { fetchDailySummary, fetchStaffStats, type DailySummaryDay, type StaffStatRow } from "../lib/api";
+import { fetchCompanySettings, DEFAULT_COMPANY_SETTINGS, type CompanySettings } from "../lib/companySettings";
 import { useSession } from "../lib/auth";
-import { fetchCompanySettings, toAnalyticsNorms, DEFAULT_COMPANY_SETTINGS } from "../lib/companySettings";
+import { useLiveRefresh } from "../lib/useLiveRefresh";
+import { useT } from "../lib/i18n";
+import {
+  formatDayLong, formatNumber, formatPercent, tashkentDay, tashkentNowHm,
+} from "../lib/format";
+import {
+  AlertBanner, Card, CardHeader, EmptyState, IconButton, KpiTile,
+  PageHeader, ProgressBar, SegmentedControl, Skeleton, StatusChip, deltaOf,
+} from "./kit";
+import { BarChart } from "./kit/charts";
 
-/* Real-time'dan kelgan bir nechta hodisani (masalan band jamoada ketma-ket
- * tahlil qilinayotgan qo'ng'iroqlar) BITTA qayta yuklashga birlashtiradi —
- * aks holda har bir yozuv butun og'ir pipeline'ni (2000 qo'ng'iroq + voronka
- * namunasi) qayta ishga tushirib, sahifa "qotib qolgandek" tuyulardi. */
-const REALTIME_DEBOUNCE_MS = 4000;
+/* =====================================================================
+ * ANALITIKA (spetsifikatsiya 3.1)
+ *
+ * Barcha raqamlar serverdagi kunlik yakundan (/analytics/daily-summary).
+ * Delta AYNI VAQT ORALIG'I bilan solishtiriladi: bugun 10:17 bo'lsa,
+ * oldingi davr ham 10:17 gacha olinadi (until=HH:MM) — shunda kun
+ * boshida "−100%" chiqmaydi.
+ * ===================================================================== */
 
-const PERIODS: Period[] = ["day", "week", "month"];
-const BACKEND_UNREACHABLE_MESSAGE = "Backend bilan aloqa yo'q. Iltimos qayta urinib ko'ring.";
+type Period = "day" | "week" | "month";
 
-/* Standart Accent (indigo/cyan/emerald/violet) to'rttagina rangni qamrab
- * oladi; bu sahifa reference dizaynidagi ko'k/yashil-firuza/binafsha/to'q
- * sariq/pushti to'plamini talab qiladi — shuning uchun kartalar uchun
- * alohida, xom Tailwind ranglariga asoslangan mini-palitra. */
-const CARD_THEME = {
-  blue: { icon: "bg-linear-to-br from-blue-500 to-blue-600", text: "text-blue-600 dark:text-blue-400", line: "#2563eb" },
-  teal: { icon: "bg-linear-to-br from-emerald-500 to-teal-600", text: "text-emerald-600 dark:text-emerald-400", line: "#059669" },
-  purple: { icon: "bg-linear-to-br from-violet-500 to-purple-600", text: "text-violet-600 dark:text-violet-400", line: "#7c3aed" },
-  orange: { icon: "bg-linear-to-br from-orange-500 to-amber-600", text: "text-orange-600 dark:text-orange-400", line: "#ea580c" },
-  rose: { icon: "bg-linear-to-br from-rose-500 to-pink-600", text: "text-rose-600 dark:text-rose-400", line: "#e11d48" },
-} as const;
-type CardColor = keyof typeof CARD_THEME;
-
-/* Serverdagi kunlik yakundan tanlangan davr (kun/hafta/oy) yig'indisini
- * chiqaradi va dashboard raqamlarini shu bilan almashtiradi. Sparkline va
- * voronka eski hisobdan qoladi — ular shakl uchun, raqam uchun emas. */
-function tashkentDayKey(d: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tashkent",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(d);
-}
-
-function periodRange(period: Period): { from: string; to: string; prevFrom: string; prevTo: string } {
-  const now = new Date();
-  const today = tashkentDayKey(now);
-  const dayShift = (n: number) => tashkentDayKey(new Date(now.getTime() + n * 86400000));
-  if (period === "day") return { from: today, to: today, prevFrom: dayShift(-1), prevTo: dayShift(-1) };
+/** Davr uchun kunlar ro'yxati (Toshkent) va oldingi davr kunlari. */
+function periodDays(period: Period): { cur: string[]; prev: string[] } {
+  const today = tashkentDay();
+  if (period === "day") return { cur: [today], prev: [tashkentDay(-1)] };
   if (period === "week") {
     const dow = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7; // dushanba = 0
-    return { from: dayShift(-dow), to: today, prevFrom: dayShift(-dow - 7), prevTo: dayShift(-dow - 1) };
+    const cur = Array.from({ length: dow + 1 }, (_, i) => tashkentDay(-dow + i));
+    const prev = cur.map((_, i) => tashkentDay(-dow - 7 + i));
+    return { cur, prev };
   }
-  const first = `${today.slice(0, 7)}-01`;
-  const prevMonth = new Date(`${first}T12:00:00Z`);
-  prevMonth.setUTCMonth(prevMonth.getUTCMonth() - 1);
-  const prevFirst = tashkentDayKey(prevMonth).slice(0, 7) + "-01";
-  return { from: first, to: today, prevFrom: prevFirst, prevTo: tashkentDayKey(new Date(new Date(`${first}T12:00:00Z`).getTime() - 86400000)) };
+  const dayNum = Number(today.slice(8, 10));
+  const cur = Array.from({ length: dayNum }, (_, i) => tashkentDay(-(dayNum - 1) + i));
+  const prev = cur.map((_, i) => tashkentDay(-(dayNum - 1) - 30 + i));
+  return { cur, prev };
 }
 
-function applyServerTotals(data: AnalyticsData, summary: DailySummaryDay[] | null, period: Period): AnalyticsData {
-  if (!summary || summary.length === 0) return data;
-  const { from, to, prevFrom, prevTo } = periodRange(period);
-  const inRange = (d: string, a: string, b: string) => d >= a && d <= b;
-  const sum = (a: string, b: string, k: keyof DailySummaryDay) =>
-    summary.filter((d) => inRange(d.date, a, b)).reduce((s, d) => s + (Number(d[k]) || 0), 0);
-
-  const stat = (k: keyof DailySummaryDay, prev: PeriodStat | null | undefined): PeriodStat => {
-    const cur = sum(from, to, k);
-    const before = sum(prevFrom, prevTo, k);
-    const changePct = before > 0 ? Math.round(((cur - before) / before) * 1000) / 10 : null;
-    return { value: cur, changePct, spark: prev?.spark ?? [] };
-  };
-
-  return {
-    ...data,
-    totalCalls: stat("calls", data.totalCalls),
-    newLeads: stat("leads", data.newLeads),
-    sentToDealer: stat("invited", data.sentToDealer),
-    didntAnswer: stat("unanswered", data.didntAnswer),
-    poorLead: stat("bad_leads", data.poorLead),
-    incoming: sum(from, to, "incoming"),
-    outgoing: sum(from, to, "outgoing"),
-  };
-}
+const sumBy = (rows: DailySummaryDay[], days: string[], key: keyof DailySummaryDay) =>
+  rows.filter((r) => days.includes(r.date)).reduce((s, r) => s + (Number(r[key]) || 0), 0);
 
 export function AnalyticsView() {
+  const t = useT();
   const session = useSession();
   const [period, setPeriod] = useState<Period>("day");
+  const [full, setFull] = useState<DailySummaryDay[] | null>(null);
+  const [untilRows, setUntilRows] = useState<DailySummaryDay[] | null>(null);
+  const [staff, setStaff] = useState<StaffStatRow[] | null>(null);
+  const [norms, setNorms] = useState<CompanySettings>(DEFAULT_COMPANY_SETTINGS);
   const [reloadKey, setReloadKey] = useState(0);
-  // Avtomatik yangilanish: realtime ishlamasa ham panel eskirmaydi
-  // (qarang: lib/useLiveRefresh.ts).
-  useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 20000); 
+  const [showBelow, setShowBelow] = useState(false);
 
-  // Kompaniyaning o'zi sozlagan KPI normalari (GET /company/settings) —
-  // backend hali bermasa/bo'lmasa DEFAULT_COMPANY_SETTINGS bilan boshlanadi
-  // va shu bilan ishlayveradi (fetchCompanySettings hech qachon throw
-  // qilmaydi, faqat AbortError'dan tashqari — qarang lib/companySettings.ts).
-  const [norms, setNorms] = useState<AnalyticsNorms>(() => toAnalyticsNorms(DEFAULT_COMPANY_SETTINGS));
+  useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 30000);
 
   useEffect(() => {
     const ctrl = new AbortController();
-    fetchCompanySettings(session?.token, ctrl.signal)
-      .then((s) => setNorms(toAnalyticsNorms(s)))
-      .catch(() => {
-        /* AbortError — komponent unmount bo'lganda, e'tiborsiz qoldiriladi */
-      });
+    void (async () => {
+      const [f, s, n] = await Promise.all([
+        fetchDailySummary(40, ctrl.signal).catch(() => null),
+        fetchStaffStats(undefined, ctrl.signal).then((r) => r.rows).catch(() => null),
+        fetchCompanySettings(session?.token, ctrl.signal).catch(() => DEFAULT_COMPANY_SETTINGS),
+      ]);
+      if (ctrl.signal.aborted) return;
+      setFull(f);
+      setStaff(s);
+      setNorms(n);
+    })();
     return () => ctrl.abort();
-  }, [session?.token, reloadKey]);
+  }, [reloadKey, session?.token]);
 
-  // Xom ma'lumot (qo'ng'iroqlar/menejerlar/PoP/analitika) — faqat mount va
-  // real-time o'zgarishda qayta olinadi, davr almashtirilganda EMAS.
-  const [raw, setRaw] = useState<AnalyticsRaw | null>(null);
-  const [rawStatus, setRawStatus] = useState<"loading" | "online" | "offline">("loading");
-
-  // Tanlangan davr uchun hisoblangan natija — `raw` xotirada tayyor bo'lgach
-  // tarmoqqa deyarli tegmasdan (voronka namunasi asosan keshdan) hisoblanadi.
-  const [data, setData] = useState<AnalyticsData | null>(null);
-
-  /* Asosiy raqamlar SERVERDAN — /api/calls ro'yxati ko'pi bilan 200 qator
-   * qaytaradi va kuniga 1000+ qo'ng'iroqda ko'rsatkichlar yangi qo'ng'iroq
-   * kelgani sari kamayib ketardi (2026-09-24). Endi kunlik yakun serverda,
-   * barcha qatorlar bo'yicha hisoblanadi va shu yerda ustiga qo'yiladi. */
-  const [summary, setSummary] = useState<DailySummaryDay[] | null>(null);
+  /* Oldingi davrni ayni vaqtgacha olish — alohida so'rov (until=HH:MM). */
   useEffect(() => {
     const ctrl = new AbortController();
-    fetchDailySummary(35, ctrl.signal)
-      .then((d) => setSummary(d))
-      .catch(() => { /* server eski bo'lsa — eski hisob ishlayveradi */ });
-    return () => ctrl.abort();
-  }, [reloadKey]);
-  const [dataStatus, setDataStatus] = useState<"loading" | "online" | "offline">("loading");
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchAnalyticsRaw(ctrl.signal, reloadKey > 0)
-      .then((r) => {
-        setRaw(r);
-        setRawStatus("online");
-      })
-      .catch((e) => {
-        if ((e as Error)?.name !== "AbortError") setRawStatus("offline");
-      });
+    void (async () => {
+      try {
+        const rows = await fetchDailySummary(40, ctrl.signal, tashkentNowHm());
+        if (!ctrl.signal.aborted) setUntilRows(rows);
+      } catch { /* eski server — to'liq kun bilan ishlaymiz */ }
+    })();
     return () => ctrl.abort();
   }, [reloadKey]);
 
-  useEffect(() => {
-    if (!raw) return;
-    const ctrl = new AbortController();
-    computeAnalyticsData(raw, period, ctrl.signal, norms)
-      .then((d) => {
-        setData(applyServerTotals(d, summary, period));
-        setDataStatus("online");
-      })
-      .catch((e) => {
-        if ((e as Error)?.name !== "AbortError") setDataStatus("offline");
-      });
-    return () => ctrl.abort();
-  }, [raw, period, norms, summary]);
+  const { cur, prev } = useMemo(() => periodDays(period), [period]);
+  const rows = full ?? [];
+  /* Joriy davr — to'liq; oldingi davr — ayni vaqtgacha (bo'lsa). */
+  const prevRows = untilRows ?? rows;
 
-  /* Realtime: `calls`/`managers` o'zgarsa, xom ma'lumot qayta olinadi — lekin
-   * bir nechta hodisa ketma-ket kelsa (band jamoada tez-tez bo'ladi),
-   * debounce ularni bitta qayta yuklashga birlashtiradi. */
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) return;
-    const bump = () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => setReloadKey((k) => k + 1), REALTIME_DEBOUNCE_MS);
-    };
-    const channel = supabase
-      .channel("analytics-calls-managers")
-      .on("postgres_changes", { event: "*", schema: "public", table: "calls" }, bump)
-      .on("postgres_changes", { event: "*", schema: "public", table: "managers" }, bump)
-      .subscribe();
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  const metric = (key: keyof DailySummaryDay, higherIsBetter = true) => {
+    const c = sumBy(rows, cur, key);
+    const p = sumBy(prevRows, prev, key);
+    return { value: c, prev: p, delta: deltaOf(c, p, higherIsBetter) };
+  };
 
-  // `data` kelgan davr bilan tanlangan davr mos kelmasa (birinchi yuklanish
-  // yoki davr hozirgina almashtirilgan) — hali "stale". Bu render vaqtida
-  // hisoblanadi (qo'shimcha effekt/setState kerak emas), pastdagi skeleton/
-  // bo'sh holatlarni shundan boshqaradi.
-  const stale = data?.period !== period;
-  const status = rawStatus === "offline" ? "offline" : dataStatus === "offline" ? "offline" : rawStatus === "loading" || dataStatus === "loading" ? "loading" : "online";
+  const calls = metric("calls");
+  const leads = metric("leads");
+  const invited = metric("invited");
+  const closed = metric("closed");
+  const longCalls = metric("long_calls");
+  const incoming = metric("incoming");
+  const outgoing = metric("outgoing");
+
+  const convCur = leads.value > 0 ? (closed.value / leads.value) * 100 : 0;
+  const convPrev = leads.prev > 0 ? (closed.prev / leads.prev) * 100 : 0;
+
+  const spark = (key: keyof DailySummaryDay) =>
+    rows.slice(0, 14).reverse().map((r) => Number(r[key]) || 0);
+
+  /* 3.1 C — so'nggi 14 kun (eskidan yangiga). */
+  const chartDays = rows.slice(0, 14).reverse();
+  const today = tashkentDay();
+
+  /* 3.1 A — norma ostidagi operatorlar. */
+  const normDay = norms.min_qualified_calls_day;
+  const below = (staff ?? [])
+    .map((s) => ({ ...s, long: Math.round((s.minutes * 60) / Math.max(1, norms.qualified_call_seconds)) }))
+    .filter((s) => s.calls > 0 && s.long < normDay)
+    .sort((a, b) => a.long - b.long);
+
+  const loading = full === null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <LiveBadge status={stale && status !== "offline" ? "loading" : status} />
-        <PeriodToggle value={period} onChange={setPeriod} />
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title={t("nav.overview.label")}
+        live={t("rec.live")}
+        hint={`${t("an.hint")} · ${formatDayLong(today)}`}
+        right={
+          <>
+            <SegmentedControl<Period>
+              value={period}
+              onChange={setPeriod}
+              options={[
+                { value: "day", label: t("an.period.day") },
+                { value: "week", label: t("an.period.week") },
+                { value: "month", label: t("an.period.month") },
+              ]}
+            />
+            <IconButton ariaLabel={t("rec.notifications")}><Bell className="h-[18px] w-[18px]" /></IconButton>
+          </>
+        }
+      />
 
-      {stale && status !== "offline" && <LoadingSkeleton />}
-
-      {stale && status === "offline" && <OfflineState onRetry={() => setReloadKey((k) => k + 1)} />}
-
-      {!stale && data && <AnalyticsBody data={data} />}
-    </div>
-  );
-}
-
-/* ============================ Header row ============================ */
-function LiveBadge({ status }: { status: "loading" | "online" | "offline" }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${
-        status === "online"
-          ? "bg-emerald-500/10 text-emerald-600 ring-emerald-500/30 dark:text-emerald-400"
-          : status === "offline"
-          ? "bg-rose-500/10 text-rose-600 ring-rose-500/30 dark:text-rose-400"
-          : "bg-slate-500/10 text-slate-500 ring-slate-500/30"
-      }`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full bg-current ${status === "online" ? "animate-pulse" : ""}`} />
-      {status === "online" ? "Backend ulangan · jonli ma'lumot" : status === "offline" ? "Backend oflayn" : "Yuklanmoqda..."}
-    </span>
-  );
-}
-
-function PeriodToggle({ value, onChange }: { value: Period; onChange: (p: Period) => void }) {
-  return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200/70 bg-slate-100/70 p-1 dark:border-slate-700/60 dark:bg-slate-800/60">
-      {PERIODS.map((p) => (
-        <button
-          key={p}
-          onClick={() => onChange(p)}
-          className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors duration-200 ${
-            value === p
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-          }`}
-        >
-          {PERIOD_LABEL[p]}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/* ============================ Loading / offline ============================ */
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-6">
-      <Skeleton className="h-16" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-40" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Skeleton className="h-64" />
-        <Skeleton className="h-64" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-28" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-40" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function OfflineState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <Card className="flex flex-col items-center gap-4 p-12 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-rose-500/10 text-rose-500">
-        <Icons.plug className="h-7 w-7" />
-      </span>
-      <div>
-        <p className="text-lg font-bold text-slate-800 dark:text-slate-100">{"Backendga ulanib bo'lmadi"}</p>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{BACKEND_UNREACHABLE_MESSAGE}</p>
-      </div>
-      <PillButton icon="scan" onClick={onRetry}>
-        Qayta urinish
-      </PillButton>
-    </Card>
-  );
-}
-
-/* ============================ Body ============================ */
-function AnalyticsBody({ data }: { data: AnalyticsData }) {
-  const leadToDealPct = data.funnel.length
-    ? Math.round((data.funnel[3].value / Math.max(data.funnel[0].value, 1)) * 1000) / 10
-    : 0;
-
-  return (
-    <div className="space-y-6">
-      <KpiAlertBanner alerts={data.alerts} period={data.period} norms={data.norms} />
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <TopStatCard label="Jami qo'ng'iroqlar" stat={data.totalCalls} color="blue" icon="phone" />
-        <TopStatCard label="Yangi lidlar (Yangi Lid)" stat={data.newLeads} color="teal" icon="spark" />
-        <TopStatCard label="O'quv markazga taklif qilindi" stat={data.sentToDealer} color="purple" icon="building" />
-        <TopStatCard
-          label="Konversiya (Lid→Bitim)"
-          stat={data.conversion}
-          color="orange"
-          icon="funnel"
-          format={(v) => `${v}%`}
+      {/* A) Ogohlantirish banneri */}
+      {below.length > 0 && (
+        <AlertBanner
+          icon={<TriangleAlert className="h-[18px] w-[18px]" />}
+          title={t("an.alert.title", { n: below.length })}
+          hint={t("an.alert.hint", { norm: normDay })}
+          right={
+            <>
+              {below.slice(0, 3).map((s) => (
+                <span
+                  key={s.key}
+                  className="inline-flex h-7 items-center gap-2 rounded-full px-3 text-xs"
+                  style={{ background: "var(--surface-4)", border: "1px solid var(--border-chip)", color: "var(--text-2)" }}
+                >
+                  {s.name}
+                  <span className="font-mono" style={{ color: "var(--orange)" }}>{s.long}/{normDay}</span>
+                </span>
+              ))}
+              {below.length > 3 && (
+                <span className="inline-flex h-7 items-center rounded-full px-3 text-xs" style={{ background: "var(--surface-4)", color: "var(--muted)" }}>
+                  +{below.length - 3}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowBelow((v) => !v)}
+                className="inline-flex h-11 items-center rounded-xl px-3.5 text-[13px] font-semibold"
+                style={{ background: "rgba(251,146,60,0.16)", color: "var(--orange-soft)" }}
+              >
+                {t("an.alert.open")}
+              </button>
+            </>
+          }
         />
-      </div>
+      )}
 
-      <TrendCard trend={data.trend} period={data.period} />
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <IncomingOutgoingCard incoming={data.incoming} outgoing={data.outgoing} />
-        <ConversionFunnelCard funnel={data.funnel} leadToDealPct={leadToDealPct} saleToClosedPct={data.saleToClosedPct} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SmallStatCard label="Lid ko'tarmadi" stat={data.didntAnswer} color="orange" />
-        <SmallStatCard label="Sifatsiz lid" stat={data.poorLead} color="rose" />
-        <SmallBadgeCard label="O'quv markazga taklif qilinganlar" stat={data.sentToDealer} color="purple" icon="building" />
-      </div>
-
-      <TeamGrid employees={data.employees} period={data.period} />
-    </div>
-  );
-}
-
-/* ============================ Sotuv / qo'ng'iroq dinamikasi (grafik) ============================ */
-const TREND_WINDOW_LABEL: Record<Period, string> = { day: "so'nggi 14 kun", week: "so'nggi 30 kun", month: "so'nggi 60 kun" };
-
-function TrendCard({ trend, period }: { trend: TrendData; period: Period }) {
-  const hasAny = trend.calls.some((v) => v > 0);
-  const series = [
-    { name: "Qo'ng'iroqlar", color: "#3b82f6", values: trend.calls },
-    { name: "Uzun qo'ng'iroqlar", color: "#14b8a6", values: trend.qualified, dashed: true },
-    ...(trend.deals ? [{ name: "Yopilgan bitimlar", color: "#8b5cf6", values: trend.deals }] : []),
-  ];
-  const g = trend.growthPct;
-  return (
-    <Card className="p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <SectionTitle title="Sotuv va qo'ng'iroqlar dinamikasi" subtitle={`Kunlik kesimda · ${TREND_WINDOW_LABEL[period]}`} />
-        <div className="flex items-center gap-4">
-          {g != null && (
-            <div className="text-right">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">O&apos;sish (oyna yarmiga nisbatan)</p>
-              <p className={`text-lg font-bold tabular-nums ${g >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                {g >= 0 ? "+" : ""}
-                {g.toFixed(1)}%
-              </p>
-            </div>
-          )}
-          <ul className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-            {series.map((s) => (
-              <li key={s.name} className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
-                {s.name}
+      {showBelow && below.length > 0 && (
+        <Card>
+          <ul className="space-y-2">
+            {below.map((s) => (
+              <li key={s.key} className="flex items-center justify-between gap-3 text-sm">
+                <span style={{ color: "var(--text-2)" }}>{s.name}</span>
+                <span className="font-mono" style={{ color: "var(--orange)" }}>{s.long} / {normDay}</span>
               </li>
             ))}
           </ul>
-        </div>
-      </div>
-      {hasAny ? (
-        <AreaTrendChart labels={trend.labels} series={series} height={260} />
-      ) : (
-        <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">Bu oynada hali qo&apos;ng&apos;iroq yo&apos;q.</p>
+        </Card>
       )}
-    </Card>
-  );
-}
 
-/* ============================ 2. KPI ogohlantirish banneri ============================ */
-function KpiAlertBanner({ alerts, period, norms }: { alerts: KpiAlert[]; period: Period; norms: AnalyticsNorms }) {
-  const [expanded, setExpanded] = useState(false);
-  if (!alerts.length) return null;
-  const visible = expanded ? alerts : alerts.slice(0, 2);
-  const hiddenCount = alerts.length - visible.length;
-
-  return (
-    <div className="rounded-2xl border border-rose-500/30 bg-rose-500/[0.06] px-5 py-4 dark:bg-rose-500/10">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-rose-500" />
-        <span className="font-bold tracking-wide text-rose-600 dark:text-rose-400">KPI OGOHLANTIRISH</span>
-        <span className="text-slate-500 dark:text-slate-400">
-          · {alerts.length} xodim norma ostida (&lt;{norms.minQualifiedCalls[period]} ta &gt;{norms.qualifiedCallSeconds}s
-          qo&apos;ng&apos;iroq)
-        </span>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5">
-        {visible.map((a) => (
-          <span key={a.employeeId} className="inline-flex items-center gap-1.5 text-sm">
-            <Icons.alertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
-            <span className="font-medium text-rose-700 dark:text-rose-300">{a.employeeName}</span>
-            <span className="text-rose-600/80 dark:text-rose-400/80">— {a.reason}</span>
-          </span>
-        ))}
-        {hiddenCount > 0 && (
-          <button
-            onClick={() => setExpanded(true)}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400"
-          >
-            +{hiddenCount} ta yana
-            <Icons.chevronDown className="h-3 w-3" />
-          </button>
-        )}
-        {expanded && alerts.length > 2 && (
-          <button
-            onClick={() => setExpanded(false)}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400"
-          >
-            Yig&apos;ish
-            <Icons.chevronDown className="h-3 w-3 rotate-180" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ============================ 3. Top KPI kartalar ============================ */
-function DeltaBadge({ changePct }: { changePct: number | null }) {
-  if (changePct == null) return null;
-  const up = changePct >= 0;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
-        up
-          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-      }`}
-    >
-      {up ? <Icons.arrowUp className="h-3 w-3" /> : <Icons.arrowDown className="h-3 w-3" />}
-      {Math.abs(changePct).toFixed(1)}%
-    </span>
-  );
-}
-
-function TopStatCard({
-  label,
-  stat,
-  color,
-  icon,
-  format,
-}: {
-  label: string;
-  stat: PeriodStat | MaybeStat;
-  color: CardColor;
-  icon: keyof typeof Icons;
-  format?: (v: number) => string;
-}) {
-  const theme = CARD_THEME[color];
-  const Icon = Icons[icon];
-  return (
-    <Card hover className="p-5">
-      <div className="flex items-start justify-between">
-        <span className={`grid h-11 w-11 place-items-center rounded-xl text-white shadow-md ${theme.icon}`}>
-          <Icon className="h-5 w-5" />
-        </span>
-        <DeltaBadge changePct={stat?.changePct ?? null} />
-      </div>
-      <p className="mt-4 text-3xl font-bold tracking-tight tabular-nums text-slate-800 dark:text-white">
-        {stat ? (format ? format(stat.value) : stat.value.toLocaleString()) : "—"}
-      </p>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{label}</p>
-      <div className="mt-3">
-        {stat ? (
-          <Sparkline data={stat.spark} color={theme.line} />
-        ) : (
-          <p className="text-xs text-slate-400">{"Backend hali bu ko'rsatkichni qaytarmayapti"}</p>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-/* ============================ 4.1 Kiruvchi vs Chiquvchi (donut) ============================ */
-function IncomingOutgoingCard({ incoming, outgoing }: { incoming: number | null; outgoing: number | null }) {
-  if (incoming == null || outgoing == null) {
-    return (
-      <Card className="p-6">
-        <SectionTitle title="Kiruvchi vs Chiquvchi" subtitle="Vxodyashie / Chiquvchi qo'ng'iroqlar" />
-        <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-          {"Backend hali kiruvchi/chiquvchi taqsimotini qaytarmayapti."}
-        </p>
-      </Card>
-    );
-  }
-  const total = incoming + outgoing || 1;
-  const outPct = Math.round((outgoing / total) * 100);
-  const inPct = 100 - outPct;
-  return (
-    <Card className="p-6">
-      <SectionTitle title="Kiruvchi vs Chiquvchi" subtitle="Vxodyashie / Chiquvchi qo'ng'iroqlar" />
-      <div className="flex flex-wrap items-center gap-6">
-        <div className="relative h-36 w-36 shrink-0">
-          <div
-            className="h-full w-full rounded-full"
-            style={{
-              background: `conic-gradient(#2563eb 0% ${outPct}%, #059669 ${outPct}% 100%)`,
-              WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 16px))",
-              mask: "radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 16px))",
-            }}
+      {/* B) 4 ta KPI */}
+      {loading ? (
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} height={120} />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiTile
+            label={t("an.kpi.calls")} tone="accent" icon={<Phone className="h-4 w-4" />}
+            value={formatNumber(calls.value)} delta={calls.delta} spark={spark("calls")}
+            hint={t("an.kpi.prev", { v: formatNumber(calls.prev) })}
           />
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold tabular-nums text-slate-800 dark:text-white">{total.toLocaleString()}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Jami</span>
-          </div>
+          <KpiTile
+            label={t("an.kpi.leads")} tone="green" icon={<UserPlus className="h-4 w-4" />}
+            value={formatNumber(leads.value)} delta={leads.delta} spark={spark("leads")}
+            hint={t("an.kpi.prev", { v: formatNumber(leads.prev) })}
+          />
+          <KpiTile
+            label={t("an.kpi.invited")} tone="violet" icon={<Building2 className="h-4 w-4" />}
+            value={formatNumber(invited.value)} delta={invited.delta} spark={spark("invited")}
+            hint={t("an.kpi.prev", { v: formatNumber(invited.prev) })}
+          />
+          <KpiTile
+            label={t("an.kpi.conversion")} tone="orange" icon={<Filter className="h-4 w-4" />}
+            value={formatPercent(convCur)} delta={deltaOf(convCur, convPrev)}
+            hint={t("an.kpi.prev", { v: formatPercent(convPrev) })}
+          />
         </div>
-        <div className="min-w-40 flex-1 space-y-3">
-          <LegendRow color="#2563eb" label="Chiquvchi" count={outgoing} pct={outPct} />
-          <LegendRow color="#059669" label="Kiruvchi" count={incoming} pct={inPct} />
-        </div>
-      </div>
-    </Card>
-  );
-}
+      )}
 
-function LegendRow({ color, label, count, pct }: { color: string; label: string; count: number; pct: number }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-      <span className="flex-1 text-sm font-medium text-slate-600 dark:text-slate-300">{label}</span>
-      <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-white">{count.toLocaleString()}</span>
-      <span className="w-10 shrink-0 text-right text-xs font-semibold text-slate-400">{pct}%</span>
-    </div>
-  );
-}
-
-/* ============================ 4.2 Konversiya voronkasi ============================ */
-function ConversionFunnelCard({
-  funnel,
-  leadToDealPct,
-  saleToClosedPct,
-}: {
-  funnel: FunnelStage[];
-  leadToDealPct: number;
-  saleToClosedPct: number | null;
-}) {
-  return (
-    <Card className="p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <SectionTitle title="Konversiya voronkasi" subtitle="Lid tezligi: bosqichma-bosqich" />
-        <div className="flex gap-5">
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Lid → Bitim</p>
-            <p className="text-lg font-bold tabular-nums text-blue-600 dark:text-blue-400">{leadToDealPct.toFixed(1)}%</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Sotuv → Yopilgan</p>
-            <p className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-              {saleToClosedPct != null ? `${saleToClosedPct.toFixed(1)}%` : "—"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {!funnel.length ? (
-        <p className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
-          {"Voronka uchun yetarli qo'ng'iroq ma'lumoti yo'q."}
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {funnel.map((stage) => {
-            const widthPct = Math.max((stage.value / Math.max(funnel[0].value, 1)) * 100, 14);
-            const ofFirstPct = Math.round((stage.value / Math.max(funnel[0].value, 1)) * 100);
-            return (
-              <div key={stage.label} className="flex items-center gap-3">
-                <span className="w-16 shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">{stage.label}</span>
-                <div className="h-9 flex-1 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800/60">
-                  <div
-                    className="flex h-full items-center rounded-lg bg-linear-to-r from-blue-600 to-teal-500 px-3 text-sm font-bold text-white transition-all duration-700"
-                    style={{ width: `${widthPct}%` }}
-                  >
-                    {stage.value.toLocaleString()}
-                  </div>
-                </div>
-                <span className="w-12 shrink-0 text-right text-xs font-semibold text-slate-400">{ofFirstPct}%</span>
+      {/* C) Dinamika + voronka */}
+      <div className="flex flex-col gap-5 xl:flex-row">
+        <Card className="min-w-0 xl:flex-[1.7]">
+          <CardHeader
+            title={t("an.dyn.title")}
+            hint={t("an.dyn.hint")}
+            right={
+              <div className="flex flex-wrap items-center gap-4 text-xs" style={{ color: "var(--text-3)" }}>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: "var(--chart)" }} />{t("an.legend.calls")}</span>
+                <span className="flex items-center gap-1.5"><span className="h-0.5 w-3.5" style={{ background: "var(--teal)" }} />{t("an.legend.long", { n: norms.qualified_call_seconds })}</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--violet)" }} />{t("an.legend.deals")}</span>
               </div>
-            );
-          })}
-        </div>
-      )}
-    </Card>
-  );
-}
+            }
+          />
+          {chartDays.length === 0 ? (
+            <EmptyState text={t("an.empty")} />
+          ) : (
+            <div className="mt-4">
+              <BarChart
+                height={180}
+                data={chartDays.map((d) => ({
+                  label: new Intl.DateTimeFormat("uz-UZ", { timeZone: "Asia/Tashkent", day: "numeric", month: "short" }).format(new Date(`${d.date}T12:00:00Z`)),
+                  value: d.calls,
+                  line: d.long_calls,
+                  highlight: d.date === today,
+                }))}
+              />
+              {/* Bitimlar qatori */}
+              <div className="mt-2 flex gap-3 overflow-x-auto pl-[34px]">
+                {chartDays.map((d) => (
+                  <span
+                    key={d.date}
+                    className="grid h-5 min-w-[22px] shrink-0 place-items-center rounded-md px-1 font-mono text-[11px]"
+                    style={
+                      d.closed > 0
+                        ? { background: "rgba(167,139,250,0.16)", color: "var(--violet-soft)" }
+                        : { color: "var(--faint)" }
+                    }
+                  >
+                    {d.closed}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
 
-/* ============================ 5. Kichik statistik kartalar ============================ */
-function SmallStatCard({ label, stat, color }: { label: string; stat: MaybeStat; color: CardColor }) {
-  const theme = CARD_THEME[color];
-  return (
-    <Card className="p-5">
-      <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-slate-800 dark:text-white">
-        {stat ? stat.value.toLocaleString() : "—"}
-      </p>
-      <div className="mt-3">
-        {stat ? (
-          <Sparkline data={stat.spark} color={theme.line} />
-        ) : (
-          <p className="text-xs text-slate-400">Ma&apos;lumot kutilmoqda</p>
-        )}
+        <Card className="min-w-0 xl:flex-1">
+          <CardHeader
+            title={t("an.funnel.title")}
+            right={
+              <span className="flex items-baseline gap-2 text-[13px]" style={{ color: "var(--muted)" }}>
+                {t("an.funnel.lead2deal")}
+                <span className="font-mono text-base font-semibold" style={{ color: "var(--green)" }}>{formatPercent(convCur)}</span>
+              </span>
+            }
+          />
+          <ul className="mt-4 space-y-1.5">
+            {[
+              { label: t("an.funnel.calls"), value: calls.value, color: "var(--chart)" },
+              { label: t("an.funnel.long", { n: norms.qualified_call_seconds }), value: longCalls.value, color: "var(--teal)" },
+              { label: t("an.funnel.leads"), value: leads.value, color: "var(--green)" },
+              { label: t("an.funnel.invited"), value: invited.value, color: "var(--violet)" },
+              { label: t("an.funnel.closed"), value: closed.value, color: "var(--amber)" },
+            ].filter((s) => s.value > 0 || s.label === t("an.funnel.calls")).map((s, i, arr) => {
+              const first = arr[0].value || 1;
+              const dropFrom = i > 0 ? arr[i - 1].value : null;
+              const drop = dropFrom && dropFrom > 0 ? (s.value / dropFrom) * 100 : null;
+              return (
+                <li key={s.label}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="truncate text-[13px]" style={{ color: "var(--text-2)" }}>{s.label}</span>
+                    <span className="flex shrink-0 items-baseline gap-2">
+                      {drop !== null && <span className="font-mono text-[11px]" style={{ color: "var(--subtle)" }}>↓ {drop.toFixed(1)}%</span>}
+                      <span className="font-mono text-[13px] font-semibold" style={{ color: "var(--text)" }}>{formatNumber(s.value)}</span>
+                    </span>
+                  </div>
+                  <div className="mt-1.5"><ProgressBar value={s.value} max={first} color={s.color} height={8} /></div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <hr className="my-4" style={{ borderColor: "var(--divider-strong)" }} />
+
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-[13px] font-semibold" style={{ color: "var(--text)" }}>{t("an.dir.title")}</span>
+            <span className="text-[13px]" style={{ color: "var(--muted)" }}>
+              {t("an.dir.total", { n: formatNumber(incoming.value + outgoing.value) })}
+            </span>
+          </div>
+          <div className="mt-2 flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+            <span style={{ width: `${(outgoing.value / Math.max(1, incoming.value + outgoing.value)) * 100}%`, background: "var(--chart)", borderRadius: 5 }} />
+            <span style={{ width: `${(incoming.value / Math.max(1, incoming.value + outgoing.value)) * 100}%`, background: "var(--teal)", borderRadius: 5 }} />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs" style={{ color: "var(--muted)" }}>
+            <span>{t("rec.outgoing")} <span className="font-mono" style={{ color: "var(--text)" }}>{formatNumber(outgoing.value)}</span> · {formatPercent((outgoing.value / Math.max(1, incoming.value + outgoing.value)) * 100)}</span>
+            <span>{t("rec.incoming")} <span className="font-mono" style={{ color: "var(--text)" }}>{formatNumber(incoming.value)}</span> · {formatPercent((incoming.value / Math.max(1, incoming.value + outgoing.value)) * 100)}</span>
+          </div>
+        </Card>
       </div>
-    </Card>
-  );
-}
 
-function SmallBadgeCard({
-  label,
-  stat,
-  color,
-  icon,
-}: {
-  label: string;
-  stat: MaybeStat;
-  color: CardColor;
-  icon: keyof typeof Icons;
-}) {
-  const theme = CARD_THEME[color];
-  const Icon = Icons[icon];
-  return (
-    <Card className="flex items-center justify-between p-5">
-      <div className="min-w-0">
-        <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-        <p className="mt-2 text-2xl font-bold tabular-nums text-slate-800 dark:text-white">
-          {stat ? stat.value.toLocaleString() : "—"}
-        </p>
-      </div>
-      <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-white shadow-md ${theme.icon}`}>
-        <Icon className="h-6 w-6" />
-      </span>
-    </Card>
-  );
-}
-
-/* ============================ 6. Jamoa samaradorligi ============================ */
-function TeamGrid({ employees, period }: { employees: EmployeeAnalytics[]; period: Period }) {
-  return (
-    <div>
-      <SectionTitle
-        title="Jamoa samaradorligi"
-        action={
-          <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            {PERIOD_LABEL[period]} · {employees.length} xodim
-          </span>
-        }
-      />
-      {!employees.length ? (
-        <p className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">Xodimlar topilmadi.</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {employees.map((e) => (
-            <EmployeeCard key={e.id} emp={e} />
-          ))}
-        </div>
-      )}
+      {/* D) Jamoa samaradorligi */}
+      <TeamTable staff={staff} norms={norms} period={period} />
     </div>
   );
 }
 
-function EmployeeCard({ emp }: { emp: EmployeeAnalytics }) {
+/** 3.1 D — operatorlar jadvali. */
+function TeamTable({ staff, norms, period }: { staff: StaffStatRow[] | null; norms: CompanySettings; period: Period }) {
+  const t = useT();
+  const COLS = "1.5fr 0.8fr 2fr 0.8fr 0.8fr 0.8fr 0.7fr 1.1fr";
+  const normDay = norms.min_qualified_calls_day;
+  const periodLabel = period === "day" ? t("an.period.day") : period === "week" ? t("an.period.week") : t("an.period.month");
+
+  const rows = (staff ?? []).map((s) => ({
+    ...s,
+    long: Math.round((s.minutes * 60) / Math.max(1, norms.qualified_call_seconds)),
+  })).sort((a, b) => b.long / normDay - a.long / normDay);
+
   return (
-    <Card
-      className="p-5"
-      style={
-        emp.belowNorm
-          ? {
-              borderColor: "rgba(244,63,94,0.5)",
-              boxShadow: "0 0 0 1px rgba(244,63,94,0.35), 0 14px 30px -16px rgba(244,63,94,0.5)",
-            }
-          : undefined
-      }
-    >
-      <div className="flex items-center gap-3">
-        <span
-          className={`grid h-11 w-11 shrink-0 place-items-center rounded-full bg-linear-to-br text-sm font-bold text-white ${accentGrad[emp.accent]}`}
-        >
-          {emp.initials}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-100">{emp.name}</p>
-          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            <span className={`text-xs font-medium ${accentText[emp.accent]}`}>
-              Umumiy ball: {emp.efficiency != null ? `${(emp.efficiency / 10).toFixed(1)} / 10` : "—"}
-            </span>
-            {emp.belowNorm && (
-              <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
-                Norma ostida
-              </span>
-            )}
+    <Card padded={false}>
+      <div className="px-[22px] py-5">
+        <CardHeader
+          title={t("an.team.title")}
+          hint={t("an.team.hint", { period: periodLabel, n: rows.length, norm: normDay })}
+          right={<Link href="/dashboard/staff-stats" className="text-[13px] font-medium" style={{ color: "var(--accent-text)" }}>{t("an.team.all")}</Link>}
+        />
+      </div>
+
+      {rows.length === 0 ? (
+        <EmptyState text={t("an.empty")} />
+      ) : (
+        <div className="overflow-x-auto">
+          <div className="min-w-[900px]">
+            <div
+              className="grid items-center px-[22px] text-[11px] font-medium uppercase tracking-[0.1em]"
+              style={{ gridTemplateColumns: COLS, columnGap: 16, height: 38, color: "var(--subtle)", borderTop: "1px solid var(--divider-strong)", borderBottom: "1px solid var(--divider-strong)" }}
+            >
+              <span>{t("an.team.col.operator")}</span>
+              <span>{t("an.team.col.calls")}</span>
+              <span>{t("an.team.col.long", { n: norms.qualified_call_seconds })}</span>
+              <span className="hidden xl:block">{t("an.team.col.incoming")}</span>
+              <span className="hidden xl:block">{t("an.team.col.outgoing")}</span>
+              <span>{t("an.team.col.leads")}</span>
+              <span>{t("an.team.col.sales")}</span>
+              <span>{t("an.team.col.status")}</span>
+            </div>
+
+            {rows.map((s) => {
+              const ok = s.long >= normDay;
+              return (
+                <div
+                  key={s.key}
+                  className="grid items-center px-[22px]"
+                  style={{ gridTemplateColumns: COLS, columnGap: 16, height: 48, borderBottom: "1px solid var(--divider)" }}
+                >
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <span
+                      className="inline-flex h-7 min-w-11 shrink-0 items-center justify-center rounded-lg px-1.5 font-mono text-xs"
+                      style={{ background: "var(--badge)", border: "1px solid var(--border-chip)", color: "var(--accent-badge)" }}
+                    >
+                      {s.name.replace(/\D/g, "") || "—"}
+                    </span>
+                    <span className="truncate text-sm" style={{ color: "var(--text)" }}>{s.name}</span>
+                  </span>
+                  <span className="font-mono text-[13px]" style={{ color: "var(--text-2)" }}>{formatNumber(s.calls)}</span>
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <span className="min-w-0 flex-1">
+                      <ProgressBar value={s.long} max={normDay} color={ok ? "var(--green)" : "var(--orange)"} height={6} />
+                    </span>
+                    <span className="shrink-0 font-mono text-xs font-medium" style={{ color: ok ? "var(--green)" : "var(--orange)" }}>
+                      {s.long} / {normDay}
+                    </span>
+                  </span>
+                  <span className="hidden font-mono text-[13px] xl:block" style={{ color: "var(--text-2)" }}>—</span>
+                  <span className="hidden font-mono text-[13px] xl:block" style={{ color: "var(--text-2)" }}>—</span>
+                  <span className="font-mono text-[13px]" style={{ color: "var(--text-2)" }}>—</span>
+                  <span className="font-mono text-[13px]" style={{ color: "var(--text-2)" }}>—</span>
+                  <span><StatusChip label={ok ? t("an.team.ok") : t("an.team.below")} tone={ok ? "green" : "orange"} /></span>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
-
-      <div className="mt-3">
-        <Sparkline data={emp.spark} accent={emp.accent} />
-      </div>
-
-      <div className="mt-4 grid grid-cols-4 gap-2 text-center">
-        <MetricCell label="chiquvchi" value={emp.outgoing} />
-        <MetricCell label="kiruvchi" value={emp.incoming} />
-        <MetricCell label="yangi lid" value={emp.newLeads} />
-        <MetricCell label="sotuv" value={emp.sales} />
-      </div>
+      )}
     </Card>
-  );
-}
-
-function MetricCell({ label, value }: { label: string; value: number | null }) {
-  return (
-    <div>
-      <p className="text-sm font-bold tabular-nums text-slate-800 dark:text-white">{value != null ? value.toLocaleString() : "—"}</p>
-      <p className="text-[10px] text-slate-400">{label}</p>
-    </div>
   );
 }

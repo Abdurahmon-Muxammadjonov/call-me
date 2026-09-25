@@ -118,7 +118,7 @@ export function AudioPlayer({ src, callId, compact }: { src: string; callId: str
   return (
     <div
       className={compact ? "flex items-center gap-3" : "rounded-2xl p-4"}
-      style={compact ? undefined : { background: "var(--rec-player-bg)", border: "1px solid var(--rec-border)" }}
+      style={compact ? undefined : { background: "var(--surface-4)", border: "1px solid var(--border)" }}
     >
       <audio
         ref={audioRef}
@@ -137,7 +137,7 @@ export function AudioPlayer({ src, callId, compact }: { src: string; callId: str
           onClick={toggle}
           aria-label={playing ? t("rec.pause") : t("rec.listen")}
           className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-white transition hover:opacity-90"
-          style={{ background: "var(--rec-accent)" }}
+          style={{ background: "var(--accent)" }}
         >
           <span aria-hidden className="text-base">{playing ? "❚❚" : "▶"}</span>
         </button>
@@ -160,7 +160,7 @@ export function AudioPlayer({ src, callId, compact }: { src: string; callId: str
                 className="flex-1 rounded-full transition-colors"
                 style={{
                   height: `${Math.max(8, p * 100)}%`,
-                  background: played ? "var(--rec-bar)" : "var(--rec-wave-idle)",
+                  background: played ? "var(--chart)" : "var(--bar-dim)",
                 }}
               />
             );
@@ -169,13 +169,13 @@ export function AudioPlayer({ src, callId, compact }: { src: string; callId: str
       </div>
 
       {!compact && (
-        <div className="mt-3 flex items-center justify-between font-mono text-xs" style={{ color: "var(--rec-text-2)" }}>
+        <div className="mt-3 flex items-center justify-between font-mono text-xs" style={{ color: "var(--text-2)" }}>
           <span className="tabular-nums">{fmtClock(time)}</span>
           <button
             type="button"
             onClick={cycleRate}
             className="rounded-lg px-2.5 py-1 font-sans text-xs font-medium transition hover:opacity-80"
-            style={{ background: "var(--rec-btn-bg)", border: "1px solid var(--rec-btn-border)", color: "var(--rec-text)" }}
+            style={{ background: "var(--surface-4)", border: "1px solid var(--border-chip)", color: "var(--text)" }}
           >
             {rate}x
           </button>
