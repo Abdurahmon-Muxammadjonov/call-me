@@ -13,11 +13,12 @@
  * Hech qanday zaxira raqam yo'q: noma'lum qiymat null, UI uni "—" qiladi
  * yoki blokni yashiradi. */
 
+import { useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { apiFetch, API_V2 } from "./api";
 import { useMe, type Me } from "./me";
 import { useLocale, type Locale } from "../../lib/i18n";
-import { listAllCalls, type CallRow } from "../../lib/calls";
+import { operatorsOf, useDayCalls, useManagerNames } from "./dayCalls";
 import {
   addDays, dayDiff, hmOf, isoWeekday, monthStart, sameDayPrevMonth, shiftMonth, tashkentHourOf, tashkentToday, weekStart,
 } from "../lib/dates";
@@ -230,48 +231,6 @@ function pct(a: number, b: number): number | null {
   return b > 0 ? (a / b) * 100 : null;
 }
 
-function normalizeScore10(v: number | null | undefined): number | null {
-  const x = Number(v);
-  if (!Number.isFinite(x) || x <= 0) return null;
-  return x > 10 ? x / 10 : x;
-}
-
-/* Bugungi qo'ng'iroqlardan operator kesimi (faqat kunlik davr). */
-function teamFromCalls(calls: CallRow[], names: Map<string, string>, longSec: number | null): TeamRow[] {
-  const by = new Map<string, TeamRow & { scoreSum: number; scored: number; leadsSeen: boolean }>();
-  for (const c of calls) {
-    const ext = c.operator_ext?.trim() || null;
-    const key = ext ?? c.manager_id ?? "—";
-    let r = by.get(key);
-    if (!r) {
-      r = {
-        key, ext, name: (c.manager_id && names.get(c.manager_id)) || null,
-        calls: 0, longCalls: 0, incoming: 0, outgoing: 0, leads: 0, score10: null,
-        scoreSum: 0, scored: 0, leadsSeen: false,
-      };
-      by.set(key, r);
-    }
-    r.calls += 1;
-    if (longSec != null && n(c.duration) > longSec) r.longCalls += 1;
-    if (c.direction === "incoming") r.incoming += 1;
-    else if (c.direction === "outgoing") r.outgoing += 1;
-    if (c.new_leads_count != null) {
-      r.leadsSeen = true;
-      r.leads = (r.leads ?? 0) + n(c.new_leads_count);
-    }
-    const s = normalizeScore10(c.kpi_score);
-    if (s != null) {
-      r.scoreSum += s;
-      r.scored += 1;
-    }
-  }
-  return [...by.values()].map(({ scoreSum, scored, leadsSeen, ...row }) => ({
-    ...row,
-    leads: leadsSeen ? row.leads : null,
-    score10: scored ? Math.round((scoreSum / scored) * 10) / 10 : null,
-  }));
-}
-
 async function fetchV1(period: Period, me: Me, locale: Locale, signal?: AbortSignal): Promise<AnalyticsData> {
   // Operator kesimi (jamoa jadvali, norma banneri) alohida so'rovda —
   // qo'ng'iroqlar ro'yxati og'ir, u sekinroq yangilanadi (fetchV1Team).
@@ -369,29 +328,6 @@ async function fetchV1(period: Period, me: Me, locale: Locale, signal?: AbortSig
 }
 
 
-/* v1: operator kesimi — bugungi qo'ng'iroqlardan (faqat kunlik davr).
- * Ro'yxat og'ir bo'lgani uchun alohida so'rov va sekinroq yangilanadi. */
-async function fetchV1Team(me: Me, signal?: AbortSignal): Promise<Pick<AnalyticsData, "team" | "lagging">> {
-  const today = tashkentToday();
-  const longSec = me.norms.longCallSec;
-  const dailyNorm = me.norms.dailyLongCallsNorm;
-  const [calls, managers] = await Promise.all([
-    listAllCalls({ date: today }, signal),
-    apiFetch<Array<{ id: string; name: string }>>("/managers", { signal }).catch(() => null),
-  ]);
-  const names = new Map((Array.isArray(managers) ? managers : []).map((m) => [m.id, m.name]));
-  const team = teamFromCalls(calls, names, longSec);
-  let lagging: AnalyticsData["lagging"] = null;
-  if (dailyNorm != null && longSec != null) {
-    const behind = team.filter((r) => r.calls > 0 && r.longCalls < dailyNorm).sort((a, b) => a.longCalls - b.longCalls);
-    lagging = {
-      count: behind.length,
-      top: behind.slice(0, 3).map((r) => ({ ext: r.ext ?? r.name ?? r.key, longCalls: r.longCalls, normTarget: dailyNorm })),
-    };
-  }
-  return { team, lagging };
-}
-
 async function fetchV2(period: Period, signal?: AbortSignal): Promise<AnalyticsData> {
   // Appendix A.3 (pages/analytics) kelgach shu yerda o'giriladi.
   const data = await apiFetch<Omit<AnalyticsData, "source">>(`/pages/analytics?period=${period}`, { signal, v2: true });
@@ -417,18 +353,31 @@ export function useAnalytics(period: Period) {
     placeholderData: keepPreviousData,
     meta: { persist: true, page: true },
   });
-  // v1: operator kesimi alohida (faqat kunlik davrda ma'lum).
-  const team = useQuery({
-    queryKey: ["v1", me?.company.id ?? "_", "analytics-team", tashkentToday()],
-    queryFn: ({ signal }) => fetchV1Team(me!, signal),
-    enabled: !!me && !API_V2 && period === "day",
-    staleTime: 60_000,
-    refetchInterval: 120_000,
-  });
+  // v1: operator kesimi — bugungi qo'ng'iroqlardan (faqat kunlik davr),
+  // Solishtirish bilan umumiy kesh (dayCalls.ts).
+  const v1Team = !API_V2 && period === "day";
+  const today = page.data?.today ?? null;
+  const calls = useDayCalls(me?.company.id, today, v1Team);
+  const names = useManagerNames(me?.company.id, v1Team);
+  const derived = useMemo(() => {
+    if (!v1Team || !calls.data || !me) return null;
+    const team: TeamRow[] = operatorsOf(calls.data, names.data ?? new Map(), me.norms.longCallSec).map((o) => ({
+      key: o.key, ext: o.ext, name: o.name, calls: o.calls, longCalls: o.longCalls,
+      incoming: o.incoming, outgoing: o.outgoing, leads: o.leads, score10: o.score10,
+    }));
+    const dailyNorm = me.norms.dailyLongCallsNorm;
+    let lagging: AnalyticsData["lagging"] = null;
+    if (dailyNorm != null && me.norms.longCallSec != null) {
+      const behind = team.filter((r) => r.calls > 0 && r.longCalls < dailyNorm).sort((a, b) => a.longCalls - b.longCalls);
+      lagging = {
+        count: behind.length,
+        top: behind.slice(0, 3).map((r) => ({ ext: r.ext ?? r.name ?? r.key, longCalls: r.longCalls, normTarget: dailyNorm })),
+      };
+    }
+    return { team, lagging };
+  }, [v1Team, calls.data, names.data, me]);
   const merged: AnalyticsData | undefined =
-    page.data && !API_V2 && page.data.period === "day"
-      ? { ...page.data, team: team.data?.team ?? null, lagging: team.data?.lagging ?? null }
-      : page.data;
+    page.data && v1Team ? { ...page.data, team: derived?.team ?? null, lagging: derived?.lagging ?? null } : page.data;
   return {
     data: merged,
     isLoading: page.isLoading,
@@ -437,9 +386,9 @@ export function useAnalytics(period: Period) {
     isFetching: page.isFetching,
     isPlaceholderData: page.isPlaceholderData,
     refetch: page.refetch,
-    teamLoading: !API_V2 && period === "day" && team.isLoading,
-    teamError: !API_V2 && period === "day" && team.isError,
-    refetchTeam: team.refetch,
+    teamLoading: v1Team && (calls.isLoading || !page.data),
+    teamError: v1Team && calls.isError,
+    refetchTeam: calls.refetch,
   };
 }
 

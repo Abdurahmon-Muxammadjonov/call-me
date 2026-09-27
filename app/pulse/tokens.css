@@ -58,6 +58,11 @@
   --pn-bad-ring: rgba(255, 127, 102, 0.18);
   --pn-alert-bg: rgba(255, 127, 102, 0.07);
   --pn-alert-border: rgba(255, 127, 102, 0.24);
+  /* Tint ustidagi matn (pill, chip): manbalarda qorong'ida ton rangining
+   * o'zi; yorug'da AA kontrast uchun -soft (pastda). */
+  --pn-good-text: var(--pn-good);
+  --pn-warn-text: var(--pn-warn);
+  --pn-bad-text: var(--pn-bad);
 
   /* — Pastel (fon sifatida ikkala mavzuda ham bir xil) — */
   --pn-lilac: #CBB9FF;
@@ -131,6 +136,9 @@
   --pn-bad-ring: rgba(200, 67, 42, 0.16);
   --pn-alert-bg: rgba(200, 67, 42, 0.06);
   --pn-alert-border: rgba(200, 67, 42, 0.22);
+  --pn-good-text: var(--pn-good-soft);
+  --pn-warn-text: var(--pn-warn-soft);
+  --pn-bad-text: var(--pn-bad-soft);
 
   --pn-lilac: #cbb9ff;
   --pn-sky: #a9d6ff;

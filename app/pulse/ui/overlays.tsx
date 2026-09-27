@@ -203,6 +203,9 @@ export function Popover({
     if (!open) return;
     const anchor = anchorRef.current;
     const raf = requestAnimationFrame(() => {
+      // Ichkaridagi komponent fokusni o'zi qo'ygan bo'lsa (masalan sana
+      // tanlagichdagi tanlangan kun), uni o'g'irlamaymiz.
+      if (boxRef.current?.contains(document.activeElement)) return;
       const target = initialFocusRef?.current ?? (boxRef.current ? focusables(boxRef.current)[0] : null) ?? boxRef.current;
       target?.focus({ preventScroll: true });
     });

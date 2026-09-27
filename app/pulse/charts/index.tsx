@@ -30,16 +30,19 @@ export function useWidth<T extends HTMLElement>(): [React.RefObject<T | null>, n
  * Grafik konteyneri fokuslanadi, ←/→ faol ustunni siljitadi; sichqoncha
  * ustida bo'lsa x bo'yicha ustun tanlanadi. Tooltip faol ustun ustida. */
 
-export function useColumnCursor(count: number) {
+/* `points: true` — chiziqli grafik: nuqtalar chetdan chetga (i × W/(n−1)),
+ * eng yaqin nuqta tanlanadi; aks holda teng ustunlar. */
+export function useColumnCursor(count: number, { points = false }: { points?: boolean } = {}) {
   const [active, setActive] = useState<number | null>(null);
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
       if (!rect.width || !count) return;
-      const i = Math.min(count - 1, Math.max(0, Math.floor(((e.clientX - rect.left) / rect.width) * count)));
-      setActive(i);
+      const rel = (e.clientX - rect.left) / rect.width;
+      const raw = points ? Math.round(rel * (count - 1)) : Math.floor(rel * count);
+      setActive(Math.min(count - 1, Math.max(0, raw)));
     },
-    [count]
+    [count, points]
   );
   const onPointerLeave = useCallback(() => setActive(null), []);
   const onKeyDown = useCallback(

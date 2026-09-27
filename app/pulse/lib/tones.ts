@@ -87,9 +87,10 @@ export function deltaTone(delta: number | null | undefined, direction: GoodDirec
 }
 
 /* Ton → token nomlari. Komponentlar xom hex emas, shularni ishlatadi. */
-export const TONE_VARS: Record<Tone, { fg: string; tint: string; soft: string; ring: string }> = {
-  good: { fg: "var(--pn-good)", tint: "var(--pn-good-tint)", soft: "var(--pn-good-soft)", ring: "var(--pn-good-ring)" },
-  warn: { fg: "var(--pn-warn)", tint: "var(--pn-warn-tint)", soft: "var(--pn-warn-soft)", ring: "var(--pn-warn-ring)" },
-  bad: { fg: "var(--pn-bad)", tint: "var(--pn-bad-tint)", soft: "var(--pn-bad-soft)", ring: "var(--pn-bad-ring)" },
-  neutral: { fg: "var(--pn-muted)", tint: "var(--pn-panel-3)", soft: "var(--pn-text-2)", ring: "transparent" },
+/* `text` — tint ustidagi matn (pill/chip): qorong'ida fg, yorug'da soft. */
+export const TONE_VARS: Record<Tone, { fg: string; tint: string; soft: string; ring: string; text: string }> = {
+  good: { fg: "var(--pn-good)", tint: "var(--pn-good-tint)", soft: "var(--pn-good-soft)", ring: "var(--pn-good-ring)", text: "var(--pn-good-text)" },
+  warn: { fg: "var(--pn-warn)", tint: "var(--pn-warn-tint)", soft: "var(--pn-warn-soft)", ring: "var(--pn-warn-ring)", text: "var(--pn-warn-text)" },
+  bad: { fg: "var(--pn-bad)", tint: "var(--pn-bad-tint)", soft: "var(--pn-bad-soft)", ring: "var(--pn-bad-ring)", text: "var(--pn-bad-text)" },
+  neutral: { fg: "var(--pn-muted)", tint: "var(--pn-panel-3)", soft: "var(--pn-text-2)", ring: "transparent", text: "var(--pn-text-2)" },
 };

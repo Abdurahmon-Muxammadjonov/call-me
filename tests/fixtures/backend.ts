@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { BrowserContext, Page, Route } from "@playwright/test";
-import { dailySummary, hourly, todayCalls, TODAY } from "./analytics";
+import { dailyMinutes, dailySummary, hourly, todayCalls, yesterdayCalls, TODAY, YESTERDAY } from "./analytics";
 
 function apiBase(): string {
   const env = readFileSync(join(__dirname, "..", "..", ".env.local"), "utf8");
@@ -59,6 +59,7 @@ export async function mockBackend(target: Page | BrowserContext, opts: BackendOp
     analyticsError = false,
   } = opts;
   const calls = analytics ? todayCalls() : [];
+  const callsY = analytics ? yesterdayCalls() : [];
   await target.route(`${API}/**`, async (route: Route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
@@ -111,12 +112,19 @@ export async function mockBackend(target: Page | BrowserContext, opts: BackendOp
           ])
         );
       case "/analytics/hourly":
-        return route.fulfill(ok(analytics ? hourly() : []));
+        return route.fulfill(ok(analytics ? hourly(url.searchParams.get("date")) : []));
+      case "/analytics/daily-minutes":
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ success: true, data: analytics ? dailyMinutes(Number(url.searchParams.get("days") || 30)) : [], summary: { days: 0, calls: 0, minutes: 0 } }),
+        });
       case "/api/calls": {
-        if (!analytics || url.searchParams.get("date") !== TODAY) return route.fulfill(ok([]));
+        const date = url.searchParams.get("date");
+        const src = !analytics ? [] : date === TODAY ? calls : date === YESTERDAY ? callsY : [];
         const limit = Number(url.searchParams.get("limit") || 200);
         const offset = Number(url.searchParams.get("offset") || 0);
-        return route.fulfill(ok(calls.slice(offset, offset + limit)));
+        return route.fulfill(ok(src.slice(offset, offset + limit)));
       }
       default:
         // Boshqa hamma narsa: bo'sh ro'yxat. Tashqi tarmoqqa HECH QACHON o'tmaydi.

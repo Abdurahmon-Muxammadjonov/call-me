@@ -313,9 +313,9 @@ export function DeltaPill({
     <span
       data-testid={testId}
       className={cx("pn-mono inline-flex shrink-0 items-center gap-1 rounded-full font-semibold", DELTA_SIZE[size], className)}
-      style={{ background: t.tint, color: t.soft, ...style }}
+      style={{ background: t.tint, color: t.text, ...style }}
     >
-      {arrow === "up" ? "↑" : arrow === "down" ? "↓" : null}
+      {arrow && <span>{arrow === "up" ? "↑" : "↓"}</span>}
       {children}
     </span>
   );
@@ -343,7 +343,7 @@ export function StatusPill({
         plain ? "h-[26px] px-[10px] text-[12px]" : "h-7 px-3 text-[12px]",
         className
       )}
-      style={{ background: t.tint, color: t.soft }}
+      style={{ background: t.tint, color: t.text }}
     >
       {!plain && <span aria-hidden className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: t.fg }} />}
       {children}
@@ -370,7 +370,7 @@ export function ScoreChip({
         size === "lg" ? "h-[30px] w-11 rounded-[9px]" : "h-7 rounded-lg px-[10px]",
         className
       )}
-      style={{ background: t.tint, color: t.soft }}
+      style={{ background: t.tint, color: t.text }}
     >
       {children}
     </span>
@@ -382,7 +382,7 @@ export function CoverageChip({ tone, children }: { tone: Tone; children: ReactNo
   return (
     <span
       className="pn-mono inline-flex h-[26px] shrink-0 items-center rounded-lg px-[10px] text-[12px] font-semibold"
-      style={{ background: t.tint, color: t.soft }}
+      style={{ background: t.tint, color: t.text }}
     >
       {children}
     </span>

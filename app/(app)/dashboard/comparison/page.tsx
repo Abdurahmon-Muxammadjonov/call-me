@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { ComparisonView } from "../../../components/ComparisonView";
+import { ComparePage } from "../../../pulse/pages/compare/ComparePage";
 
-/* Solishtirish paneli — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Solishtirish paneli — Pulse Noir (3-bosqich). */
 export const metadata: Metadata = { title: "Solishtirish paneli" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <ComparisonView />
-    </LegacyFrame>
-  );
+  return <ComparePage />;
 }

@@ -15,16 +15,19 @@ const LEADS = [36, 22, 4, 41, 44, 39, 37, 35, 24, 3, 42, 45, 36, 48];
 const OFFERS = [8, 5, 1, 9, 10, 8, 9, 8, 5, 1, 9, 10, 8, 11];
 
 export const HOURLY = [48, 96, 132, 121, 88, 79, 95, 112, 126, 158, 171, 80]; // 09:00–20:00
+/* Solishtirish maketi: kechagi soatlik (09:00–23:00). */
+export const HOURLY_YESTERDAY = [26, 50, 68, 62, 46, 40, 50, 58, 64, 80, 86, 44, 14, 6, 3];
+export const YESTERDAY = addDays(TODAY, -1);
 
 function row(date: string, i: number) {
   const calls = CALLS[i] ?? 0;
   return {
     date,
     calls,
-    minutes: i === 13 ? 21 * 60 + 17 : Math.round(calls * 0.95),
+    minutes: i === 13 ? 21 * 60 + 17 : i === 12 ? 699 : Math.round(calls * 0.95),
     analyzed: calls,
     scored: Math.round(calls * 0.25),
-    avg_score: 36,
+    avg_score: i === 13 ? 34 : i === 12 ? 35 : 36,
     low_score: i === 13 ? 41 : 20,
     long_calls: LONGS[i] ?? 0,
     operator_calls: calls,
@@ -57,10 +60,13 @@ export function dailySummary(days: number, until: string | null) {
   return out;
 }
 
-export function hourly() {
+export function hourly(date: string | null = TODAY) {
   return Array.from({ length: 24 }, (_, h) => ({
     hour: h,
-    calls: h >= 9 && h <= 20 ? HOURLY[h - 9] : 0,
+    calls:
+      date === TODAY ? (h >= 9 && h <= 20 ? HOURLY[h - 9] : 0)
+      : date === YESTERDAY ? (h >= 9 && h <= 23 ? HOURLY_YESTERDAY[h - 9] : 0)
+      : 0,
     operator_calls: 0,
     long_calls: 0,
     analyzed: 0,
@@ -108,4 +114,60 @@ export function todayCalls() {
     }
   }
   return calls;
+}
+
+/* Solishtirish › "Kim o'sdi, kim tushdi": kechagi ballar (bugungisi TEAM da). */
+export const SCORE_YESTERDAY: Record<string, number> = {
+  "102": 4.0, "106": 4.5, "103": 3.6, "104": 3.9, "108": 4.1, "101": 3.2,
+  "107": 3.3, "109": 3.2, "110": 3.0, "105": 2.8, "100": 2.9, "5200": 2.4,
+};
+
+export function yesterdayCalls() {
+  const calls = [];
+  let seq = 0;
+  for (const [ext, score] of Object.entries(SCORE_YESTERDAY)) {
+    for (let j = 0; j < 20; j++) {
+      seq++;
+      calls.push({
+        id: `y${seq}`,
+        manager_id: "unmapped",
+        audio_url: "",
+        duration: 70,
+        kpi_score: Math.round(score * 10),
+        penalty_amount: 0,
+        bonus_amount: 0,
+        rop_comment: "",
+        operator_ext: ext,
+        direction: "outgoing",
+        new_leads_count: 0,
+        created_at: `${YESTERDAY}T10:00:00+05:00`,
+      });
+    }
+  }
+  return calls;
+}
+
+/* /analytics/daily-minutes — bugun operatorlar kesimi (maketdagi to'rttasi). */
+export function dailyMinutes(days: number) {
+  const out = [];
+  const rows = dailySummary(days, null);
+  for (let k = 0; k < days; k++) {
+    const date = addDays(TODAY, -k);
+    const r = rows[k];
+    out.push({
+      date,
+      calls: r.calls,
+      seconds: r.minutes * 60,
+      minutes: r.minutes,
+      operators: k === 0
+        ? [
+            { name: "104", calls: 229, minutes: 204 },
+            { name: "108", calls: 214, minutes: 204 },
+            { name: "102", calls: 109, minutes: 163 },
+            { name: "107", calls: 109, minutes: 121 },
+          ]
+        : [],
+    });
+  }
+  return out;
 }
