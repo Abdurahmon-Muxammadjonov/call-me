@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Icons } from "../Icons";
 import { Logo, ThemeToggle, LocaleToggle } from "../ui";
 import { useTheme } from "../../lib/theme";
+import { useInPulseShell } from "../../pulse/shell/context";
+import { LegacyFrame } from "../../pulse/shell/LegacyFrame";
 
 /* Shared chrome for /settings/* pages. Deliberately not the full AppShell
  * (sidebar + tab routing) — settings pages live outside the /dashboard
@@ -23,6 +25,21 @@ export function SettingsShell({
   children: ReactNode;
 }) {
   const { isDark, toggle: toggleTheme } = useTheme();
+  const inShell = useInPulseShell();
+
+  // Doimiy Pulse qobig'i ichida: menyu, til va mavzu allaqachon yon
+  // menyuda — faqat sarlavha va mazmun (eski ko'rinishda) chiziladi.
+  if (inShell) {
+    return (
+      <LegacyFrame>
+        <div className="mx-auto max-w-3xl">
+          <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100">{title}</h1>
+          {subtitle && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}
+          <div className="mt-6">{children}</div>
+        </div>
+      </LegacyFrame>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">

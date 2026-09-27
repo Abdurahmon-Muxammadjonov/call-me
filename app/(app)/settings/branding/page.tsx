@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SettingsShell } from "../../components/settings/SettingsShell";
-import { CompanyProvider, useCompany } from "../../lib/company";
-import { useHydrated, useSession } from "../../lib/auth";
-import { useHasRole } from "../../lib/useHasRole";
-import { showToast } from "../../lib/toast";
-import { ToastHost } from "../../components/ToastHost";
-import { Icons } from "../../components/Icons";
-import { Card, Skeleton } from "../../components/ui";
-import { apiUrl, authHeaders } from "../../lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { SettingsShell } from "../../../components/settings/SettingsShell";
+import { useCompany } from "../../../lib/company";
+import { useHydrated, useSession } from "../../../lib/auth";
+import { useHasRole } from "../../../lib/useHasRole";
+import { showToast } from "../../../lib/toast";
+import { Icons } from "../../../components/Icons";
+import { Card, Skeleton } from "../../../components/ui";
+import { apiUrl, authHeaders } from "../../../lib/api";
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -19,6 +19,8 @@ function BrandingContent() {
   const session = useSession();
   const canEdit = useHasRole(["director", "admin"]);
   const { company, loading, setCompany } = useCompany();
+  // Yon menyudagi kompaniya tugmasi (Pulse /me) ham darhol yangilansin.
+  const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -69,6 +71,7 @@ function BrandingContent() {
       }
       // Darhol yangilanadi — reload shart emas.
       setCompany(company ? { ...company, logo_url: json.data.logo_url } : company);
+      void qc.invalidateQueries({ queryKey: ["v2", "me"] });
       setFile(null);
       setPreview(null);
       showToast("Logotip yangilandi.", "success");
@@ -89,6 +92,7 @@ function BrandingContent() {
       const json = (await res.json()) as { success: boolean; error?: string };
       if (!res.ok || !json.success) throw new Error(json.error || `HTTP ${res.status}`);
       setCompany(company ? { ...company, logo_url: null } : company);
+      void qc.invalidateQueries({ queryKey: ["v2", "me"] });
       showToast("Logotip o'chirildi.", "success");
     } catch (e) {
       showToast((e as Error).message || "Logotipni o'chirib bo'lmadi.", "error");
@@ -219,12 +223,10 @@ export default function BrandingSettingsPage() {
 
   if (!session || !canEdit) return null;
 
+  // CompanyProvider va toastlar doimiy qobiqda (app/(app)/layout.tsx).
   return (
-    <CompanyProvider>
-      <SettingsShell title="Brend sozlamalari" subtitle="Kompaniyangiz logotipini boshqaring">
-        <BrandingContent />
-      </SettingsShell>
-      <ToastHost />
-    </CompanyProvider>
+    <SettingsShell title="Brend sozlamalari" subtitle="Kompaniyangiz logotipini boshqaring">
+      <BrandingContent />
+    </SettingsShell>
   );
 }

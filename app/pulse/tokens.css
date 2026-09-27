@@ -1,0 +1,253 @@
+/* =====================================================================
+ * PULSE NOIR — dizayn tokenlari (spetsifikatsiya §4.1, §4.2).
+ *
+ * Qiymatlar tasdiqlangan manbalardan (design/pulse-noir/source/*.dc.html)
+ * olingan. Komponentlar HECH QACHON xom hex ishlatmaydi — faqat shu
+ * o'zgaruvchilar.
+ *
+ * Mavzu <html data-theme="dark|light"> orqali almashadi (serverda cookie
+ * `sp_theme` dan chiziladi — mavzu "sakrashi" bo'lmasin). Eski `.dark`
+ * klassi ham qo'yiladi, chunki qayta dizayn qilinmagan sahifalar hali
+ * o'shanga tayanadi.
+ * ==================================================================== */
+
+:root[data-theme="dark"] {
+  /* — Fonlar / yuzalar — */
+  --pn-bg: #0B0C0F;
+  --pn-panel: #121419;
+  --pn-panel-2: #181B21;
+  --pn-panel-3: #1F232B;
+  --pn-field: #0E1013;
+  --pn-row-open: #161920;
+  --pn-row-selected: #181C24;
+  --pn-card-selected: #171B22;
+
+  /* — Chegaralar / chiziqlar — */
+  --pn-border: #1E2128;
+  --pn-border-2: #23262E;
+  --pn-border-3: #2A2E37;
+  --pn-divider: #1A1D23;
+  --pn-grid: #1C1F25;
+  --pn-axis: #2A2E37;
+  --pn-track: #262A32;
+  --pn-track-inner: #23262E;
+  --pn-bar-dim: #2A2E37;
+  --pn-bar-dim-2: #3A3F49;
+
+  /* — Matn — */
+  --pn-text: #F3F2EE;
+  --pn-text-2: #C9CCD3;
+  --pn-text-3: #B4B8C0;
+  --pn-text-4: #E4E3DE;
+  --pn-muted: #9A9FA8;
+  --pn-subtle: #7D828C;
+  --pn-faint: #5E636C;
+
+  /* — Ton: yaxshi / ogohlantirish / yomon — */
+  --pn-good: #5EDFA0;
+  --pn-good-tint: rgba(94, 223, 160, 0.13);
+  --pn-good-soft: #86EBBA;
+  --pn-good-ring: rgba(94, 223, 160, 0.16);
+  --pn-warn: #F7C948;
+  --pn-warn-tint: rgba(247, 201, 72, 0.13);
+  --pn-warn-soft: #F9D877;
+  --pn-warn-ring: rgba(247, 201, 72, 0.16);
+  --pn-bad: #FF7F66;
+  --pn-bad-tint: rgba(255, 127, 102, 0.14);
+  --pn-bad-soft: #FF9A85;
+  --pn-bad-ring: rgba(255, 127, 102, 0.18);
+  --pn-alert-bg: rgba(255, 127, 102, 0.07);
+  --pn-alert-border: rgba(255, 127, 102, 0.24);
+
+  /* — Pastel (fon sifatida ikkala mavzuda ham bir xil) — */
+  --pn-lilac: #CBB9FF;
+  --pn-sky: #A9D6FF;
+  --pn-peach: #FFC9A9;
+  --pn-pink: #FF9EC7;
+  --pn-slate: #A9B4C2;
+  --pn-slate-2: #6B7280;
+  --pn-periwinkle: #B9C8FF;
+
+  /* Pastel CHIZIQ/MATN/IKONKA sifatida ishlatilganda (yorug'da to'qroq) */
+  --pn-lilac-line: #CBB9FF;
+  --pn-sky-line: #A9D6FF;
+  --pn-peach-line: #FFC9A9;
+
+  /* Pastel plitka ustidagi siyoh */
+  --pn-pastel-ink: #111317;
+  --pn-pastel-muted: rgba(17, 19, 23, 0.7);
+  --pn-pastel-dim: rgba(17, 19, 23, 0.24);
+  --pn-pastel-faint: rgba(17, 19, 23, 0.1);
+
+  /* — Maxsus — */
+  --pn-not-analyzed: #4a4128;
+  --pn-wave-idle: #343944;
+  --pn-wave-idle-list: #2f333c;
+  --pn-seg-active-bg: #f3f2ee;
+  --pn-seg-active-text: #0b0c0f;
+  --pn-scrim: rgba(5, 6, 8, 0.6);
+}
+
+:root[data-theme="light"] {
+  --pn-bg: #f4f3ee;
+  --pn-panel: #ffffff;
+  --pn-panel-2: #f2f1ec;
+  --pn-panel-3: #e9e8e2;
+  --pn-field: #f2f1ec;
+  --pn-row-open: #faf9f5;
+  --pn-row-selected: #f3f6e6;
+  --pn-card-selected: #f3f6e6;
+
+  --pn-border: #e4e2da;
+  --pn-border-2: #dad8cf;
+  --pn-border-3: #cfcdc4;
+  --pn-divider: #eeece6;
+  --pn-grid: #eeece6;
+  --pn-axis: #d6d4cc;
+  --pn-track: #e6e4dd;
+  --pn-track-inner: #e6e4dd;
+  --pn-bar-dim: #dad8d0;
+  --pn-bar-dim-2: #c9c7be;
+
+  --pn-text: #15161a;
+  --pn-text-2: #33363d;
+  --pn-text-3: #4a4e57;
+  --pn-text-4: #2a2d33;
+  --pn-muted: #5f636b;
+  --pn-subtle: #6e727a;
+  --pn-faint: #9a9da4;
+
+  --pn-good: #0f8a5f;
+  --pn-good-tint: rgba(15, 138, 95, 0.12);
+  --pn-good-soft: #0b6b49;
+  --pn-good-ring: rgba(15, 138, 95, 0.16);
+  --pn-warn: #9a6700;
+  --pn-warn-tint: rgba(154, 103, 0, 0.12);
+  --pn-warn-soft: #7a5200;
+  --pn-warn-ring: rgba(154, 103, 0, 0.16);
+  --pn-bad: #c8432a;
+  --pn-bad-tint: rgba(200, 67, 42, 0.12);
+  --pn-bad-soft: #a3341f;
+  --pn-bad-ring: rgba(200, 67, 42, 0.16);
+  --pn-alert-bg: rgba(200, 67, 42, 0.06);
+  --pn-alert-border: rgba(200, 67, 42, 0.22);
+
+  --pn-lilac: #cbb9ff;
+  --pn-sky: #a9d6ff;
+  --pn-peach: #ffc9a9;
+  --pn-pink: #ff9ec7;
+  --pn-slate: #a9b4c2;
+  --pn-slate-2: #6b7280;
+  --pn-periwinkle: #b9c8ff;
+
+  --pn-lilac-line: #7c5fe0;
+  --pn-sky-line: #2f7fc8;
+  --pn-peach-line: #d9722f;
+
+  --pn-pastel-ink: #111317;
+  --pn-pastel-muted: rgba(17, 19, 23, 0.7);
+  --pn-pastel-dim: rgba(17, 19, 23, 0.24);
+  --pn-pastel-faint: rgba(17, 19, 23, 0.1);
+
+  --pn-not-analyzed: #e3d6a8;
+  --pn-wave-idle: #d6d4cc;
+  --pn-wave-idle-list: #dad8d0;
+  --pn-seg-active-bg: #15161a;
+  --pn-seg-active-text: #ffffff;
+  --pn-scrim: rgba(21, 22, 26, 0.35);
+}
+
+/* ---------------------------------------------------------------------
+ * SABAB RANGLARI (§4.1 "Reason colours").
+ *
+ * FAQAT manbada ko'ringan qiymatlar (Tahlil.dc.html renderVals) va §4.1
+ * jadvalidagi "Used for" ustunidagi xarita ishlatildi — o'ylab topilgan
+ * qiymat yo'q. Sabablar mavjud ton/pastel tokenlariga BOG'LANADI, shu
+ * sabab yorug' mavzuda ham avtomatik to'g'ri rang oladi:
+ *   Javobsiz          → --pn-bad       (manba: #FF7F66)
+ *   Qisqa suhbat      → --pn-warn      (manba: #F7C948)
+ *   Noto'g'ri raqam   → --pn-pink      (manba: #FF9EC7; §4.1 wrong-number)
+ *   Aloqa sifati yomon→ --pn-slate     (manba: #A9B4C2; §4.1 bad-audio)
+ *   Go'shakni qo'ydi  → --pn-slate-2   (manba: #6B7280; §4.1 hung-up)
+ *   Kunlik limit      → --pn-periwinkle (§4.1 daily-limit)
+ *
+ * OCHIQ SAVOL (Appendix A.5 kelguncha): `callback`, `not_sales` va
+ * barcha `-text` qiymatlarining aniq raqamlari. Hozircha `-text` =
+ * to'ldirish rangi (tone'lar uchun `-soft`), bu manbadagi ko'rinishga mos.
+ * ------------------------------------------------------------------- */
+:root {
+  --pn-reason-analyzed: var(--pn-good);
+  --pn-reason-analyzed-text: var(--pn-good-soft);
+  --pn-reason-pending: var(--pn-warn);
+  --pn-reason-pending-text: var(--pn-warn-soft);
+  --pn-reason-failed: var(--pn-bad);
+  --pn-reason-failed-text: var(--pn-bad-soft);
+
+  --pn-reason-no_answer: var(--pn-bad);
+  --pn-reason-no_answer-text: var(--pn-bad-soft);
+  --pn-reason-short_call: var(--pn-warn);
+  --pn-reason-short_call-text: var(--pn-warn-soft);
+  --pn-reason-wrong_number: var(--pn-pink);
+  --pn-reason-wrong_number-text: var(--pn-pink);
+  --pn-reason-bad_audio: var(--pn-slate);
+  --pn-reason-bad_audio-text: var(--pn-slate);
+  --pn-reason-hung_up: var(--pn-slate-2);
+  --pn-reason-hung_up-text: var(--pn-slate);
+  --pn-reason-daily_limit: var(--pn-periwinkle);
+  --pn-reason-daily_limit-text: var(--pn-periwinkle);
+}
+
+/* ---------------------------------------------------------------------
+ * AKSENT (§4.3). Standart qiymatlar — laym preset. Bo'yashdan oldingi
+ * skript cookie `sp_accent` dagi presetni <html style> ga yozadi
+ * (lib/accent.ts → accentVars), inline uslub bu deklaratsiyalardan ustun.
+ *
+ * `--pn-accent-strong`: qorong'ida aksentning o'zi, yorug'da presetning
+ * to'q varianti — aksent MATN, CHIZIQ, CHEGARA yoki alfa-to'ldirish
+ * sifatida panel ustida ishlatilganda (§4.3 "Light-theme rule").
+ * ------------------------------------------------------------------- */
+:root {
+  --pn-accent: #D4F570;
+  --pn-accent-ink: #101114;
+  --pn-accent-soft: rgba(212, 245, 112, 0.14);
+  --pn-accent-area: rgba(212, 245, 112, 0.12);
+  --pn-accent-ring: rgba(212, 245, 112, 0.16);
+  --pn-on-accent-muted: rgba(16, 17, 20, 0.68);
+  --pn-on-accent-dim: rgba(16, 17, 20, 0.22);
+  --pn-on-accent-faint: rgba(16, 17, 20, 0.12);
+  --pn-on-accent-badge: rgba(16, 17, 20, 0.14);
+  --pn-accent-strong-dark: #D4F570;
+  --pn-accent-strong-light: #5A7A00;
+}
+:root[data-theme="dark"] {
+  --pn-accent-strong: var(--pn-accent-strong-dark);
+}
+:root[data-theme="light"] {
+  --pn-accent-strong: var(--pn-accent-strong-light);
+}
+
+/* ---------------------------------------------------------------------
+ * HARAKAT (§4.5). Shrift tokenlari pulse.css → .pn-root da (next/font
+ * o'zgaruvchilari shu elementda aniqlanadi).
+ * ------------------------------------------------------------------- */
+:root {
+  --pn-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --pn-dur-hover: 140ms;
+  --pn-dur-data: 240ms;
+  --pn-dur-drawer: 200ms;
+  --pn-dur-popover: 120ms;
+}
+
+/* Soyalar YO'Q (§4.2): yagona box-shadow — jonli/signal nuqtasidagi halo. */
+.pn-halo-good { box-shadow: 0 0 0 4px var(--pn-good-ring); }
+.pn-halo-warn { box-shadow: 0 0 0 4px var(--pn-warn-ring); }
+.pn-halo-bad { box-shadow: 0 0 0 4px var(--pn-bad-ring); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pn-dur-hover: 0ms;
+    --pn-dur-data: 0ms;
+    --pn-dur-drawer: 0ms;
+    --pn-dur-popover: 0ms;
+  }
+}

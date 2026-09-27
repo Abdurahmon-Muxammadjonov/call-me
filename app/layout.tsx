@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Sora, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ClientBootstrap } from "./components/ClientBootstrap";
+import { bootstrapScript } from "./pulse/lib/bootstrap";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -66,23 +67,10 @@ export const metadata: Metadata = {
   },
 };
 
-// Runs before paint to set the theme class + locale attribute, preventing a
-// light/dark and language flash (mirrors the same "set DOM before hydration,
-// read the DOM back as the source of truth" trick for both).
-const themeScript = `
-(function () {
-  try {
-    var stored = localStorage.getItem('procell-theme');
-    var dark = stored ? stored === 'dark'
-      : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.toggle('dark', dark);
-  } catch (e) {}
-  try {
-    var loc = localStorage.getItem('procell-locale');
-    document.documentElement.setAttribute('data-locale', (loc === 'ru' || loc === 'en') ? loc : 'uz');
-  } catch (e) {}
-})();
-`;
+// Bo'yashdan OLDIN: `data-theme` + eski `.dark` klassi, aksent va til
+// (cookie sp_theme / sp_accent / sp_locale; bo'lmasa eski localStorage
+// kalitlari). Batafsil: app/pulse/lib/bootstrap.ts.
+const themeScript = bootstrapScript();
 
 export default function RootLayout({
   children,
@@ -92,6 +80,7 @@ export default function RootLayout({
   return (
     <html
       lang="uz"
+      data-theme="dark"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${sora.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >

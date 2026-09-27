@@ -43,11 +43,15 @@ function getServerSnapshot(): Locale {
 
 export function setLocale(locale: Locale): void {
   document.documentElement.setAttribute("data-locale", locale);
+  document.documentElement.setAttribute("lang", locale);
   try {
     localStorage.setItem(LOCALE_KEY, locale);
   } catch {
     /* localStorage unavailable — ignore */
   }
+  // Pulse Noir: bo'yashdan oldingi skript tilni shu cookie'dan o'qiydi.
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `sp_locale=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
   emit();
 }
 

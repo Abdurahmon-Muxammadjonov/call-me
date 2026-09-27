@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Pulse Noir dizayn tizimi — tokenlar, Tailwind ranglari, umumiy uslublar. */
+@import "./pulse/pulse.css";
 
 /* Tailwind v4: drive dark mode from a `.dark` class on <html> instead of the
    OS preference, so the in-app toggle can flip every `dark:` utility. */

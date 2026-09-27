@@ -1,0 +1,224 @@
+/* =====================================================================
+ * PULSE NOIR — Tailwind ulanishi va umumiy uslublar.
+ * globals.css dan @import qilinadi (Tailwind v4 kirish fayli).
+ * ==================================================================== */
+@import "./tokens.css";
+
+/* Tokenlar Tailwind yordamchilariga: `bg-pn-panel`, `text-pn-muted`,
+ * `border-pn-border`, `font-pn-mono` … Qiymatlar mavzuga qarab
+ * tokens.css dan keladi, shuning uchun `dark:` varianti KERAK EMAS. */
+@theme inline {
+  --color-pn-bg: var(--pn-bg);
+  --color-pn-panel: var(--pn-panel);
+  --color-pn-panel-2: var(--pn-panel-2);
+  --color-pn-panel-3: var(--pn-panel-3);
+  --color-pn-field: var(--pn-field);
+  --color-pn-row-open: var(--pn-row-open);
+  --color-pn-row-selected: var(--pn-row-selected);
+  --color-pn-card-selected: var(--pn-card-selected);
+  --color-pn-border: var(--pn-border);
+  --color-pn-border-2: var(--pn-border-2);
+  --color-pn-border-3: var(--pn-border-3);
+  --color-pn-divider: var(--pn-divider);
+  --color-pn-grid: var(--pn-grid);
+  --color-pn-axis: var(--pn-axis);
+  --color-pn-track: var(--pn-track);
+  --color-pn-track-inner: var(--pn-track-inner);
+  --color-pn-bar-dim: var(--pn-bar-dim);
+  --color-pn-bar-dim-2: var(--pn-bar-dim-2);
+  --color-pn-text: var(--pn-text);
+  --color-pn-text-2: var(--pn-text-2);
+  --color-pn-text-3: var(--pn-text-3);
+  --color-pn-text-4: var(--pn-text-4);
+  --color-pn-muted: var(--pn-muted);
+  --color-pn-subtle: var(--pn-subtle);
+  --color-pn-faint: var(--pn-faint);
+  --color-pn-good: var(--pn-good);
+  --color-pn-good-tint: var(--pn-good-tint);
+  --color-pn-good-soft: var(--pn-good-soft);
+  --color-pn-warn: var(--pn-warn);
+  --color-pn-warn-tint: var(--pn-warn-tint);
+  --color-pn-warn-soft: var(--pn-warn-soft);
+  --color-pn-bad: var(--pn-bad);
+  --color-pn-bad-tint: var(--pn-bad-tint);
+  --color-pn-bad-soft: var(--pn-bad-soft);
+  --color-pn-alert-bg: var(--pn-alert-bg);
+  --color-pn-alert-border: var(--pn-alert-border);
+  --color-pn-lilac: var(--pn-lilac);
+  --color-pn-sky: var(--pn-sky);
+  --color-pn-peach: var(--pn-peach);
+  --color-pn-pink: var(--pn-pink);
+  --color-pn-slate: var(--pn-slate);
+  --color-pn-slate-2: var(--pn-slate-2);
+  --color-pn-periwinkle: var(--pn-periwinkle);
+  --color-pn-lilac-line: var(--pn-lilac-line);
+  --color-pn-sky-line: var(--pn-sky-line);
+  --color-pn-peach-line: var(--pn-peach-line);
+  --color-pn-pastel-ink: var(--pn-pastel-ink);
+  --color-pn-pastel-muted: var(--pn-pastel-muted);
+  --color-pn-pastel-dim: var(--pn-pastel-dim);
+  --color-pn-pastel-faint: var(--pn-pastel-faint);
+  --color-pn-not-analyzed: var(--pn-not-analyzed);
+  --color-pn-wave-idle: var(--pn-wave-idle);
+  --color-pn-wave-idle-list: var(--pn-wave-idle-list);
+  --color-pn-seg-active-bg: var(--pn-seg-active-bg);
+  --color-pn-seg-active-text: var(--pn-seg-active-text);
+  --color-pn-scrim: var(--pn-scrim);
+  --color-pn-accent: var(--pn-accent);
+  --color-pn-accent-ink: var(--pn-accent-ink);
+  --color-pn-accent-soft: var(--pn-accent-soft);
+  --color-pn-accent-area: var(--pn-accent-area);
+  --color-pn-accent-ring: var(--pn-accent-ring);
+  --color-pn-accent-strong: var(--pn-accent-strong);
+  --color-pn-on-accent-muted: var(--pn-on-accent-muted);
+  --color-pn-on-accent-dim: var(--pn-on-accent-dim);
+  --color-pn-on-accent-faint: var(--pn-on-accent-faint);
+  --color-pn-on-accent-badge: var(--pn-on-accent-badge);
+
+  --font-pn-display: var(--pn-font-display);
+  --font-pn-ui: var(--pn-font-ui);
+  --font-pn-mono: var(--pn-font-mono);
+
+  --ease-pn: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Ilova qobig'i ildizi. next/font o'zgaruvchilari (--font-bricolage …)
+ * SHU elementga qo'yiladi (app/(app)/layout.tsx), shuning uchun shrift
+ * tokenlari ham shu yerda e'lon qilinadi — :root da ular hali
+ * aniqlanmagan bo'lardi. Qalqib chiquvchi oynalar ham shu element
+ * ichiga chiziladi (PortalRoot), shriftlar ularga ham yetadi. */
+.pn-root {
+  /* Manba fayllar brauzer standarti `line-height: normal` bilan chizilgan;
+   * Tailwind preflight 1.5 qiladi — 1:1 uchun qaytaramiz. */
+  line-height: normal;
+  --pn-font-display: var(--font-bricolage), var(--font-onest), sans-serif;
+  --pn-font-ui: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --pn-font-mono: var(--font-pn-jetbrains), ui-monospace, monospace;
+  font-family: var(--pn-font-ui);
+  background: var(--pn-bg);
+  color: var(--pn-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* Qorong'i mavzuda sahifa chetidan "oq" ko'rinmasin (overscroll). */
+body:has(.pn-root) {
+  background: var(--pn-bg);
+}
+
+/* ---------- Tipografiya (§4.4) ---------- */
+.pn-eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pn-muted);
+}
+.pn-h1 {
+  margin: 10px 0 0;
+  font-family: var(--pn-font-display);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.pn-page-sub { margin-top: 8px; font-size: 14px; color: var(--pn-muted); }
+.pn-card-title {
+  font-family: var(--pn-font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.pn-card-sub { margin-top: 4px; font-size: 13px; color: var(--pn-muted); }
+.pn-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.pn-table-head {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pn-subtle);
+}
+.pn-nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pn-subtle);
+}
+.pn-mono { font-family: var(--pn-font-mono); }
+.pn-display { font-family: var(--pn-font-display); font-weight: 700; }
+
+/* ---------- Harakat (§4.5) ---------- */
+.pn-press { transition: background-color var(--pn-dur-hover) ease-out, color var(--pn-dur-hover) ease-out, border-color var(--pn-dur-hover) ease-out, opacity var(--pn-dur-hover) ease-out, transform var(--pn-dur-hover) ease-out; }
+.pn-press:not(:disabled):active { transform: scale(0.98); }
+
+@keyframes pn-skeleton {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.pn-skeleton {
+  background: var(--pn-panel-2);
+  animation: pn-skeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes pn-pop-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+.pn-popover-in { animation: pn-pop-in var(--pn-dur-popover) var(--pn-ease) both; }
+
+@keyframes pn-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.pn-scrim-in { animation: pn-fade-in 150ms ease-out both; }
+
+@keyframes pn-drawer-right { from { transform: translateX(calc(100% + 24px)); } to { transform: translateX(0); } }
+@keyframes pn-drawer-left { from { transform: translateX(calc(-100% - 24px)); } to { transform: translateX(0); } }
+.pn-drawer-right-in { animation: pn-drawer-right var(--pn-dur-drawer) var(--pn-ease) both; }
+.pn-drawer-left-in { animation: pn-drawer-left var(--pn-dur-drawer) var(--pn-ease) both; }
+
+@keyframes pn-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.pn-toast-in { animation: pn-toast-in 180ms var(--pn-ease) both; }
+
+/* Sarlavhadagi 2 px noaniq progress chizig'i (§6.1). */
+@keyframes pn-progress {
+  0% { transform: translateX(-100%) scaleX(0.35); }
+  50% { transform: translateX(40%) scaleX(0.6); }
+  100% { transform: translateX(160%) scaleX(0.35); }
+}
+.pn-progress-bar { animation: pn-progress 1.1s var(--pn-ease) infinite; transform-origin: left center; }
+
+@keyframes pn-spin { to { transform: rotate(360deg); } }
+.pn-spin { animation: pn-spin 0.8s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pn-press:not(:disabled):active { transform: none; }
+  .pn-skeleton { animation: none; opacity: 0.8; }
+  .pn-popover-in, .pn-scrim-in, .pn-drawer-right-in, .pn-drawer-left-in, .pn-toast-in { animation: none; }
+  .pn-progress-bar { animation-duration: 0s; transform: none; }
+}
+
+/* ---------- Fokus (WCAG) ---------- */
+.pn-root :where(a, button, [role="button"], [role="radio"], [role="menuitem"], [role="option"], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--pn-accent-strong);
+  outline-offset: 2px;
+}
+.pn-focus-inset:focus-visible { outline-offset: -2px !important; }
+
+/* Ichki aylanadigan menyu — aylantirish chizig'i ko'rinmaydi (§6.0). */
+.pn-scroll-hidden { scrollbar-width: none; }
+.pn-scroll-hidden::-webkit-scrollbar { display: none; }
+
+/* Interaktiv bo'lmagan element interaktiv ko'rinmasin (§0.3). */
+.pn-root [aria-disabled="true"] { cursor: not-allowed; }
+
+/* Tooltip foni: qorong'ida --panel-3, yorug'da --panel (§4.6). */
+.pn-tooltip { background: var(--pn-panel-3); }
+:root[data-theme="light"] .pn-tooltip { background: var(--pn-panel); }
+
+/* Mavzuga bog'liq ikonka — gidratatsiyada sakramasin (CSS tanlaydi). */
+:root[data-theme="dark"] .pn-when-light,
+:root[data-theme="light"] .pn-when-dark { display: none; }

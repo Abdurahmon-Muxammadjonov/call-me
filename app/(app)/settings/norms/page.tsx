@@ -2,19 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SettingsShell } from "../../components/settings/SettingsShell";
-import { useHydrated, useSession } from "../../lib/auth";
-import { useHasRole } from "../../lib/useHasRole";
-import { showToast } from "../../lib/toast";
-import { ToastHost } from "../../components/ToastHost";
-import { Icons } from "../../components/Icons";
-import { Card, Skeleton } from "../../components/ui";
+import { useQueryClient } from "@tanstack/react-query";
+import { SettingsShell } from "../../../components/settings/SettingsShell";
+import { useHydrated, useSession } from "../../../lib/auth";
+import { useHasRole } from "../../../lib/useHasRole";
+import { showToast } from "../../../lib/toast";
+import { Icons } from "../../../components/Icons";
+import { Card, Skeleton } from "../../../components/ui";
 import {
   fetchCompanySettings,
   updateCompanySettings,
   DEFAULT_COMPANY_SETTINGS,
   type CompanySettings,
-} from "../../lib/companySettings";
+} from "../../../lib/companySettings";
 
 /* "Analitika" sahifasidagi KPI ogohlantirish banneri va "NORMA OSTIDA"
  * belgisi shu qiymatlarni ishlatadi (qarang app/lib/analytics.ts →
@@ -69,6 +69,8 @@ const FIELDS: {
 
 function NormsContent() {
   const session = useSession();
+  // Pulse /me.norms (uzun qo'ng'iroq chegarasi, kunlik norma) ham yangilansin.
+  const qc = useQueryClient();
   const [settings, setSettings] = useState<CompanySettings>(DEFAULT_COMPANY_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -98,6 +100,7 @@ function NormsContent() {
       const saved = await updateCompanySettings(session?.token, settings);
       setSettings(saved);
       setDirty(false);
+      void qc.invalidateQueries({ queryKey: ["v2", "me"] });
       showToast("KPI normalari saqlandi.", "success");
     } catch (e) {
       showToast((e as Error).message || "Normalarni saqlab bo'lmadi.", "error");
@@ -199,7 +202,6 @@ export default function NormsSettingsPage() {
           <NormsContent />
         )}
       </SettingsShell>
-      <ToastHost />
     </>
   );
 }
