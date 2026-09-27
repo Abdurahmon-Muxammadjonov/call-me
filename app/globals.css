@@ -82,6 +82,10 @@
   --teal: #0F766E;
   --teal-tint: #CCFBF1;
   --blue-tint: rgba(29, 78, 216, 0.1);
+  /* Qizil — "Javobsiz / aloqa yomon" holati uchun (2026-09-27).
+     Yorqin fonda AA kontrast: #B42318 / #FFFFFF = 5.9:1 */
+  --red: #B42318;
+  --red-tint: #FDE7E4;
   --pink: #BE185D;
   --slate: #475569;
   --slate-2: #64748B;
@@ -153,6 +157,8 @@
   --teal: #2DD4BF;
   --teal-tint: rgba(45, 212, 191, 0.12);
   --blue-tint: rgba(59, 130, 246, 0.14);
+  --red: #F87171;
+  --red-tint: rgba(248, 113, 113, 0.14);
   --pink: #F472B6;
   --slate: #94A3B8;
   --slate-2: #64748B;

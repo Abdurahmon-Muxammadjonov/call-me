@@ -14,12 +14,13 @@ import { formatDelta, formatNumber, type Delta } from "../../lib/format";
  * tugma 10–12px, bosiladigan element ≥44px.
  * ===================================================================== */
 
-export type Tone = "green" | "amber" | "orange" | "violet" | "teal" | "accent" | "neutral";
+export type Tone = "green" | "amber" | "orange" | "red" | "violet" | "teal" | "accent" | "neutral";
 
 export const TONE: Record<Tone, { color: string; tint: string }> = {
   green: { color: "var(--green)", tint: "var(--green-tint)" },
   amber: { color: "var(--amber)", tint: "var(--amber-tint)" },
   orange: { color: "var(--orange)", tint: "var(--orange-tint)" },
+  red: { color: "var(--red)", tint: "var(--red-tint)" },
   violet: { color: "var(--violet)", tint: "var(--violet-tint)" },
   teal: { color: "var(--teal)", tint: "var(--teal-tint)" },
   accent: { color: "var(--accent-icon)", tint: "var(--blue-tint)" },

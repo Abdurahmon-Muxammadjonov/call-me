@@ -38,16 +38,49 @@ function scriptNameOf(comment?: string | null): string | null {
   return m ? m[1] : null;
 }
 
-/** NATIJA ustuni — uchta holat, "—" hech qachon ishlatilmaydi. */
+/* =====================================================================
+ * NATIJA ustuni — TO'RT HOLAT (foydalanuvchi talabi 2026-09-27).
+ *
+ *   1. Tahlil tugagan (ball bor)     -> ball plitkasi + "Tahlil qilindi"
+ *   2. Ayni vaqtda ishlanmoqda       -> "Tahlil qilinmoqda…" (puls)
+ *   3. Hali navbatda                 -> KO'K "Navbatda"
+ *   4. Javobsiz / aloqa yomon        -> QIZIL "Javobsiz"
+ *
+ * Boshqa haqiqiy natijalar ("Qisqa suhbat", "Keyinroq qayta qo'ng'iroq",
+ * "Noto'g'ri raqam") — bu xato emas, tahlil natijasi; o'z matni bilan
+ * betaraf ko'rinadi. "—" hech qachon ishlatilmaydi.
+ *
+ * Ranglar faqat CSS o'zgaruvchilaridan (TONE) olinadi.
+ * ===================================================================== */
+
+/** Suhbat umuman bo'lmagan sabablar — qizil "Javobsiz" guruhi. */
+const NO_ANSWER_REASONS = ["Javobsiz", "Aloqa sifati yomon", "Mijoz go'shakni qo'ydi"];
+
+function Pill({ tone, label, dot }: { tone: keyof typeof TONE; label: string; dot?: boolean }) {
+  const c = TONE[tone];
+  return (
+    <span
+      className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full px-2.5 text-xs font-medium"
+      style={{ background: c.tint, border: `1px solid ${c.color}33`, color: c.color }}
+    >
+      {dot && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.color }} />}
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
+
 function ResultCell({ call }: { call: CallRow }) {
   const t = useT();
-  const processing = call.status === "processing" || call.status === "queued";
+  const reason = (call.dropped_reason || "").trim();
 
+  /* 1) TAHLIL QILINDI — ball qo'yilgan. */
   if (call.kpi_score > 0) {
     const grade = scoreGrade(call.kpi_score)!;
     const tone = TONE[GRADE_TONE[grade]];
     return (
-      <span className="flex items-center gap-2.5">
+      // Baho so'zi (A'lo / Yaxshi / O'rtacha / Past) hover matnida qoladi —
+      // ustunda foydalanuvchi so'ragan "Tahlil qilindi" turadi.
+      <span className="flex items-center gap-2.5" title={t(GRADE_KEY[grade])}>
         <span
           className="grid h-[30px] w-12 shrink-0 place-items-center rounded-lg font-mono text-sm font-semibold"
           style={{ background: tone.tint, color: tone.color }}
@@ -55,35 +88,37 @@ function ResultCell({ call }: { call: CallRow }) {
           {formatScore(call.kpi_score)}
         </span>
         <span className="truncate text-[13px] font-medium" style={{ color: tone.color }}>
-          {t(GRADE_KEY[grade])}
+          {t("rec.analyzed")}
         </span>
       </span>
     );
   }
 
-  if (processing) {
+  /* 4) JAVOBSIZ / ALOQA YOMON — qizil. */
+  if (NO_ANSWER_REASONS.includes(reason)) {
+    return <Pill tone="red" label={t("rec.noAnswer")} dot />;
+  }
+
+  /* 2) AYNI VAQTDA TAHLIL QILINMOQDA. */
+  if (call.status === "processing" || call.status === "queued") {
     return (
       <span className="flex items-center gap-2.5">
         <span
-          className="h-2 w-2 shrink-0 rounded-full"
-          style={{ background: "var(--chart)", boxShadow: "0 0 0 4px rgba(59,130,246,0.2)" }}
+          className="h-2 w-2 shrink-0 animate-pulse rounded-full"
+          style={{ background: TONE.amber.color, boxShadow: `0 0 0 4px ${TONE.amber.tint}` }}
         />
-        <span className="truncate text-[13px]" style={{ color: "var(--accent-text)" }}>
+        <span className="truncate text-[13px] font-medium" style={{ color: TONE.amber.color }}>
           {t("rec.processing")}
         </span>
       </span>
     );
   }
 
-  return (
-    <span
-      className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full px-2.5 text-xs"
-      style={{ background: "var(--surface-4)", border: "1px solid var(--border-chip)", color: "var(--text-3)" }}
-    >
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "#6B7486" }} />
-      <span className="truncate">{call.dropped_reason || t("rec.unscored")}</span>
-    </span>
-  );
+  /* Tahlil qilingan, lekin sotuv suhbati emas — o'z sababi bilan. */
+  if (reason) return <Pill tone="neutral" label={reason} />;
+
+  /* 3) HALI NAVBATDA — ko'k. */
+  return <Pill tone="accent" label={t("rec.queued")} dot />;
 }
 
 function Row({
