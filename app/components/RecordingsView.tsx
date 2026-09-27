@@ -24,7 +24,7 @@ import { CallDetailPanel } from "./calls/CallDetailPanel";
  * qo'ng'iroq paneli.
  * ===================================================================== */
 
-type Segment = "all" | "scored" | "unscored" | "low";
+type Segment = "all" | "scored" | "unscored" | "low" | "problem";
 
 /** Kichik plitka — 3.6 A (KpiTile'dan soddaroq: ikonkasiz, izoh yonida). */
 function Tile({ label, value, hint, hintTone, valueTone }: {
@@ -107,6 +107,7 @@ export function RecordingsView() {
       scored: scored.length,
       unscored: calls.length - scored.length,
       low: scored.filter((c) => c.kpi_score < 50).length,
+      problem: calls.filter((c) => c.is_problem).length,
     };
   }, [calls]);
 
@@ -115,6 +116,7 @@ export function RecordingsView() {
     if (segment === "scored" && !(c.kpi_score > 0)) return false;
     if (segment === "unscored" && c.kpi_score > 0) return false;
     if (segment === "low" && !(c.kpi_score > 0 && c.kpi_score < 50)) return false;
+    if (segment === "problem" && !c.is_problem) return false;
     if (operator && c.manager_id !== operator && c.operator_ext !== operator) return false;
     if (!q) return true;
     return `${nameOf(c)} ${c.rop_comment ?? ""} ${c.dropped_reason ?? ""}`.toLowerCase().includes(q);
@@ -247,6 +249,7 @@ export function RecordingsView() {
                 { value: "scored", label: t("rec.seg.scored"), count: counts.scored },
                 { value: "unscored", label: t("rec.seg.unscored"), count: counts.unscored },
                 { value: "low", label: t("rec.seg.low"), count: counts.low, countTone: "orange" },
+                { value: "problem", label: t("pr.filter"), count: counts.problem, countTone: "orange" },
               ]}
             />
 

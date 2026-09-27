@@ -127,7 +127,19 @@ function Row({
           {call.operator_ext || "—"}
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-sm font-medium" style={{ color: "var(--text)" }}>{managerName}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-medium" style={{ color: "var(--text)" }}>{managerName}</span>
+            {/* AI muammoli deb belgilagan qo'ng'iroq — rahbar darhol ko'rsin */}
+            {call.is_problem && (
+              <span
+                className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                style={{ background: "var(--orange-tint)", color: "var(--orange)" }}
+                title={call.problem_reason ?? undefined}
+              >
+                {t("pr.badge")}
+              </span>
+            )}
+          </span>
           {script && <span className="block truncate text-xs" style={{ color: "#8C95A6" }}>{script}</span>}
         </span>
       </div>

@@ -320,6 +320,63 @@ export function CallDetailPanel({
 
                 <hr style={{ borderColor: "var(--divider-strong)" }} />
 
+                {/* MUAMMO — AI rahbar ko'rishi kerak deb belgilagan bo'lsa */}
+                {detail.is_problem && detail.problem_reason && (
+                  <section
+                    className="rounded-xl p-4"
+                    style={{ background: "var(--orange-tint)", border: "1px solid var(--alert-border)" }}
+                  >
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--orange)" }}>
+                      {t("pr.title")}
+                      {detail.problem_severity && (
+                        <span style={{ color: "var(--orange-soft)" }}>
+                          {" · "}
+                          {t(`pr.sev.${detail.problem_severity}` as Parameters<typeof t>[0])}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>{detail.problem_reason}</p>
+                  </section>
+                )}
+
+                {/* MUHIM JOYLAR — vaqtni bosganda audio o'sha joyga o'tadi */}
+                {Array.isArray(detail.key_moments) && detail.key_moments.length > 0 && (
+                  <section>
+                    <div className="mb-2 flex items-baseline justify-between gap-3">
+                      <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>{t("km.title")}</h3>
+                      <span className="text-xs" style={{ color: "var(--subtle)" }}>{t("km.hint")}</span>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {detail.key_moments.map((k, i) => {
+                        const color = k.kind === "good" ? "var(--green)" : k.kind === "bad" ? "var(--orange)" : "var(--muted)";
+                        const tint = k.kind === "good" ? "var(--green-tint)" : k.kind === "bad" ? "var(--orange-tint)" : "var(--surface-4)";
+                        return (
+                          <li key={i}>
+                            <button
+                              type="button"
+                              onClick={() => seek(k.time)}
+                              className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition hover:opacity-80"
+                            >
+                              <span
+                                className="shrink-0 rounded-md px-2 py-0.5 font-mono text-xs font-semibold"
+                                style={{ background: tint, color }}
+                              >
+                                {fmtClock(k.time)}
+                              </span>
+                              <span className="min-w-0 flex-1 truncate text-[13px]" style={{ color: "var(--text-2)" }}>
+                                {k.label}
+                              </span>
+                              <span aria-hidden className="shrink-0 text-xs" style={{ color }}>
+                                {k.kind === "good" ? "\u2713" : k.kind === "bad" ? "!" : "\u2022"}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                )}
+
                 {/* d) Skript bandlari */}
                 {criteria.length > 0 && <CriteriaList items={criteria} />}
 

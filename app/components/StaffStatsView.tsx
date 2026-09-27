@@ -92,6 +92,65 @@ function Distribution({ rows, goal }: { rows: StaffStatRow[]; goal: number }) {
   );
 }
 
+/** Skript bandlari bo'yicha eng yaxshi va eng zaif operator.
+ *
+ * "Kim ehtiyojni to'g'ri aniqlayapti, kim e'tirozlar bilan ishlayapti"
+ * degan savolga javob (talab 2026-09-27): har band uchun operatorlarning
+ * o'rtacha foizi solishtiriladi. */
+function Strengths({ rows }: { rows: StaffStatRow[] }) {
+  const t = useT();
+  const byStage = new Map<string, { name: string; pct: number }[]>();
+  for (const r of rows) {
+    for (const st of r.stages) {
+      byStage.set(st.title, [...(byStage.get(st.title) || []), { name: r.name, pct: st.pct }]);
+    }
+  }
+  const stages = [...byStage.entries()]
+    .map(([title, list]) => {
+      const sorted = list.slice().sort((a, b) => b.pct - a.pct);
+      const avg = Math.round(list.reduce((s, x) => s + x.pct, 0) / list.length);
+      return { title, best: sorted[0], worst: sorted[sorted.length - 1], avg };
+    })
+    .filter((s) => s.best && s.worst && s.best.name !== s.worst.name)
+    .sort((a, b) => a.avg - b.avg);
+
+  if (stages.length === 0) return null;
+
+  return (
+    <Card padded={false}>
+      <div className="px-[22px] py-5">
+        <CardHeader title={t("st.strengths")} hint={t("st.strengths.hint")} />
+      </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[760px]">
+          {stages.map((s) => (
+            <div
+              key={s.title}
+              className="grid items-center px-[22px]"
+              style={{ gridTemplateColumns: "1.6fr 90px 1.2fr 1.2fr", columnGap: 20, height: 46, borderTop: "1px solid var(--divider)" }}
+            >
+              <span className="truncate text-[13px]" style={{ color: "var(--text-2)" }}>{s.title}</span>
+              <span className="font-mono text-xs" style={{ color: "var(--subtle)" }}>{t("st.avg")} {s.avg}%</span>
+              <span className="flex min-w-0 items-center gap-2 text-[13px]">
+                <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ background: "var(--green-tint)", color: "var(--green)" }}>{t("st.best")}</span>
+                <span className="truncate" style={{ color: "var(--text-2)" }}>{s.best.name}</span>
+                <span className="shrink-0 font-mono text-xs" style={{ color: "var(--green)" }}>{s.best.pct}%</span>
+              </span>
+              <span className="flex min-w-0 items-center gap-2 text-[13px]">
+                <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ background: "var(--orange-tint)", color: "var(--orange)" }}>{t("st.worst")}</span>
+                <span className="truncate" style={{ color: "var(--text-2)" }}>{s.worst.name}</span>
+                <span className="shrink-0 font-mono text-xs" style={{ color: "var(--orange)" }}>{s.worst.pct}%</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function StaffRow({ row, index, trend, date }: { row: StaffStatRow; index: number; trend: number[]; date: string }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -189,6 +248,52 @@ function StaffRow({ row, index, trend, date }: { row: StaffStatRow; index: numbe
             </div>
           </div>
 
+          {/* Konversiya + eng qimmat xatolar + yo'qotish sabablari */}
+          <div className="mt-4 grid gap-4 xl:grid-cols-3">
+            <div className="rounded-xl p-4" style={{ background: "var(--surface-3)", border: "1px solid var(--border)" }}>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--muted)" }}>{t("st.conv")}</p>
+              <p className="font-mono text-[22px] font-semibold" style={{ color: row.conversion >= 10 ? "var(--green)" : "var(--orange)" }}>
+                {row.conversion.toFixed(1)}%
+              </p>
+              <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+                {t("st.convHint", { leads: row.leads, closed: row.closed })}
+              </p>
+              {row.problems > 0 && (
+                <p className="mt-2 text-xs" style={{ color: "var(--orange)" }}>{t("st.problems", { n: row.problems })}</p>
+              )}
+            </div>
+
+            {row.top_mistakes.length > 0 && (
+              <div className="rounded-xl p-4" style={{ background: "var(--surface-3)", border: "1px solid var(--border)" }}>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--orange)" }}>{t("st.mistakesTop")}</p>
+                <ul className="space-y-1.5">
+                  {row.top_mistakes.slice(0, 4).map((m) => (
+                    <li key={m.label} className="flex items-baseline justify-between gap-2 text-[13px]">
+                      <span className="min-w-0 truncate" style={{ color: "var(--text-2)" }}>{m.label}</span>
+                      <span className="shrink-0 font-mono text-xs" style={{ color: "var(--orange)" }}>
+                        {t("st.pointsLost", { n: m.points_lost })} · {t("st.times", { n: m.count })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {row.lost_reasons.length > 0 && (
+              <div className="rounded-xl p-4" style={{ background: "var(--surface-3)", border: "1px solid var(--border)" }}>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--muted)" }}>{t("st.losses")}</p>
+                <ul className="space-y-1.5">
+                  {row.lost_reasons.slice(0, 5).map((l) => (
+                    <li key={l.reason} className="flex items-baseline justify-between gap-2 text-[13px]">
+                      <span className="min-w-0 truncate" style={{ color: "var(--text-2)" }}>{l.reason}</span>
+                      <span className="shrink-0 font-mono text-xs" style={{ color: "var(--subtle)" }}>{t("st.times", { n: l.count })}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
           <div className="mt-4 flex flex-wrap gap-2.5">
             <Link href={`/dashboard/recordings?operator=${encodeURIComponent(ext)}&date=${date}`}>
               <PrimaryButton>{t("st.viewCalls")}</PrimaryButton>
@@ -263,6 +368,8 @@ export function StaffStatsView() {
       ) : (
         <>
           <Distribution rows={sorted} goal={goal} />
+
+          <Strengths rows={sorted} />
 
           <Card padded={false}>
             <div

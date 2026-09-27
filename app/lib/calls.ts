@@ -60,6 +60,11 @@ export interface CallRow {
   direction?: string | null;
   /* Qo'ng'iroq holati: "done" | "processing" | "queued" | "failed". */
   status?: string | null;
+  /* AI "rahbar ko'rishi kerak" deb belgilagani (qo'pollik, norozi mijoz,
+   * qo'ldan ketgan issiq lid va h.k.). */
+  is_problem?: boolean | null;
+  problem_severity?: "low" | "medium" | "high" | null;
+  problem_reason?: string | null;
   created_at: string;
   incoming_count?: number | null;
   outgoing_count?: number | null;
@@ -110,6 +115,9 @@ export interface CallDetail extends CallRow {
   sentiment?: string | null;
   risk?: string | null;
   criteria_scores?: CriterionScore[];
+  /* AI topgan muhim joylar — vaqt belgisi bilan; bosilganda audio o'sha
+   * joyga o'tadi. */
+  key_moments?: Array<{ time: number; label: string; kind: "good" | "bad" | "neutral" }> | null;
   /* Boyitilgan AI tahlil bloklari — backend bulardan birortasini bersa,
    * chuqur tahlilda alohida kartalarda jonli ko'rinadi (bo'lmasa yashiriladi). */
   summary?: string | null; // Xulosa (rop_comment'dan boyroq, ko'p qatorli)
@@ -187,6 +195,8 @@ export async function listCalls(
     analyzed?: boolean;
     reason?: string;
     date?: string;
+    /* Faqat AI muammoli deb belgilaganlar. */
+    problem?: boolean;
     /* Sahifalash — eksport uchun (backend 200 tadan ko'p bermaydi). */
     offset?: number;
   } = {},
@@ -199,6 +209,7 @@ export async function listCalls(
   if (opts.analyzed !== undefined) params.set("analyzed", String(opts.analyzed));
   if (opts.reason) params.set("reason", opts.reason);
   if (opts.date) params.set("date", opts.date);
+  if (opts.problem) params.set("problem", "true");
   if (opts.offset) params.set("offset", String(opts.offset));
   return unwrapData<CallRow[]>(apiClient.get<{ success?: boolean; data?: CallRow[]; error?: string; message?: string }>(`/api/calls?${params.toString()}`, { signal }));
 }

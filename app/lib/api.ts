@@ -465,6 +465,14 @@ export interface StaffStatRow {
   faults: string[];
   advice: string[];
   reasons: { reason: string; count: number }[];
+  /* Konversiya va yo'qotish tahlili (2026-09-27). */
+  leads: number;
+  invited: number;
+  closed: number;
+  conversion: number;   // lid -> bitim, foizda
+  problems: number;     // AI muammoli deb belgilagan qo'ng'iroqlar
+  top_mistakes: { label: string; count: number; points_lost: number }[];
+  lost_reasons: { reason: string; count: number }[];
 }
 
 /* GET /analytics/staff-stats — har operatorning kunlik bali, kuchsiz
