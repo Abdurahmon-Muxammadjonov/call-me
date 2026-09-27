@@ -6,6 +6,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { BrowserContext, Page, Route } from "@playwright/test";
+import { dailySummary, hourly, todayCalls, TODAY } from "./analytics";
 
 function apiBase(): string {
   const env = readFileSync(join(__dirname, "..", "..", ".env.local"), "utf8");
@@ -25,6 +26,10 @@ export interface BackendOptions {
   locked?: string[];
   /* Har bir so'rov yo'li — tekshirish uchun. */
   log?: string[];
+  /* Analitika maketi ma'lumotlari (tests/fixtures/analytics.ts). */
+  analytics?: boolean;
+  /* Analitika so'rovlari muvaffaqiyatsiz (xato holatini tekshirish). */
+  analyticsError?: boolean;
 }
 
 function tashkentToday(): string {
@@ -50,7 +55,10 @@ export async function mockBackend(target: Page | BrowserContext, opts: BackendOp
     lowScoreToday = 41,
     locked = [],
     log,
+    analytics = false,
+    analyticsError = false,
   } = opts;
+  const calls = analytics ? todayCalls() : [];
   await target.route(`${API}/**`, async (route: Route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
@@ -87,6 +95,10 @@ export async function mockBackend(target: Page | BrowserContext, opts: BackendOp
           })
         );
       case "/analytics/daily-summary":
+        if (analyticsError && Number(url.searchParams.get("days")) > 1) return route.fulfill({ status: 500, body: "{}" });
+        if (analytics) {
+          return route.fulfill(ok(dailySummary(Number(url.searchParams.get("days") || 1), url.searchParams.get("until"))));
+        }
         return route.fulfill(
           ok([
             {
@@ -98,6 +110,14 @@ export async function mockBackend(target: Page | BrowserContext, opts: BackendOp
             },
           ])
         );
+      case "/analytics/hourly":
+        return route.fulfill(ok(analytics ? hourly() : []));
+      case "/api/calls": {
+        if (!analytics || url.searchParams.get("date") !== TODAY) return route.fulfill(ok([]));
+        const limit = Number(url.searchParams.get("limit") || 200);
+        const offset = Number(url.searchParams.get("offset") || 0);
+        return route.fulfill(ok(calls.slice(offset, offset + limit)));
+      }
       default:
         // Boshqa hamma narsa: bo'sh ro'yxat. Tashqi tarmoqqa HECH QACHON o'tmaydi.
         return route.fulfill(ok([]));

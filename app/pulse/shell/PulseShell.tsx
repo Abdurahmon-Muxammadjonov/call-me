@@ -24,6 +24,7 @@ import { usePageStore } from "./pageStore";
 import { useShellRealtime } from "./realtime";
 import { useLiveStore } from "./liveStore";
 import { useIdlePrefetch } from "./prefetch";
+import "../data/prefetchRegistry";
 import { setServerTime } from "./clock";
 import { activeRouteId, type NavRoute } from "./routes";
 import { InPulseShellContext } from "./context";
@@ -34,7 +35,7 @@ import { ToastHost } from "../ui/toast";
 import { usePT } from "../i18n";
 import { useBadges, useMe } from "../data/me";
 import { apiFetch } from "../data/api";
-import { clearPersistedCaches, rememberCompanyId } from "../data/QueryProvider";
+import { clearPersistedCaches } from "../data/QueryProvider";
 import { applyAccent, useResolvedTheme } from "../lib/prefs";
 
 function subscribeOnline(cb: () => void) {
@@ -72,12 +73,11 @@ export function PulseShell({ fontClass, children }: { fontClass: string; childre
   const { data: me } = useMe();
   const { data: badges } = useBadges(allowed ? me?.company.id : undefined);
 
-  // /me dan: server vaqti farqi, kompaniya aksenti, kesh nomlari uchun id.
+  // /me dan: server vaqti farqi va kompaniya aksenti.
   useEffect(() => {
     if (!me) return;
     setServerTime(me.serverTime);
     applyAccent(me.company.accent);
-    rememberCompanyId(me.company.id);
   }, [me]);
 
   // Qo'ng'iroqchadagi oqim faqat shu kompaniya operatorlariniki bo'lsin.

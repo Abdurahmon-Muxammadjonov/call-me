@@ -14,7 +14,7 @@ import { Segmented } from "../ui/primitives";
 import { usePT } from "../i18n";
 import { setThemePref, useThemePref, type ThemePref } from "../lib/prefs";
 import { savePreferences, switchCompany } from "../data/preferences";
-import { clearPersistedCaches, rememberCompanyId } from "../data/QueryProvider";
+import { clearPersistedCaches } from "../data/QueryProvider";
 import { toast } from "../ui/toast";
 import type { Me } from "../data/me";
 
@@ -54,7 +54,6 @@ export function CompanyPopover({
       // Boshqa kompaniya — eski kesh (xotira + IndexedDB) yaroqsiz.
       qc.clear();
       await clearPersistedCaches();
-      rememberCompanyId(id);
       await qc.refetchQueries({ queryKey: ["v2", "me"] });
       onClose();
     } catch {

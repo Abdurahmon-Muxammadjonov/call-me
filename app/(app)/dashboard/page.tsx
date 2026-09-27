@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../pulse/shell/LegacyFrame";
-import { AnalyticsView } from "../../components/AnalyticsView";
+import { AnalyticsPage } from "../../pulse/pages/analytics/AnalyticsPage";
 
-/* Analitika — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Analitika — Pulse Noir (2-bosqich). */
 export const metadata: Metadata = { title: "Analitika" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <AnalyticsView />
-    </LegacyFrame>
-  );
+  return <AnalyticsPage />;
 }

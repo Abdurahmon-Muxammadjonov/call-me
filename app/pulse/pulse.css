@@ -222,3 +222,8 @@ body:has(.pn-root) {
 /* Mavzuga bog'liq ikonka — gidratatsiyada sakramasin (CSS tanlaydi). */
 :root[data-theme="dark"] .pn-when-light,
 :root[data-theme="light"] .pn-when-dark { display: none; }
+
+/* Grafiklarda ma'lumot o'zgarishi (§4.5): 240 ms. */
+.pn-bar { transition: height var(--pn-dur-data) var(--pn-ease), opacity var(--pn-dur-hover) ease-out; }
+.pn-ring { transition: stroke-dashoffset var(--pn-dur-data) var(--pn-ease); }
+.pn-grow { transition: width var(--pn-dur-data) var(--pn-ease); }

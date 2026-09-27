@@ -19,7 +19,6 @@ import { clearSession, loadSession } from "../../lib/auth";
 
 const BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
 const PERSIST_PREFIX = "sp-rq:";
-const COMPANY_KEY = "sp_company";
 const MAX_AGE = 12 * 60 * 60 * 1000;
 
 function onAuthLost() {
@@ -60,25 +59,13 @@ function makeClient(): QueryClient {
   });
 }
 
-export function lastCompanyId(): string {
-  try {
-    return localStorage.getItem(COMPANY_KEY) || "_";
-  } catch {
-    return "_";
-  }
-}
-
-export function rememberCompanyId(id: string): void {
-  try {
-    localStorage.setItem(COMPANY_KEY, id);
-  } catch {
-    /* e'tiborsiz */
-  }
-}
-
+/* Kalit foydalanuvchi bo'yicha. Kompaniya bo'yicha ajratish so'rov
+ * kalitlarida (['v2', companyId, …]) va kompaniya almashganda butun kesh
+ * tozalanadi — kalitga kompaniyani qo'shsak, birinchi yuklashda u hali
+ * noma'lum bo'lib, kesh keyingi safar topilmay qolardi. */
 function persistKey(): string {
   const s = loadSession();
-  return `${PERSIST_PREFIX}${s?.employeeId ?? s?.email ?? "anon"}:${lastCompanyId()}`;
+  return `${PERSIST_PREFIX}${s?.employeeId ?? s?.email ?? "anon"}`;
 }
 
 /* Chiqish / kompaniya almashtirish: IndexedDB'dagi hamma sp-rq:* yozuvlari. */

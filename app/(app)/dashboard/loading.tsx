@@ -1,5 +1,5 @@
-import { PageSkeleton } from "../../pulse/shell/PageSkeleton";
+import { AnalyticsSkeleton } from "../../pulse/pages/analytics/AnalyticsSkeleton";
 
 export default function Loading() {
-  return <PageSkeleton />;
+  return <AnalyticsSkeleton />;
 }
