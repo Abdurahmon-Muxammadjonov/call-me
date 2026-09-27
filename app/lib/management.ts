@@ -20,10 +20,11 @@
 
 import type { Accent } from "../components/ui";
 import { fetchCallAnalytics } from "./api";
+import { daysBetween, tashkentDay, tashkentDayOf } from "./format";
 import {
   listManagers,
   getManagerStats,
-  listCalls,
+  listCallsSince,
   getCall,
   formatSeconds,
   type CallRow,
@@ -154,19 +155,19 @@ function emptyDay(): DayBucket {
   return { count: 0, kpiSum: 0, durSum: 0, low: 0, penalized: 0, short: 0, bonus: 0, penalty: 0 };
 }
 
-function startOfDay(d: Date): number {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-}
+const WINDOW_DAYS = 14;
 
-/** days[0] = today, days[1] = yesterday … days[13] = 13 days ago. */
+/** days[0] = bugun, days[1] = kecha … days[13] = 13 kun oldin.
+ * Kun chegarasi — Toshkent vaqti bo'yicha (butun ilovada bir xil);
+ * ilgari brauzer vaqti ishlatilgani uchun yarim tunga yaqin
+ * qo'ng'iroqlar qo'shni kunga tushib qolardi. */
 function buildDays(calls: CallRow[]): DayBucket[] {
-  const days: DayBucket[] = Array.from({ length: 14 }, emptyDay);
-  const sToday = startOfDay(new Date());
+  const days: DayBucket[] = Array.from({ length: WINDOW_DAYS }, emptyDay);
+  const today = tashkentDay();
   for (const c of calls) {
-    const t = new Date(c.created_at).getTime();
-    if (Number.isNaN(t)) continue;
-    const idx = Math.floor((sToday - startOfDay(new Date(t))) / 86_400_000);
-    if (idx < 0 || idx >= 14) continue;
+    if (Number.isNaN(new Date(c.created_at).getTime())) continue;
+    const idx = daysBetween(today, tashkentDayOf(c.created_at));
+    if (idx < 0 || idx >= WINDOW_DAYS) continue;
     const b = days[idx];
     b.count += 1;
     b.kpiSum += Number(c.kpi_score) || 0;
@@ -309,7 +310,10 @@ export async function fetchManagementData(
   const [analytics, managers, calls] = await Promise.all([
     fetchCallAnalytics(signal, platformId).catch(() => null),
     listManagers(signal, platformId).catch(() => []),
-    listCalls({ limit: 1000, platformId }, signal).catch(() => [] as CallRow[]),
+    // 14 kunlik oynaning HAMMA qo'ng'irog'i (server bitta so'rovda 200 ta
+    // beradi — shu sabab sahifama-sahifa; ilgari limit:1000 so'ralsa ham
+    // 200 ta kelib, eski kunlar bo'sh ko'rinardi).
+    listCallsSince(tashkentDay(-(WINDOW_DAYS - 1)), { platformId }, signal).catch(() => [] as CallRow[]),
   ]);
 
   const stats = await Promise.all(
@@ -470,10 +474,10 @@ export async function fetchManagementData(
 
   /* ----- ROP sellers ----- */
   const todayByManager = new Map<string, number>();
-  const sToday = startOfDay(new Date());
+  const todayDay = tashkentDay();
   for (const c of calls) {
-    const t = new Date(c.created_at).getTime();
-    if (!Number.isNaN(t) && startOfDay(new Date(t)) === sToday) {
+    if (Number.isNaN(new Date(c.created_at).getTime())) continue;
+    if (tashkentDayOf(c.created_at) === todayDay) {
       todayByManager.set(c.manager_id, (todayByManager.get(c.manager_id) ?? 0) + 1);
     }
   }

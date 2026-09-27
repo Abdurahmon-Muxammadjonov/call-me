@@ -13,6 +13,7 @@
 
 import { apiClient } from "./api/client";
 import { apiUrl } from "./api";
+import { tashkentDayOf } from "./format";
 
 export interface Manager {
   id: string;
@@ -212,6 +213,57 @@ export async function listCalls(
   if (opts.problem) params.set("problem", "true");
   if (opts.offset) params.set("offset", String(opts.offset));
   return unwrapData<CallRow[]>(apiClient.get<{ success?: boolean; data?: CallRow[]; error?: string; message?: string }>(`/api/calls?${params.toString()}`, { signal }));
+}
+
+/* Backend `/api/calls` bitta so'rovda ko'pi bilan 200 qator qaytaradi
+ * (qarang app/lib/api.ts, fetchDailySummary izohi). Kuniga 200 dan ko'p
+ * qo'ng'iroq bo'lganda ro'yxat va undan hisoblangan sanoqlar ("tahlil
+ * qilingan", "muammoli" va h.k.) serverdagi umumiy raqamdan kam chiqardi —
+ * ya'ni qo'ng'iroqning bir qismi hech qaysi bo'limga tushmay qolardi.
+ *
+ * Shu sabab ro'yxat kerak bo'lgan HAR BIR joy shu funksiyadan o'tadi: u
+ * `offset` bilan sahifama-sahifa yurib, tanlangan kun/filtr bo'yicha
+ * BARCHA qatorlarni yig'adi. `maxRows` — cheksiz tsikldan himoya (juda
+ * katta kunda ham brauzer qotib qolmasin), amalda hech qachon urilmaydi. */
+const PAGE_SIZE = 200;
+
+export async function listAllCalls(
+  opts: Omit<Parameters<typeof listCalls>[0], "limit" | "offset"> = {},
+  signal?: AbortSignal,
+  maxRows = 20_000
+): Promise<CallRow[]> {
+  const all: CallRow[] = [];
+  for (let offset = 0; offset < maxRows; offset += PAGE_SIZE) {
+    const page = await listCalls({ ...opts, limit: PAGE_SIZE, offset }, signal);
+    all.push(...page);
+    // To'liq bo'lmagan sahifa — oxiriga yetdik.
+    if (page.length < PAGE_SIZE) break;
+    if (signal?.aborted) break;
+  }
+  return all;
+}
+
+/* Ma'lum kundan BUGUNGACHA bo'lgan barcha qo'ng'iroqlar — "Boshqaruv
+ * paneli" kabi bir necha kunlik oyna bilan ishlaydigan bo'limlar uchun.
+ * listAllCalls'dan farqi: butun tarixni emas, kerakli oynani oladi va
+ * oynadan chiqqach to'xtaydi (ro'yxat yangidan eskiga tartiblangan). */
+export async function listCallsSince(
+  sinceDay: string,
+  opts: Omit<Parameters<typeof listCalls>[0], "limit" | "offset"> = {},
+  signal?: AbortSignal,
+  maxRows = 20_000
+): Promise<CallRow[]> {
+  const all: CallRow[] = [];
+  for (let offset = 0; offset < maxRows; offset += PAGE_SIZE) {
+    const page = await listCalls({ ...opts, limit: PAGE_SIZE, offset }, signal);
+    all.push(...page);
+    if (page.length < PAGE_SIZE || signal?.aborted) break;
+    // Butun sahifa oynadan oldingi kunlarga tegishli bo'lsa — davom etish
+    // shart emas (tartib buzilgan bo'lsa ham xavfsiz: faqat TO'LIQ sahifa
+    // eski bo'lgandagina to'xtaydi).
+    if (page.every((c) => tashkentDayOf(c.created_at) < sinceDay)) break;
+  }
+  return all;
 }
 
 export async function getCall(id: string, signal?: AbortSignal): Promise<CallDetail> {

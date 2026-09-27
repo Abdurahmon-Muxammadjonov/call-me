@@ -367,6 +367,14 @@ export interface HourlyRow {
 }
 
 /* GET /analytics/hourly — 0–23 soatning har biri uchun qator. */
+/* Ro'yxat qaytaradigan endpointlar uchun himoya: server kutilmagan shakl
+ * qaytarsa (xato javobi, eski versiya, proksi buzsa) `.filter is not a
+ * function` bo'lib BUTUN sahifa qulardi. Endi bunday holatda bo'lim
+ * shunchaki bo'sh ko'rinadi. */
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 export async function fetchHourly(date?: string, signal?: AbortSignal): Promise<HourlyRow[]> {
   const qs = date ? `?date=${encodeURIComponent(date)}` : "";
   const res = await fetch(apiUrl(`/analytics/hourly${qs}`), {
@@ -377,7 +385,7 @@ export async function fetchHourly(date?: string, signal?: AbortSignal): Promise<
   if (!res.ok) throw httpError("Soatlik kesim", res.status);
   const json = (await res.json()) as { success: boolean; data: HourlyRow[] };
   if (!json.success) throw new Error("hourly: success=false");
-  return json.data;
+  return asArray<HourlyRow>(json.data);
 }
 
 /* ---------- Tahlil holati (qilingan / qilinmagan + sabablari) ---------- */
@@ -409,9 +417,18 @@ export async function fetchAnalysisStatus(date?: string, signal?: AbortSignal): 
   if (!res.ok) throw httpError("Tahlil holati", res.status);
   const json = (await res.json()) as { success: boolean; date: string; data: AnalysisStatus };
   if (!json.success) throw new Error("analysis-status: success=false");
-  return { date: json.date, status: json.data };
+  // Ichki ro'yxatlar ham himoyalanadi — bittasi yetishmasa bo'lim qulamasin.
+  const d = json.data ?? ({} as AnalysisStatus);
+  return {
+    date: json.date,
+    status: { ...d, reasons: asArray(d.reasons), operators: asArray(d.operators) },
+  };
 }
 
+/* Ro'yxat qaytaradigan endpointlar uchun himoya: server kutilmagan shakl
+ * qaytarsa (xato javobi, eski versiya, proksi buzsa) `.filter is not a
+ * function` bo'lib BUTUN sahifa qulardi. Endi bunday holatda bo'lim
+ * shunchaki bo'sh ko'rinadi. */
 /* ---------- Kunlik yakun (serverda, BARCHA qo'ng'iroqlar bo'yicha) ---------- */
 export interface DailySummaryDay {
   date: string;
@@ -449,7 +466,7 @@ export async function fetchDailySummary(days = 35, signal?: AbortSignal, until?:
   if (!res.ok) throw httpError("Kunlik yakun", res.status);
   const json = (await res.json()) as { success: boolean; data: DailySummaryDay[] };
   if (!json.success) throw new Error("daily-summary: success=false");
-  return json.data;
+  return asArray<DailySummaryDay>(json.data);
 }
 
 /* ---------- Xodimlar statistikasi (kunlik) ---------- */
@@ -487,7 +504,7 @@ export async function fetchStaffStats(date?: string, signal?: AbortSignal): Prom
   if (!res.ok) throw httpError("Xodimlar statistikasi", res.status);
   const json = (await res.json()) as { success: boolean; date: string; data: StaffStatRow[] };
   if (!json.success) throw new Error("staff-stats: success=false");
-  return { date: json.date, rows: json.data };
+  return { date: json.date, rows: asArray<StaffStatRow>(json.data) };
 }
 
 /* ---------- Kunlik gaplashuv daqiqalari ---------- */
@@ -524,7 +541,10 @@ export async function fetchDailyMinutes(days = 30, signal?: AbortSignal): Promis
     summary: DailyMinutesResult["summary"];
   };
   if (!json.success) throw new Error("daily-minutes: success=false");
-  return { days: json.data, summary: json.summary };
+  return {
+    days: asArray<DailyMinutesDay>(json.data),
+    summary: json.summary ?? { days: 0, calls: 0, minutes: 0 },
+  };
 }
 
 /* ---------- Kunlik tarix (hamma kunlar saqlanadi) ---------- */
@@ -552,5 +572,5 @@ export async function fetchConversionHistory(
   if (!res.ok) throw new Error(`conversion-history ${res.status}`);
   const json = (await res.json()) as { success: boolean; data: ConversionDay[] };
   if (!json.success) throw new Error("conversion-history: success=false");
-  return json.data;
+  return asArray<ConversionDay>(json.data);
 }

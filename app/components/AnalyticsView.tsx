@@ -9,7 +9,7 @@ import { useSession } from "../lib/auth";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
 import { useT } from "../lib/i18n";
 import {
-  formatDayLong, formatNumber, formatPercent, tashkentDay, tashkentNowHm,
+  formatDayAxis, formatDayLong, formatNumber, formatPercent, tashkentDay, tashkentNowHm,
 } from "../lib/format";
 import {
   AlertBanner, Card, CardHeader, EmptyState, IconButton, KpiTile,
@@ -248,7 +248,7 @@ export function AnalyticsView() {
               <BarChart
                 height={180}
                 data={chartDays.map((d) => ({
-                  label: new Intl.DateTimeFormat("uz-UZ", { timeZone: "Asia/Tashkent", day: "numeric", month: "short" }).format(new Date(`${d.date}T12:00:00Z`)),
+                  label: formatDayAxis(d.date),
                   value: d.calls,
                   line: d.long_calls,
                   highlight: d.date === today,

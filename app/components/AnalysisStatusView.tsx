@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Info, Pause, Play } from "lucide-react";
 import { fetchAnalysisStatus, type AnalysisStatus } from "../lib/api";
-import { listCalls, type CallRow } from "../lib/calls";
+import { listAllCalls, type CallRow } from "../lib/calls";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
 import { useT } from "../lib/i18n";
 import {
@@ -108,12 +108,12 @@ export function AnalysisStatusView() {
   const [status, setStatus] = useState<AnalysisStatus | null>(null);
   const [filter, setFilter] = useState<string>("analyzed");
   const [calls, setCalls] = useState<CallRow[] | null>(null);
-  const [limit, setLimit] = useState(20);
 
-  /* Filtr yoki sana almashsa ro'yxat boshidan ko'rsatiladi — bu effektda
-     emas, hodisa ichida qilinadi (react-hooks qoidasi). */
-  const pickFilter = useCallback((key: string) => { setLimit(20); setFilter(key); }, []);
-  const pickDate = useCallback((d: string) => { setLimit(20); setDate(d); }, []);
+  /* Ro'yxat kesilmaydi: tanlangan kun/filtr bo'yicha BARCHA qo'ng'iroq
+     ko'rsatiladi (ilgari 200 ta olinib, shundan 20 tasi chiqardi — chip'dagi
+     son bilan ro'yxat mos kelmasdi). */
+  const pickFilter = useCallback((key: string) => setFilter(key), []);
+  const pickDate = useCallback((d: string) => setDate(d), []);
   const [reloadKey, setReloadKey] = useState(0);
 
   useLiveRefresh(useCallback(() => setReloadKey((k) => k + 1), []), 60000);
@@ -129,8 +129,8 @@ export function AnalysisStatusView() {
   useEffect(() => {
     const ctrl = new AbortController();
     void (async () => {
-      const rows = await listCalls({
-        date, limit: 200,
+      const rows = await listAllCalls({
+        date,
         analyzed: filter === "analyzed" ? true : filter === "not" ? false : undefined,
         reason: filter === "analyzed" || filter === "not" ? undefined : filter,
       }, ctrl.signal).catch(() => null);
@@ -152,7 +152,7 @@ export function AnalysisStatusView() {
   }, [status, t]);
 
   const maxOpCalls = Math.max(1, ...(status?.operators ?? []).map((o) => o.analyzed + o.skipped));
-  const shown = (calls ?? []).slice(0, limit);
+  const shown = calls ?? [];
 
   return (
     <div className="space-y-5">
@@ -382,18 +382,6 @@ export function AnalysisStatusView() {
                   </div>
                 </div>
 
-                {(calls?.length ?? 0) > limit && (
-                  <div className="flex justify-center p-4">
-                    <button
-                      type="button"
-                      onClick={() => setLimit((l) => l + 20)}
-                      className="inline-flex h-11 items-center rounded-xl px-4 text-sm font-medium"
-                      style={{ background: "var(--control)", border: "1px solid var(--border-control)", color: "var(--text)" }}
-                    >
-                      {t("as.more")}
-                    </button>
-                  </div>
-                )}
               </>
             )}
           </Card>

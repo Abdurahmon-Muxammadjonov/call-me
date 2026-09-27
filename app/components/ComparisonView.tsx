@@ -11,6 +11,7 @@ import { useT } from "../lib/i18n";
 import {
   formatMinutes, formatNumber, formatPercent, formatScore, normalizeScore,
   tashkentDay, tashkentNowHm,
+  formatWeekdayShort,
 } from "../lib/format";
 import { Card, CardHeader, DeltaChip, EmptyState, PageHeader, ProgressBar, SegmentedControl, Skeleton, deltaOf } from "./kit";
 import { LineChart } from "./kit/charts";
@@ -143,7 +144,9 @@ export function ComparisonView() {
   /* Kunlik jadval — ASOS: hamma qo'ng'iroqlar. */
   const tableRows = rows.slice(0, 14);
   const maxMinutes = Math.max(1, ...tableRows.map((r) => r.minutes));
-  const byDayOps = new Map(minutes?.days.map((d) => [d.date, d.operators]) ?? []);
+  /* Server eski/qisman javob qaytarsa ham bo'lim ochilaveradi (ilgari
+     `days` bo'lmasa butun sahifa qulardi). */
+  const byDayOps = new Map((minutes?.days ?? []).map((d) => [d.date, d.operators ?? []]));
   const convByDay = new Map(history?.map((h) => [h.date, h]) ?? []);
 
   const loading = days === null;
@@ -248,7 +251,7 @@ export function ComparisonView() {
                           <span className="min-w-0">
                             <span className="block font-mono text-sm" style={{ color: "var(--text)" }}>{d.date.slice(8, 10)}-{d.date.slice(5, 7)}</span>
                             <span className="block text-[13px]" style={{ color: "var(--subtle)" }}>
-                              {new Intl.DateTimeFormat("uz-UZ", { timeZone: "Asia/Tashkent", weekday: "short" }).format(new Date(`${d.date}T12:00:00Z`))}
+                              {formatWeekdayShort(d.date)}
                             </span>
                           </span>
                           <span className="min-w-0">

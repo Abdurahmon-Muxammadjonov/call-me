@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "../../lib/i18n";
 import { getCall, type CallDetail } from "../../lib/calls";
+import { formatDayShort } from "../../lib/format";
 import { AudioPlayer } from "./AudioPlayer";
 import { ScoreBadge, fmtClock, fmtMoney, gradeOf, scriptNameOf, toTen } from "./primitives";
 
@@ -17,7 +18,7 @@ import { ScoreBadge, fmtClock, fmtMoney, gradeOf, scriptNameOf, toTen } from "./
 
 function fmtWhen(iso: string): string {
   const d = new Date(iso);
-  const day = new Intl.DateTimeFormat("uz-UZ", { timeZone: "Asia/Tashkent", day: "2-digit", month: "short" }).format(d);
+  const day = formatDayShort(iso);
   const time = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tashkent", hour: "2-digit", minute: "2-digit" }).format(d);
   return `${day}, ${time}`;
 }

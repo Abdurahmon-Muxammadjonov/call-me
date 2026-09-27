@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bell, CalendarDays, Download, Search } from "lucide-react";
-import { listCalls, listManagers, type CallRow } from "../lib/calls";
+import { listAllCalls, listManagers, type CallRow } from "../lib/calls";
 import { fetchDailySummary, type DailySummaryDay } from "../lib/api";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
 import { useT } from "../lib/i18n";
 import { downloadCsv } from "../lib/exportCsv";
 import {
   formatDayLong, formatNumber, formatScore, formatTime,
-  normalizeScore, tashkentDay,
+  daysBetween, normalizeScore, shiftDay, tashkentDay,
 } from "../lib/format";
 import { IconButton, PageHeader, SecondaryButton, SegmentedControl, Skeleton } from "./kit";
 import { CallsTable } from "./calls/CallsTable";
@@ -78,14 +78,19 @@ export function RecordingsView() {
     void (async () => {
       try {
         const [rows, mgrs, sum] = await Promise.all([
-          listCalls({ limit: 200, date }, ctrl.signal),
+          listAllCalls({ date }, ctrl.signal),
           listManagers(ctrl.signal).catch(() => []),
-          fetchDailySummary(3, ctrl.signal).catch(() => null),
+          // Oyna tanlangan kunga qarab cho'ziladi: kun O'ZI va undan
+          // oldingi kun (taqqoslash uchun) hamisha ichida bo'lsin.
+          fetchDailySummary(daysBetween(tashkentDay(), date) + 2, ctrl.signal).catch(() => null),
         ]);
         if (ctrl.signal.aborted) return;
         setCalls(rows);
         setManagers(Object.fromEntries((mgrs as { id: string; name: string }[]).map((m) => [m.id, m.name])));
         setSummary(sum);
+      } catch (e) {
+        // Kun almashganda oldingi so'rov bekor qilinadi — bu xato emas.
+        if ((e as Error)?.name !== "AbortError" && !ctrl.signal.aborted) setCalls([]);
       } finally {
         if (!ctrl.signal.aborted) setLoading(false);
       }
@@ -125,7 +130,7 @@ export function RecordingsView() {
   const visible = useMemo(() => calls.filter(matches), [calls, matches]);
 
   const today = summary?.find((d) => d.date === date);
-  const prev = summary?.find((d) => d.date === tashkentDay(-1));
+  const prev = summary?.find((d) => d.date === shiftDay(date, -1));
   const callsPct = today && prev && prev.calls > 0 ? Math.round(((today.calls - prev.calls) / prev.calls) * 100) : null;
   const todayScore = normalizeScore(today?.avg_score);
   const prevScore = normalizeScore(prev?.avg_score);
@@ -156,12 +161,7 @@ export function RecordingsView() {
   const exportCsv = useCallback(async () => {
     setExporting(true);
     try {
-      const all: CallRow[] = [];
-      for (let offset = 0; offset < 10000; offset += 200) {
-        const page = await listCalls({ limit: 200, date, offset });
-        all.push(...page);
-        if (page.length < 200) break;
-      }
+      const all = await listAllCalls({ date });
       const rows = all.filter(matches).map((c) => [
         c.created_at.slice(0, 10),
         formatTime(c.created_at),

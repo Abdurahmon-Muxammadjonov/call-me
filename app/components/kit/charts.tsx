@@ -59,6 +59,17 @@ export function BarChart({
 
   const linePts = data.filter((d) => d.line !== undefined).map((d, i) => `${x(i)},${y(d.line ?? 0)}`);
 
+  /* Yorliqlar bir-birining ustiga chiqmasin: bitta yorliq uchun qancha
+     joy borligiga qarab har n-chisi chiziladi (oxirgisi va bugungi kun
+     doim ko'rinadi). "14-sen15-sen16-sen..." bo'lib ketishining oldini
+     oladi. */
+  const labelChars = Math.max(...data.map((d) => d.label.length), 1);
+  const everyNth = Math.max(1, Math.ceil((labelChars * 7) / step));
+  /* Oxirgi kundan teskari sanaladi — shunda oxirgi (bugungi) yorliq doim
+     bor va oraliq bir tekis bo'ladi; "26-sen27-sen" bo'lib qo'shilib
+     ketmaydi. */
+  const showLabel = (_d: BarDatum, i: number) => (data.length - 1 - i) % everyNth === 0;
+
   return (
     <div className="overflow-x-auto">
       <svg width={width} height={height + 24} role="img" style={{ minWidth: "100%" }}>
@@ -78,11 +89,13 @@ export function BarChart({
           <polyline points={linePts.join(" ")} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         )}
         <line x1={padLeft} x2={width} y1={height} y2={height} stroke="var(--axis-line)" strokeWidth={1} />
-        {data.map((d, i) => (
-          <text key={d.label} x={x(i)} y={height + 16} textAnchor="middle" {...AXIS_FONT} fill={d.highlight ? "var(--text)" : "var(--subtle)"}>
-            {d.label}
-          </text>
-        ))}
+        {data.map((d, i) =>
+          showLabel(d, i) ? (
+            <text key={d.label} x={x(i)} y={height + 16} textAnchor="middle" {...AXIS_FONT} fill={d.highlight ? "var(--text)" : "var(--subtle)"}>
+              {d.label}
+            </text>
+          ) : null
+        )}
       </svg>
     </div>
   );

@@ -127,6 +127,31 @@ export function tashkentDay(offsetDays = 0): string {
     .format(new Date(Date.now() + offsetDays * 86400000));
 }
 
+/** Berilgan kundan N kun oldin/keyin: shiftDay("2026-09-27", -1) → "2026-09-26".
+ * Taqqoslash HAR DOIM tanlangan kunga nisbatan bo'lishi uchun kerak —
+ * ilgari "kechagiga nisbatan" har doim BUGUNGI kunning kechasi bilan
+ * solishtirardi, shu bois kecha tanlanganda kun o'zi bilan taqqoslanib
+ * "0%" chiqardi. */
+export function shiftDay(day: string, offsetDays: number): string {
+  const d = new Date(`${day}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Qo'ng'iroq vaqtidan Toshkent kunini oladi: "2026-09-27T19:10:00Z" → "2026-09-28".
+ * Kunlarga ajratuvchi HAR BIR joy shu yerdan o'tishi kerak — brauzer
+ * vaqt mintaqasi bo'yicha ajratilsa, yarim tunga yaqin qo'ng'iroqlar
+ * boshqa kunga tushib qolardi. */
+export function tashkentDayOf(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date(iso));
+}
+
+/** Ikki kun orasidagi farq (kun): daysBetween("2026-09-27","2026-09-25") → 2. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${from}T12:00:00Z`) - Date.parse(`${to}T12:00:00Z`)) / 86400000);
+}
+
 /** Hozirgi Toshkent vaqti "HH:MM" — daily-summary?until= uchun. */
 export function tashkentNowHm(): string {
   return new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false })
@@ -139,15 +164,49 @@ export function formatTime(iso: string): string {
     .format(new Date(iso));
 }
 
+/* Chromium'ning uz-UZ ICU ma'lumotida oy/hafta nomlari yo'q — Intl
+ * "M09 27" va "Sun" kabi texnik shakl qaytaradi (foydalanuvchi shuni
+ * ko'rgan). Shu sabab nomlar shu yerda, qo'lda. */
+const UZ_MONTH_SHORT = ["yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avg", "sen", "okt", "noy", "dek"];
+const UZ_MONTH_LONG = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
+const UZ_WEEKDAY = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
+
+/** Toshkent bo'yicha kun/oy/hafta raqamlari — nom qo'yish uchun. */
+function tashkentParts(d: Date): { day: number; month: number; weekday: number } {
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit", weekday: "short",
+  }).formatToParts(d);
+  const get = (t: string) => p.find((x) => x.type === t)?.value ?? "";
+  const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(get("weekday"));
+  return { day: Number(get("day")), month: Number(get("month")), weekday: wd };
+}
+
 /** "24-sen" */
 export function formatDayShort(iso: string): string {
-  return new Intl.DateTimeFormat("uz-UZ", { timeZone: TZ, day: "2-digit", month: "short" }).format(new Date(iso));
+  const { day, month } = tashkentParts(new Date(iso));
+  return `${day}-${UZ_MONTH_SHORT[month - 1]}`;
+}
+
+/** "24-sentabr" — kun tanlagich chiplari uchun. */
+export function formatDayMonth(day: string): string {
+  const { day: d, month } = tashkentParts(new Date(`${day}T12:00:00Z`));
+  return `${d}-${UZ_MONTH_LONG[month - 1]}`;
+}
+
+/** "27-sen" — grafik o'qi uchun qisqa yorliq. */
+export function formatDayAxis(day: string): string {
+  const { day: d, month } = tashkentParts(new Date(`${day}T12:00:00Z`));
+  return `${d}-${UZ_MONTH_SHORT[month - 1]}`;
+}
+
+/** "sha", "yak" — hafta kunining qisqa nomi. */
+export function formatWeekdayShort(day: string): string {
+  const { weekday } = tashkentParts(new Date(`${day}T12:00:00Z`));
+  return UZ_WEEKDAY[weekday].slice(0, 3);
 }
 
 /** "chorshanba, 24-sentabr" */
 export function formatDayLong(day: string): string {
-  const d = new Date(`${day}T12:00:00Z`);
-  const weekday = new Intl.DateTimeFormat("uz-UZ", { timeZone: TZ, weekday: "long" }).format(d);
-  const rest = new Intl.DateTimeFormat("uz-UZ", { timeZone: TZ, day: "numeric", month: "long" }).format(d);
-  return `${weekday}, ${rest}`;
+  const { day: d, month, weekday } = tashkentParts(new Date(`${day}T12:00:00Z`));
+  return `${UZ_WEEKDAY[weekday]}, ${d}-${UZ_MONTH_LONG[month - 1]}`;
 }
