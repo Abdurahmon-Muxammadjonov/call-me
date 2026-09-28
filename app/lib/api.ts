@@ -3,14 +3,16 @@
 /* Real backend client — all frontend requests must go through
  * NEXT_PUBLIC_API_URL (Railway production URL in hosting env).
  *
- * Vercel PREVIEW build'lari (har bir branch) production ma'lumotiga
- * foydalanuvchi ruxsatisiz ulanmasligi kerak (Pulse Noir spetsifikatsiyasi
- * §1.2). Shu sabab preview'da faqat NEXT_PUBLIC_PREVIEW_API_URL (staging)
- * ishlatiladi; u berilmagan bo'lsa backend ulanmaydi. Production va
- * lokal ishga tushirish avvalgidek NEXT_PUBLIC_API_URL dan foydalanadi. */
+ * Vercel PREVIEW build'lari: agar NEXT_PUBLIC_PREVIEW_API_URL (staging)
+ * berilgan bo'lsa — o'sha; aks holda asosiy backend (NEXT_PUBLIC_API_URL).
+ * Preview'ni asosiy backendga ulashga foydalanuvchi 2026-09-28 da ruxsat
+ * berdi (Pulse Noir spetsifikatsiyasi §1.2 shu ruxsatni talab qiladi).
+ * Staging paydo bo'lsa, faqat Vercel'da o'zgaruvchini qo'shish kifoya. */
 const DEPLOY_ENV = process.env.NEXT_PUBLIC_DEPLOY_ENV || "local";
 const RAW_BASE =
-  DEPLOY_ENV === "preview" ? process.env.NEXT_PUBLIC_PREVIEW_API_URL || "" : process.env.NEXT_PUBLIC_API_URL || "";
+  (DEPLOY_ENV === "preview" ? process.env.NEXT_PUBLIC_PREVIEW_API_URL : undefined) ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "";
 const BASE_URL = RAW_BASE.trim().replace(/\/+$/, "");
 
 export const API_BASE = BASE_URL;
