@@ -123,6 +123,7 @@ export function PulseShell({ fontClass, children }: { fontClass: string; childre
   const busy = usePageStore((s) => s.busy);
   const online = useOnline();
   const routeId = activeRouteId(pathname);
+  const isRecordingsPage = pathname === "/dashboard/recordings";
 
   return (
     <div className={`${fontClass} pn-root min-h-dvh`}>
@@ -161,7 +162,7 @@ export function PulseShell({ fontClass, children }: { fontClass: string; childre
           <main
             id="pn-main"
             tabIndex={-1}
-            className="relative flex min-w-0 flex-1 flex-col gap-5 px-4 pb-8 pt-4 outline-none lg:pb-8 lg:pl-5 lg:pr-8 lg:pt-6"
+            className={`relative flex min-w-0 flex-1 flex-col gap-5 px-4 pb-8 outline-none lg:pb-8 lg:pl-5 lg:pr-8 ${isRecordingsPage ? "pt-0 lg:pt-0" : "pt-4 lg:pt-6"}`}
             data-route={routeId ?? ""}
           >
             {busy && (
