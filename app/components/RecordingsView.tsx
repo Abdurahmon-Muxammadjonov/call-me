@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bell, CalendarDays, Download, Search } from "lucide-react";
+import { CalendarDays, Download, Search } from "lucide-react";
 import { listAllCalls, listManagers, type CallRow } from "../lib/calls";
 import { fetchDailySummary, type DailySummaryDay } from "../lib/api";
 import { useLiveRefresh } from "../lib/useLiveRefresh";
@@ -12,7 +12,7 @@ import {
   formatDayLong, formatNumber, formatScore, formatTime,
   daysBetween, normalizeScore, shiftDay, tashkentDay,
 } from "../lib/format";
-import { IconButton, PageHeader, SecondaryButton, SegmentedControl, Skeleton } from "./kit";
+import { PageHeader, SecondaryButton, SegmentedControl, Skeleton } from "./kit";
 import { CallsTable } from "./calls/CallsTable";
 import { CallDetailPanel } from "./calls/CallDetailPanel";
 
@@ -204,7 +204,6 @@ export function RecordingsView() {
                 <Download className="h-4 w-4" />
                 {exporting ? t("common.loading") : t("rec.export")}
               </SecondaryButton>
-              <IconButton ariaLabel={t("rec.notifications")}><Bell className="h-[18px] w-[18px]" /></IconButton>
             </>
           }
         />

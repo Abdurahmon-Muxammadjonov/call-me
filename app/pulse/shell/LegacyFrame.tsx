@@ -9,17 +9,13 @@
  * aralashib ketmasin. */
 
 import type { ReactNode } from "react";
-import { HeaderBell } from "./Notifications";
 
 export function LegacyFrame({ children }: { children: ReactNode }) {
   return (
     <div
-      className="flex flex-col gap-4"
+      className="flex flex-col"
       style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif", lineHeight: 1.5 }}
     >
-      <div className="flex justify-end">
-        <HeaderBell />
-      </div>
       <div className="mx-auto w-full max-w-[1600px]">{children}</div>
     </div>
   );
