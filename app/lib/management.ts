@@ -20,14 +20,14 @@
 
 import type { Accent } from "../components/ui";
 import { fetchCallAnalytics } from "./api";
-import { daysBetween, tashkentDay, tashkentDayOf } from "./format";
 import {
   listManagers,
   getManagerStats,
-  listCallsSince,
+  listCalls,
+  fetchDailyPanel,
   getCall,
   formatSeconds,
-  type CallRow,
+  type DailyPanel,
 } from "./calls";
 
 /* ---------- Sub-platforms / tenants ---------- */
@@ -158,27 +158,29 @@ function emptyDay(): DayBucket {
 const WINDOW_DAYS = 14;
 
 /** days[0] = bugun, days[1] = kecha … days[13] = 13 kun oldin.
- * Kun chegarasi — Toshkent vaqti bo'yicha (butun ilovada bir xil);
- * ilgari brauzer vaqti ishlatilgani uchun yarim tunga yaqin
- * qo'ng'iroqlar qo'shni kunga tushib qolardi. */
-function buildDays(calls: CallRow[]): DayBucket[] {
-  const days: DayBucket[] = Array.from({ length: WINDOW_DAYS }, emptyDay);
-  const today = tashkentDay();
-  for (const c of calls) {
-    if (Number.isNaN(new Date(c.created_at).getTime())) continue;
-    const idx = daysBetween(today, tashkentDayOf(c.created_at));
-    if (idx < 0 || idx >= WINDOW_DAYS) continue;
-    const b = days[idx];
-    b.count += 1;
-    b.kpiSum += Number(c.kpi_score) || 0;
-    b.durSum += Number(c.duration) || 0;
-    if ((Number(c.kpi_score) || 0) < 50) b.low += 1;
-    if ((Number(c.penalty_amount) || 0) > 0) b.penalized += 1;
-    if ((Number(c.duration) || 0) < 60) b.short += 1;
-    b.bonus += Number(c.bonus_amount) || 0;
-    b.penalty += Number(c.penalty_amount) || 0;
-  }
-  return days;
+ *
+ * SERVERDA HISOBLANADI (2026-10-12, GET /api/management/daily-panel). Avval
+ * 14 kunlik barcha qo'ng'iroq /api/calls'dan 200 tadan offset bilan (~90
+ * ketma-ket so'rov) tortilib shu yerda sanalardi: sahifalash paytida yangi
+ * qo'ng'iroq kelsa bir qator ikki marta sanalar va "Bugungi qo'ng'iroqlar"
+ * o'zidan o'zgarib turardi. Endi kun Toshkent bo'yicha, ta'riflar boshqa
+ * hisobotlar (daily-summary) bilan bir xil; "qisqa" — KPI normalaridagi
+ * uzun qo'ng'iroq chegarasidan qisqa. */
+function buildDays(panel: DailyPanel | null): DayBucket[] {
+  return Array.from({ length: WINDOW_DAYS }, (_, i) => {
+    const d = panel?.days?.[i];
+    if (!d) return emptyDay();
+    return {
+      count: Number(d.calls) || 0,
+      kpiSum: Number(d.kpi_sum) || 0,
+      durSum: Number(d.seconds) || 0,
+      low: Number(d.low) || 0,
+      penalized: Number(d.penalized) || 0,
+      short: Number(d.short) || 0,
+      bonus: Number(d.bonus_sum) || 0,
+      penalty: Number(d.penalty_sum) || 0,
+    };
+  });
 }
 
 type Sel = (d: DayBucket) => number;
@@ -228,14 +230,13 @@ const HOUR_BUCKETS: { range: string; from: number; to: number; accent: Accent }[
   { range: "18:00–21:00", from: 18, to: 21, accent: "violet" },
 ];
 
-function buildTimeBuckets(calls: CallRow[]): TimeBucket[] {
+/* Soat TOSHKENT bo'yicha (server beradi). Avval brauzer soati (getHours)
+ * ishlatilardi — boshqa mintaqadagi kompyuterda intervallar surilardi. */
+function buildTimeBuckets(panel: DailyPanel | null): TimeBucket[] {
   const counts = HOUR_BUCKETS.map(() => 0);
-  for (const c of calls) {
-    const d = new Date(c.created_at);
-    if (Number.isNaN(d.getTime())) continue;
-    const h = d.getHours();
-    const i = HOUR_BUCKETS.findIndex((b) => h >= b.from && h < b.to);
-    if (i >= 0) counts[i] += 1;
+  for (const h of panel?.hours ?? []) {
+    const i = HOUR_BUCKETS.findIndex((b) => h.hour >= b.from && h.hour < b.to);
+    if (i >= 0) counts[i] += Number(h.calls) || 0;
   }
   const total = counts.reduce((a, b) => a + b, 0) || 1;
   return HOUR_BUCKETS.map((b, i) => ({
@@ -307,13 +308,13 @@ export async function fetchManagementData(
   platformId: PlatformId,
   signal?: AbortSignal
 ): Promise<PlatformData> {
-  const [analytics, managers, calls] = await Promise.all([
+  const [analytics, managers, panel, recent] = await Promise.all([
     fetchCallAnalytics(signal, platformId).catch(() => null),
     listManagers(signal, platformId).catch(() => []),
-    // 14 kunlik oynaning HAMMA qo'ng'irog'i (server bitta so'rovda 200 ta
-    // beradi — shu sabab sahifama-sahifa; ilgari limit:1000 so'ralsa ham
-    // 200 ta kelib, eski kunlar bo'sh ko'rinardi).
-    listCallsSince(tashkentDay(-(WINDOW_DAYS - 1)), { platformId }, signal).catch(() => [] as CallRow[]),
+    // 14 kunlik yig'indilar — bitta so'rov, serverda hisoblangan.
+    fetchDailyPanel(WINDOW_DAYS, platformId, signal).catch(() => null),
+    // Voronka namunasi uchun faqat oxirgi 6 ta qo'ng'iroq.
+    listCalls({ platformId, limit: 6 }, signal).catch(() => []),
   ]);
 
   const stats = await Promise.all(
@@ -321,7 +322,7 @@ export async function fetchManagementData(
   );
 
   // Voronka bosqich nisbatlari — so'nggi qo'ng'iroqlardan namuna olib o'rtachalaymiz.
-  const sampleIds = calls.slice(0, 6).map((c) => c.id);
+  const sampleIds = recent.slice(0, 6).map((c) => c.id);
   const details = await Promise.all(sampleIds.map((id) => getCall(id, signal).catch(() => null)));
   const convs = details.map((d) => d?.conversions).filter(Boolean) as NonNullable<
     Awaited<ReturnType<typeof getCall>>["conversions"]
@@ -329,7 +330,7 @@ export async function fetchManagementData(
   const avgStage = (k: "stage_1_to_2" | "stage_2_to_3" | "stage_3_to_4") =>
     convs.length ? convs.reduce((s, c) => s + asRatio(c[k]), 0) / convs.length : 0;
 
-  const days = buildDays(calls);
+  const days = buildDays(panel);
 
   /* ----- Comparison (Sabablarsiz munosabatlar dinamikasi) ----- */
   const comparison: ComparisonMetric[] = [
@@ -369,7 +370,7 @@ export async function fetchManagementData(
   ];
 
   /* ----- Time buckets (Vaqt intervallari tahlili) ----- */
-  const timeBuckets = buildTimeBuckets(calls);
+  const timeBuckets = buildTimeBuckets(panel);
 
   /* ----- General (Umumiy) ----- */
   const activeCount = managers.filter((m) => resolveSellerStatus(m.status) === "online").length;
@@ -473,14 +474,8 @@ export async function fetchManagementData(
   ];
 
   /* ----- ROP sellers ----- */
-  const todayByManager = new Map<string, number>();
-  const todayDay = tashkentDay();
-  for (const c of calls) {
-    if (Number.isNaN(new Date(c.created_at).getTime())) continue;
-    if (tashkentDayOf(c.created_at) === todayDay) {
-      todayByManager.set(c.manager_id, (todayByManager.get(c.manager_id) ?? 0) + 1);
-    }
-  }
+  // Bugungi qo'ng'iroqlar xodim (yoki virtual operator) id bo'yicha — serverdan.
+  const todayByManager = new Map<string, number>(Object.entries(panel?.today_by_manager ?? {}));
 
   const sellers: SellerKPI[] = managers
     .map((m, i) => {
@@ -504,7 +499,7 @@ export async function fetchManagementData(
     .sort((a, b) => b.score - a.score);
 
   /* ----- Funnel ----- */
-  const totalCalls = analytics?.totalCalls ?? calls.length;
+  const totalCalls = analytics?.totalCalls ?? days.reduce((s, d) => s + d.count, 0);
   const funnel = buildFunnel(
     totalCalls,
     { r12: avgStage("stage_1_to_2"), r23: avgStage("stage_2_to_3"), r34: avgStage("stage_3_to_4") },

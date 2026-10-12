@@ -227,15 +227,28 @@ export async function listCalls(
  * katta kunda ham brauzer qotib qolmasin), amalda hech qachon urilmaydi. */
 const PAGE_SIZE = 200;
 
+/* TAKRORNI TASHLASH (2026-10-12). Offset bilan sahifalash paytida yangi
+ * qo'ng'iroq kelsa, keyingi sahifalar bir qatorga suriladi va oldingi
+ * sahifaning oxirgi qatori yana keladi — sanoq bittaga oshib, keyingi
+ * yangilanishda yana "o'zidan" o'zgarardi. id bo'yicha bir marta olinadi. */
+function pushUnique(all: CallRow[], seen: Set<string>, page: CallRow[]): void {
+  for (const c of page) {
+    if (c?.id && seen.has(c.id)) continue;
+    if (c?.id) seen.add(c.id);
+    all.push(c);
+  }
+}
+
 export async function listAllCalls(
   opts: Omit<Parameters<typeof listCalls>[0], "limit" | "offset"> = {},
   signal?: AbortSignal,
   maxRows = 20_000
 ): Promise<CallRow[]> {
   const all: CallRow[] = [];
+  const seen = new Set<string>();
   for (let offset = 0; offset < maxRows; offset += PAGE_SIZE) {
     const page = await listCalls({ ...opts, limit: PAGE_SIZE, offset }, signal);
-    all.push(...page);
+    pushUnique(all, seen, page);
     // To'liq bo'lmagan sahifa — oxiriga yetdik.
     if (page.length < PAGE_SIZE) break;
     if (signal?.aborted) break;
@@ -254,9 +267,10 @@ export async function listCallsSince(
   maxRows = 20_000
 ): Promise<CallRow[]> {
   const all: CallRow[] = [];
+  const seen = new Set<string>();
   for (let offset = 0; offset < maxRows; offset += PAGE_SIZE) {
     const page = await listCalls({ ...opts, limit: PAGE_SIZE, offset }, signal);
-    all.push(...page);
+    pushUnique(all, seen, page);
     if (page.length < PAGE_SIZE || signal?.aborted) break;
     // Butun sahifa oynadan oldingi kunlarga tegishli bo'lsa — davom etish
     // shart emas (tartib buzilgan bo'lsa ham xavfsiz: faqat TO'LIQ sahifa
@@ -264,6 +278,38 @@ export async function listCallsSince(
     if (page.every((c) => tashkentDayOf(c.created_at) < sinceDay)) break;
   }
   return all;
+}
+
+/* ---------- Boshqaruv paneli (server agregati) ---------- */
+
+/* GET /api/management/daily-panel — panelga kerak kunlik yig'indilar,
+ * 24 soat (Toshkent) va bugungi qo'ng'iroqlar xodim bo'yicha. Avval panel
+ * 14 kunlik barcha qo'ng'iroqni ~90 ta ketma-ket so'rov bilan tortib
+ * brauzerda sanardi (sekin va son "o'zidan" o'zgarardi). */
+export interface DailyPanelDay {
+  date: string;
+  calls: number;
+  operator_calls: number;
+  kpi_sum: number;
+  seconds: number;
+  low: number;
+  penalized: number;
+  short: number;
+  bonus_sum: number;
+  penalty_sum: number;
+}
+
+export interface DailyPanel {
+  window_days: number;
+  long_call_seconds: number;
+  /** days[0] = bugun, days[1] = kecha ... */
+  days: DailyPanelDay[];
+  hours: Array<{ hour: number; calls: number }>;
+  today_by_manager: Record<string, number>;
+}
+
+export async function fetchDailyPanel(days: number, platformId?: string | null, signal?: AbortSignal): Promise<DailyPanel> {
+  return unwrapData<DailyPanel>(apiClient.get<{ success?: boolean; data?: DailyPanel; error?: string; message?: string }>(withPlatform(`/api/management/daily-panel?days=${days}`, platformId), { signal }));
 }
 
 export async function getCall(id: string, signal?: AbortSignal): Promise<CallDetail> {

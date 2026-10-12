@@ -51,7 +51,8 @@ export function operatorsOf(calls: CallRow[], names: Map<string, string>, longSe
     }
     r.calls += 1;
     r.talkSec += n(c.duration);
-    if (longSec != null && n(c.duration) > longSec) r.longCalls += 1;
+    // >= — backend (daily-summary/hourly long_calls) bilan bir xil chegara.
+    if (longSec != null && n(c.duration) >= longSec) r.longCalls += 1;
     if (c.direction === "incoming") r.incoming += 1;
     else if (c.direction === "outgoing") r.outgoing += 1;
     if (c.new_leads_count != null) {
