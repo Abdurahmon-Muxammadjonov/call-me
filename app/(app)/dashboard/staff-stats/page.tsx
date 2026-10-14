@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { StaffStatsView } from "../../../components/StaffStatsView";
+import { StaffPage } from "../../../pulse/pages/staff/StaffPage";
 
-/* Xodimlar statistikasi — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Xodimlar statistikasi — Pulse Noir (2026-10-14). Avval eski
+ * StaffStatsView (LegacyFrame ichida) edi. */
 export const metadata: Metadata = { title: "Xodimlar statistikasi" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <StaffStatsView />
-    </LegacyFrame>
-  );
+  return <StaffPage />;
 }
