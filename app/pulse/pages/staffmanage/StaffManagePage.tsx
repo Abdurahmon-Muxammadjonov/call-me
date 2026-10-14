@@ -26,7 +26,9 @@ import { useSelectedDate } from "../../shell/useSelectedDate";
 import { useCallDays } from "../../data/callDays";
 import { initialsOf, useMe } from "../../data/me";
 import { apiUrl, authHeadersAuto } from "../../../lib/api";
-import { listEmployees, addEmployee, updateEmployee, deleteEmployee, type Employee } from "../../../lib/store";
+import { listEmployees, addEmployee, updateEmployee, deleteEmployee, fetchOnlineIds, type Employee } from "../../../lib/store";
+import { useManagerList, extOfManager } from "../../data/roster";
+import { SelectInput } from "../../ui/form";
 import type { ScriptItem, ShiftTimes } from "../../../lib/realtime";
 import { TONE_VARS, type Tone } from "../../lib/tones";
 import { fmtInt } from "../../lib/format";
@@ -98,6 +100,22 @@ async function persistExtras(id: string, payload: { password?: string; shift?: S
   await Promise.all(calls);
 }
 
+/* Telefondan kelgan operatorga akkaunt ochishda standart qiymatlar
+ * (foydalanuvchi talabi 2026-10-15): nomi o'sha, parol 12345678, ish vaqti
+ * 09:00–20:00, email vaqtinchalik — direktor keyin o'zi almashtiradi. */
+const DEFAULT_PASSWORD = "12345678";
+const DEFAULT_SHIFT: ShiftTimes = { start: "09:00", end: "20:00" };
+const defaultEmail = (ext: string) => `operator${ext}@procell.uz`;
+
+export interface OperatorOption {
+  ext: string;
+  name: string;
+}
+interface Preset {
+  name: string;
+  ext: string;
+}
+
 /* ===================================================================== */
 
 export function StaffManagePage() {
@@ -107,6 +125,15 @@ export function StaffManagePage() {
   const days = useCallDays();
   const sel = useSelectedDate(days.data?.firstDay);
   const [editing, setEditing] = useState<Employee | "new" | null>(null);
+  const [preset, setPreset] = useState<Preset | null>(null);
+  const [bulk, setBulk] = useState(false);
+  const roster = useManagerList(me?.company.id);
+  const presence = useQuery({
+    queryKey: ["v1", me?.company.id ?? "_", "/users/presence"],
+    queryFn: ({ signal }) => fetchOnlineIds(signal),
+    enabled: !!me,
+    refetchInterval: 30_000,
+  });
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "online" | "offline">("all");
   const key = ["v1", me?.company.id ?? "_", "/users?role=user"] as const;
@@ -118,7 +145,43 @@ export function StaffManagePage() {
     staleTime: 15_000,
     refetchInterval: 30_000,
   });
-  const employees = useMemo(() => list.data ?? [], [list.data]);
+  // Onlayn holat /users/presence dan (avval hamma "oflayn" ko'rinardi).
+  const employees = useMemo(() => {
+    const on = new Set(presence.data ?? []);
+    return (list.data ?? []).map((e) => (on.has(e.id) ? { ...e, status: "online" as const } : e));
+  }, [list.data, presence.data]);
+  // Telefoniya operatorlari (doimiy ro'yxat) va ulardan akkaunti yo'qlari.
+  const operators = useMemo<OperatorOption[]>(
+    () =>
+      (roster.data ?? [])
+        .map((m) => ({ ext: extOfManager(m) ?? "", name: m.name }))
+        .filter((o) => o.ext)
+        .sort((a, b) => a.ext.localeCompare(b.ext, undefined, { numeric: true })),
+    [roster.data]
+  );
+  const linked = new Set(employees.map((e) => e.operatorExt).filter(Boolean));
+  const withoutAccount = operators.filter((o) => !linked.has(o.ext));
+  const openNew = (p: Preset | null) => {
+    setPreset(p);
+    setEditing("new");
+  };
+  async function createAll() {
+    if (bulk || !withoutAccount.length) return;
+    setBulk(true);
+    let ok = 0;
+    for (const o of withoutAccount) {
+      try {
+        const created = await addEmployee({ name: o.name, email: defaultEmail(o.ext), password: DEFAULT_PASSWORD, operatorExt: o.ext });
+        await persistExtras(created.id, { shift: DEFAULT_SHIFT });
+        ok += 1;
+      } catch {
+        /* band email/raqam — keyingisiga o'tamiz, natija toastda */
+      }
+    }
+    setBulk(false);
+    void qc.invalidateQueries({ queryKey: key });
+    toast(t("sm.bulkDone", { ok, all: withoutAccount.length }), ok === withoutAccount.length ? "good" : "warn");
+  }
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
     return employees
@@ -135,7 +198,7 @@ export function StaffManagePage() {
         actions={
           <>
             <DateButton date={sel.date} today={sel.today} onChange={sel.setDate} testId="SM-DATE" />
-            <Button variant="primary" icon="plus" onClick={() => setEditing("new")} testId="SM-NEW">{t("sm.new")}</Button>
+            <Button variant="primary" icon="plus" onClick={() => openNew(null)} testId="SM-NEW">{t("sm.new")}</Button>
             <HeaderBell />
           </>
         }
@@ -181,7 +244,7 @@ export function StaffManagePage() {
             <div className="flex flex-col items-center gap-3 py-12 text-center">
               <span className="grid h-12 w-12 place-items-center rounded-full bg-pn-panel-2 text-pn-muted"><Icon name="users" /></span>
               <p className="max-w-sm text-[14px] text-pn-muted">{t("sm.empty")}</p>
-              <Button variant="primary" icon="plus" onClick={() => setEditing("new")}>{t("sm.new")}</Button>
+              <Button variant="primary" icon="plus" onClick={() => openNew(null)}>{t("sm.new")}</Button>
             </div>
           ) : shown.length === 0 ? (
             <p className="py-12 text-center text-[14px] text-pn-muted">{t("sm.noMatch")}</p>
@@ -193,10 +256,40 @@ export function StaffManagePage() {
         </div>
       </Card>
 
+      {withoutAccount.length > 0 && (
+        <Card pad="none" className="overflow-hidden" data-testid="SM-PHONE">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+            <div>
+              <h2 className="pn-card-title">{t("sm.phone.title")}</h2>
+              <p className="pn-card-sub">{t("sm.phone.sub", { n: withoutAccount.length })}</p>
+            </div>
+            <Button variant="primary" icon="plus" loading={bulk} disabled={bulk} onClick={() => void createAll()} testId="SM-PHONE-ALL">
+              {t("sm.phone.all", { n: withoutAccount.length })}
+            </Button>
+          </div>
+          <ul className="grid grid-cols-1 gap-2 border-t border-pn-border p-4 @min-[620px]/sm:grid-cols-2 @min-[1000px]/sm:grid-cols-3">
+            {withoutAccount.map((o) => (
+              <li key={o.ext} className="flex items-center justify-between gap-3 rounded-[18px] bg-pn-panel-2 py-2 pl-3 pr-2">
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="pn-mono grid h-9 min-w-9 place-items-center rounded-xl bg-pn-panel-3 px-2 text-[12px] font-semibold">{o.ext}</span>
+                  <span className="truncate text-[14px]">{o.name}</span>
+                </span>
+                <Button variant="outline" compact icon="plus" onClick={() => openNew({ name: o.name, ext: o.ext })} testId={`SM-PHONE-${o.ext}`}>
+                  {t("sm.phone.one")}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       {editing && (
         <EmployeeEditor
-          key={editing === "new" ? "new" : editing.id}
+          key={editing === "new" ? `new-${preset?.ext ?? ""}` : editing.id}
           operator={editing === "new" ? null : editing}
+          preset={editing === "new" ? preset : null}
+          operators={operators}
+          takenExts={linked}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -225,7 +318,12 @@ function EmployeeCard({ employee, onOpen }: { employee: Employee; onOpen: () => 
           <span aria-hidden className="absolute -bottom-px -right-px h-[14px] w-[14px] rounded-full border-[3px] border-pn-panel-2" style={{ background: TONE_VARS[st.tone].fg }} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-semibold text-pn-text">{employee.name}</span>
+          <span className="flex items-center gap-2">
+            <span className="truncate text-[15px] font-semibold text-pn-text">{employee.name}</span>
+            {employee.operatorExt && (
+              <span className="pn-mono shrink-0 rounded-lg bg-pn-panel-3 px-[6px] py-[1px] text-[11px] text-pn-text-2" title={t("sm.f.operator")}>{employee.operatorExt}</span>
+            )}
+          </span>
           <span className="block truncate text-[12px] text-pn-muted">{employee.email || "—"}</span>
         </span>
       </span>
@@ -245,16 +343,32 @@ function EmployeeCard({ employee, onOpen }: { employee: Employee; onOpen: () => 
 /* ---------- Yon panel: tahrirlash / yangi ---------- */
 interface FieldErrors { name?: string; email?: string; password?: string }
 
-function EmployeeEditor({ operator, onClose, onSaved }: { operator: Employee | null; onClose: () => void; onSaved: () => void }) {
+function EmployeeEditor({
+  operator,
+  preset,
+  operators,
+  takenExts,
+  onClose,
+  onSaved,
+}: {
+  operator: Employee | null;
+  preset: Preset | null;
+  operators: OperatorOption[];
+  takenExts: Set<string | null>;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const t = usePT();
   const isNew = operator === null;
   const nameRef = useRef<HTMLInputElement>(null);
-  const [name, setName] = useState(operator?.name ?? "");
-  const [email, setEmail] = useState(operator?.email ?? "");
+  const [name, setName] = useState(operator?.name ?? preset?.name ?? "");
+  const [ext, setExt] = useState<string>(operator?.operatorExt ?? preset?.ext ?? "");
+  // Telefondan kelgan operatorga ochilayotgan akkaunt — standartlar oldindan to'ladi.
+  const [email, setEmail] = useState(operator?.email ?? (preset ? defaultEmail(preset.ext) : ""));
   const [phone, setPhone] = useState(operator?.phone ?? "");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(preset ? DEFAULT_PASSWORD : "");
   const [showPassword, setShowPassword] = useState(true);
-  const [shift, setShift] = useState<ShiftTimes>({ start: "", end: "" });
+  const [shift, setShift] = useState<ShiftTimes>(preset ? DEFAULT_SHIFT : { start: "", end: "" });
   const [scripts, setScripts] = useState<ScriptItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -314,18 +428,25 @@ function EmployeeEditor({ operator, onClose, onSaved }: { operator: Employee | n
           email: email.trim(),
           phone: phone.trim() || undefined,
           password: password.trim() || undefined,
+          operatorExt: ext || null,
         });
         await persistExtras(created.id, { shift, scripts: cleanScripts });
       } else {
-        await updateEmployee(operator.id, { name: name.trim(), email: email.trim(), phone: phone.trim() });
+        await updateEmployee(operator.id, {
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          ...(ext !== (operator.operatorExt ?? "") ? { operatorExt: ext || null } : {}),
+        });
         const pwChanged = password.trim() !== "" && password !== initialPassword.current;
         await persistExtras(operator.id, { password: pwChanged ? password.trim() : undefined, shift, scripts: cleanScripts });
       }
       toast(isNew ? t("sm.toast.added") : t("sm.toast.updated"), "good");
       onSaved();
-    } catch {
+    } catch (e) {
       setSaving(false); // panel ochiq qoladi — qayta urinish mumkin
-      toast(t("sm.toast.saveError"), "bad");
+      const msg = (e as Error)?.message;
+      toast(msg && !/^HTTP \d+$/.test(msg) ? msg : t("sm.toast.saveError"), "bad");
     }
   }
 
@@ -371,6 +492,21 @@ function EmployeeEditor({ operator, onClose, onSaved }: { operator: Employee | n
                 autoComplete="off"
                 data-testid="SM-F-name"
               />
+            )}
+          </Field>
+          <Field label={t("sm.f.operator")} icon="phone" hint={t("sm.f.operatorHint")}>
+            {(id) => (
+              <SelectInput id={id} value={ext} onChange={(e) => setExt(e.target.value)} data-testid="SM-F-operator">
+                <option value="">{t("sm.f.noOperator")}</option>
+                {operators.map((o) => {
+                  const busy = takenExts.has(o.ext) && o.ext !== (operator?.operatorExt ?? "");
+                  return (
+                    <option key={o.ext} value={o.ext} disabled={busy}>
+                      {o.ext} — {o.name}{busy ? ` (${t("sm.f.operatorTaken")})` : ""}
+                    </option>
+                  );
+                })}
+              </SelectInput>
             )}
           </Field>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

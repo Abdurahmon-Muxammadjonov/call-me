@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "./api";
 import type { RosterManager } from "./roster.model";
 
-export { withRosterOps, withRosterStaff, extFromName, type RosterManager } from "./roster.model";
+export { withRosterOps, withRosterStaff, extFromName, extOfManager, type RosterManager } from "./roster.model";
 
 export function useManagerList(companyId: string | undefined) {
   return useQuery({

@@ -14,6 +14,7 @@ import { useLocale } from "../../../lib/i18n";
 import { usePT } from "../../i18n";
 import { Button, Card, ExtBadge, ScoreChip, Skeleton, StatusPill } from "../../ui/primitives";
 import { Ring } from "../../charts";
+import { Icon } from "../../ui/Icon";
 import { DateButton } from "../../ui/DateButton";
 import { PageHeader } from "../../shell/PageHeader";
 import { HeaderBell } from "../../shell/Notifications";
@@ -24,6 +25,7 @@ import { useOperatorDay } from "../../data/dayCalls";
 import { useManagerList, withRosterOps } from "../../data/roster";
 import { useUrlState } from "../../shell/useUrlState";
 import { FilterBar } from "../../ui/FilterBar";
+import { listEmployees } from "../../../lib/store";
 import { apiFetch } from "../../data/api";
 import { getSupabase } from "../../../lib/supabase";
 import { scoreTone, TONE_VARS, type Tone } from "../../lib/tones";
@@ -49,6 +51,14 @@ export function OperatorsPage() {
   const sel = useSelectedDate(days.data?.firstDay);
   const ops = useOperatorDay(me?.company.id, sel.date);
   const roster = useManagerList(me?.company.id);
+  // Qaysi operatorning akkaunti bor (users.operator_ext) — kartada belgi.
+  const accounts = useQuery({
+    queryKey: ["v1", me?.company.id ?? "_", "/users?role=user"],
+    queryFn: ({ signal }) => listEmployees(signal, "user"),
+    enabled: !!me,
+    staleTime: 30_000,
+  });
+  const accountByExt = new Map((accounts.data ?? []).filter((u) => u.operatorExt).map((u) => [u.operatorExt as string, u]));
   const url = useUrlState();
   const OP_FILTERS = ["all", "active", "ok", "behind", "idle"] as const;
   type OpFilter = (typeof OP_FILTERS)[number];
@@ -178,6 +188,15 @@ export function OperatorsPage() {
                       ok != null && <StatusPill tone={ok ? "good" : "bad"} plain>{ok ? t("ctl.rop.ok") : t("ctl.rop.behind")}</StatusPill>
                     )}
                   </div>
+                  {accounts.data && o.ext && (
+                    <div className="-mt-2 flex items-center gap-2 text-[12px]">
+                      {accountByExt.has(o.ext) ? (
+                        <span className="flex min-w-0 items-center gap-1 text-pn-good-text"><Icon name="check" size={12} /> <span className="truncate">{accountByExt.get(o.ext)!.email}</span></span>
+                      ) : (
+                        <span className="text-pn-subtle">{t("op.noAccount")}</span>
+                      )}
+                    </div>
+                  )}
                   <div className="grid grid-cols-4 items-center gap-2 text-[12px]">
                     <div><div className="text-pn-muted">{t("op.calls")}</div><div className="pn-mono mt-1 text-[15px] font-semibold">{fmtInt(o.calls)}</div></div>
                     <div className="flex items-center gap-2">

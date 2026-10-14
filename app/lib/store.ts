@@ -44,6 +44,8 @@ export interface Employee {
   role: string;
   age: number | null;
   status: "online" | "away" | "offline";
+  /* Bog'langan telefoniya operatori — ichki raqam ("105"), yo'q bo'lsa null (2026-10-15). */
+  operatorExt: string | null;
   calls: number;
   score: number;
   penalties: Penalty[];
@@ -57,6 +59,7 @@ export type NewEmployee = {
   phone?: string;
   role?: string;
   password?: string;
+  operatorExt?: string | null;
 };
 
 /* Default speaking guidance shown to every employee. */
@@ -78,6 +81,7 @@ interface BackendUser {
   age: number | null;
   phone: string | null;
   role: string;
+  operator_ext?: string | null;
   created_at?: string;
   token?: string;
 }
@@ -100,6 +104,7 @@ function toEmployee(u: BackendUser): Employee {
     role: u.role || "user",
     age: u.age ?? null,
     status: "offline",
+    operatorExt: u.operator_ext ?? null,
     calls: 0,
     score: 0,
     penalties: [],
@@ -147,6 +152,7 @@ export async function addEmployee(input: NewEmployee): Promise<Employee> {
       phone: input.phone?.trim() || null,
       role: input.role || "user",
       password: input.password || undefined,
+      ...(input.operatorExt !== undefined ? { operator_ext: input.operatorExt || null } : {}),
     }),
   });
   const user = await parse<BackendUser>(res);
@@ -156,12 +162,14 @@ export async function addEmployee(input: NewEmployee): Promise<Employee> {
 /* PUT /users/:id — update by id. */
 export async function updateEmployee(
   id: string,
-  patch: Partial<Pick<Employee, "name" | "email" | "phone" | "role">>
+  patch: Partial<Pick<Employee, "name" | "email" | "phone" | "role" | "operatorExt">>
 ): Promise<Employee> {
+  const { operatorExt, ...rest } = patch;
+  const body = operatorExt !== undefined ? { ...rest, operator_ext: operatorExt || null } : rest;
   const res = await fetch(apiUrl(`/users/${id}`), {
     method: "PUT",
     headers: { ...JSON_HEADERS, ...authHeadersAuto() },
-    body: JSON.stringify(patch),
+    body: JSON.stringify(body),
   });
   const user = await parse<BackendUser>(res);
   return toEmployee(user);

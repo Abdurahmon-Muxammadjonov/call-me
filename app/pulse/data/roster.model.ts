@@ -15,6 +15,14 @@ import type { StaffRow } from "./staff";
 export interface RosterManager {
   id: string;
   name: string;
+  /* Telefoniya ichki raqami (virtual operatorlarda doim bor). */
+  pbx_id?: string | null;
+}
+
+/* Operatorning ichki raqami: pbx_id, bo'lmasa ism oxiridagi raqam. */
+export function extOfManager(m: RosterManager): string | null {
+  const p = String(m.pbx_id ?? "").trim();
+  return /^\d{1,8}$/.test(p) ? p : extFromName(m.name);
 }
 
 /* "Operator 105" -> "105". Ism raqam bilan tugamasa — null. */
@@ -31,7 +39,7 @@ const norm = (s: string | null | undefined) => String(s ?? "").trim().toLowerCas
 export function withRosterOps(rows: OperatorDay[], managers: RosterManager[] | undefined): OperatorDay[] {
   const out = [...rows];
   for (const m of managers ?? []) {
-    const ext = extFromName(m.name);
+    const ext = extOfManager(m);
     const found = out.some((o) => (ext && (o.ext === ext || o.key === ext)) || (o.name && norm(o.name) === norm(m.name)));
     if (found) continue;
     out.push({
@@ -55,7 +63,7 @@ export function withRosterOps(rows: OperatorDay[], managers: RosterManager[] | u
 export function withRosterStaff(rows: StaffRow[], managers: RosterManager[] | undefined): StaffRow[] {
   const out = [...rows];
   for (const m of managers ?? []) {
-    const ext = extFromName(m.name);
+    const ext = extOfManager(m);
     const found = out.some((r) => (ext && (r.key === `ext:${ext}` || extFromName(r.name) === ext)) || norm(r.name) === norm(m.name));
     if (found) continue;
     out.push({
