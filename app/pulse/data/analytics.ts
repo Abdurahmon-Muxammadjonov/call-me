@@ -67,7 +67,9 @@ export interface TeamRow {
 
 export interface AnalyticsData {
   period: Period;
+  /* Hisobot kuni (tanlangan sana). Bugun bo'lmasa isPast = true. */
   today: string;
+  isPast: boolean;
   range: { from: string; to: string; cutoff: string | null };
   labels: { leads: StageLabels; offers: StageLabels; deals: StageLabels };
   norms: {
@@ -231,11 +233,18 @@ function pct(a: number, b: number): number | null {
   return b > 0 ? (a / b) * 100 : null;
 }
 
-async function fetchV1(period: Period, me: Me, locale: Locale, signal?: AbortSignal): Promise<AnalyticsData> {
+async function fetchV1(period: Period, me: Me, locale: Locale, anchor: string | null, signal?: AbortSignal): Promise<AnalyticsData> {
   // Operator kesimi (jamoa jadvali, norma banneri) alohida so'rovda —
   // qo'ng'iroqlar ro'yxati og'ir, u sekinroq yangilanadi (fetchV1Team).
+  //
+  // TANLANGAN SANA (2026-10-14, "📅 Sana"): `today` — hisobot kuni. O'tgan
+  // kun tanlansa davr shu kun bilan tugaydi, oldingi davr bilan "shu
+  // vaqtgacha" emas, TO'LIQ kunlar solishtiriladi (until so'ralmaydi).
   const now = new Date();
-  const today = tashkentToday(now);
+  const realToday = tashkentToday(now);
+  const today = anchor && anchor < realToday ? anchor : realToday;
+  const isPast = today < realToday;
+  const back = dayDiff(today, realToday); // tanlangan kundan bugungacha necha kun
   const cutoff = hmOf(now);
   const longSec = me.norms.longCallSec;
   const dailyNorm = me.norms.dailyLongCallsNorm;
@@ -243,8 +252,10 @@ async function fetchV1(period: Period, me: Me, locale: Locale, signal?: AbortSig
   const untilDays = dayDiff(win.prevCut, today) + 1;
 
   const [full, until, hourly] = await Promise.all([
-    apiFetch<SummaryRow[]>(`/analytics/daily-summary?days=${historyDays(period)}`, { signal }),
-    apiFetch<SummaryRow[]>(`/analytics/daily-summary?days=${untilDays}&until=${encodeURIComponent(cutoff)}`, { signal }).catch(() => null),
+    apiFetch<SummaryRow[]>(`/analytics/daily-summary?days=${Math.min(120, historyDays(period) + back)}`, { signal }),
+    isPast
+      ? Promise.resolve(null)
+      : apiFetch<SummaryRow[]>(`/analytics/daily-summary?days=${untilDays}&until=${encodeURIComponent(cutoff)}`, { signal }).catch(() => null),
     period === "day" ? apiFetch<HourlyRow[]>(`/analytics/hourly?date=${today}`, { signal }).catch(() => null) : Promise.resolve(null),
   ]);
 
@@ -263,7 +274,8 @@ async function fetchV1(period: Period, me: Me, locale: Locale, signal?: AbortSig
   if (period === "day") {
     const rows = Array.isArray(hourly) ? hourly : [];
     const byHour = new Map(rows.map((r) => [n(r.hour), n(r.calls)]));
-    const nowHour = tashkentHourOf(now);
+    // O'tgan kunda hamma soat yakunlangan — "hozirgi soat" yo'q.
+    const nowHour = isPast ? 24 : tashkentHourOf(now);
     const first = [...byHour.entries()].filter(([, c]) => c > 0).map(([h]) => h).sort((a, b) => a - b)[0];
     if (first != null) {
       for (let h = first; h <= 23; h++) {
@@ -300,6 +312,7 @@ async function fetchV1(period: Period, me: Me, locale: Locale, signal?: AbortSig
   return {
     period,
     today,
+    isPast,
     range: { from: win.cur[0], to: today, cutoff: hasCutoff ? cutoff : null },
     labels: V1_LABELS[locale] ?? V1_LABELS.uz,
     norms: { longCallSec: longSec, dailyLongCallsNorm: dailyNorm, conversionTargetPct: null, targetScore10: me.norms.targetScore10 },
@@ -330,26 +343,29 @@ async function fetchV1(period: Period, me: Me, locale: Locale, signal?: AbortSig
 
 async function fetchV2(period: Period, signal?: AbortSignal): Promise<AnalyticsData> {
   // Appendix A.3 (pages/analytics) kelgach shu yerda o'giriladi.
-  const data = await apiFetch<Omit<AnalyticsData, "source">>(`/pages/analytics?period=${period}`, { signal, v2: true });
-  return { ...data, source: "v2" };
+  const data = await apiFetch<Omit<AnalyticsData, "source" | "isPast">>(`/pages/analytics?period=${period}`, { signal, v2: true });
+  return { ...data, isPast: false, source: "v2" };
 }
 
-export function analyticsKey(companyId: string | undefined, locale: Locale, period: Period) {
-  return ["v2", companyId ?? "_", locale, "/pages/analytics", { period }] as const;
+export function analyticsKey(companyId: string | undefined, locale: Locale, period: Period, date: string | null = null) {
+  return ["v2", companyId ?? "_", locale, "/pages/analytics", { period, date }] as const;
 }
 
-export function useAnalytics(period: Period) {
+/* date — tanlangan kun (null yoki bugun = jonli rejim). */
+export function useAnalytics(period: Period, date: string | null = null) {
   const { data: me } = useMe();
   const locale = useLocale();
+  const live = date == null || date >= tashkentToday();
   const page = useQuery({
-    queryKey: analyticsKey(me?.company.id, locale, period),
-    queryFn: ({ signal }) => (API_V2 ? fetchV2(period, signal) : fetchV1(period, me!, locale, signal)),
+    queryKey: analyticsKey(me?.company.id, locale, period, live ? null : date),
+    queryFn: ({ signal }) => (API_V2 ? fetchV2(period, signal) : fetchV1(period, me!, locale, live ? null : date, signal)),
     enabled: !!me,
     // Joriy davr "hozir"ni o'z ichiga oladi (§3.2): 15 s, fokusda yangilanadi.
-    staleTime: 15_000,
+    // O'tgan kun o'zgarmaydi (tahlil tugashi bundan mustasno) — 5 daqiqa.
+    staleTime: live ? 15_000 : 300_000,
     refetchOnWindowFocus: true,
-    // SSE hali yo'q — faol sahifada 30 s da bir yangilanadi.
-    refetchInterval: 30_000,
+    // SSE hali yo'q — faol sahifada 30 s da bir yangilanadi (faqat bugun).
+    refetchInterval: live ? 30_000 : false,
     placeholderData: keepPreviousData,
     meta: { persist: true, page: true },
   });
@@ -396,7 +412,7 @@ export function useAnalytics(period: Period) {
 export function analyticsPrefetchFn(me: Me | undefined, locale: Locale) {
   return {
     queryKey: analyticsKey(me?.company.id, locale, "day"),
-    queryFn: ({ signal }: { signal?: AbortSignal }) => (API_V2 ? fetchV2("day", signal) : fetchV1("day", me!, locale, signal)),
+    queryFn: ({ signal }: { signal?: AbortSignal }) => (API_V2 ? fetchV2("day", signal) : fetchV1("day", me!, locale, null, signal)),
     staleTime: 15_000,
     meta: { persist: true, page: true },
   };

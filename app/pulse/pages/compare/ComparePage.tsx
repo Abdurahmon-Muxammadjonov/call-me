@@ -12,6 +12,7 @@ import { useLocale } from "../../../lib/i18n";
 import { usePT, type PT } from "../../i18n";
 import { Button, DeltaPill, Segmented, Skeleton } from "../../ui/primitives";
 import { DatePicker, type PickerMode } from "../../ui/DatePicker";
+import { useCallDays } from "../../data/callDays";
 import { Icon } from "../../ui/Icon";
 import { PageHeader } from "../../shell/PageHeader";
 import { usePageBusy } from "../../shell/pageStore";
@@ -82,6 +83,7 @@ export function ComparePage() {
   const a = normSide(period, url.get("a"), today, defA);
   const b = normSide(period, url.get("b"), today, defB);
   const { data: me } = useMe();
+  const callDays = useCallDays();
   const q = useCompare(period, a, b);
   usePageBusy(q.isFetching && q.isPlaceholderData);
 
@@ -146,7 +148,9 @@ export function ComparePage() {
               mode={mode}
               value={a}
               today={today}
-              min={me?.company.firstDataDay}
+              min={callDays.data?.firstDay ?? me?.company.firstDataDay}
+              marks={callDays.data?.counts ?? null}
+              markTitle={(n) => t("date.callsOnDay", { n })}
               loc={loc}
               label={t("cmp.pickA", { label: la.pill })}
               onSelect={(v) => setSide("a", v)}
@@ -159,7 +163,9 @@ export function ComparePage() {
               mode={mode}
               value={b}
               today={today}
-              min={me?.company.firstDataDay}
+              min={callDays.data?.firstDay ?? me?.company.firstDataDay}
+              marks={callDays.data?.counts ?? null}
+              markTitle={(n) => t("date.callsOnDay", { n })}
               loc={loc}
               label={t("cmp.pickB", { label: lb.pill })}
               onSelect={(v) => setSide("b", v)}

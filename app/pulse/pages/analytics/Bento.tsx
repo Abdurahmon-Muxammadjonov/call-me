@@ -10,7 +10,7 @@ import { usePT, type PT } from "../../i18n";
 import { fmtDec, fmtInt, fmtSigned, DASH } from "../../lib/format";
 import { conversionTone, TONE_VARS } from "../../lib/tones";
 import { gaugeFill, gaugeScaleMax, gaugeTick } from "../../lib/numbers";
-import { dayMonthShort, hoursMinutes, isoWeekday, monthName, weekdayShort, type Loc } from "../../lib/dates";
+import { dayMonth, dayMonthShort, hoursMinutes, isoWeekday, monthName, weekdayShort, type Loc } from "../../lib/dates";
 import type { AnalyticsData, Period } from "../../data/analytics";
 
 /* ------------------------------------------------------------------ Hero */
@@ -50,7 +50,10 @@ export function HeroTile({ data, loc }: { data: AnalyticsData; loc: Loc }) {
   const sub =
     prev == null
       ? null
-      : t(`an.hero.${data.range.cutoff ? "cut" : "full"}.${p}` as "an.hero.cut.day", { n: fmtInt(prev) });
+      : t(
+          (data.isPast && p === "day" ? "an.hero.full.dayPast" : `an.hero.${data.range.cutoff ? "cut" : "full"}.${p}`) as "an.hero.cut.day",
+          { n: fmtInt(prev) }
+        );
 
   return (
     <section
@@ -58,7 +61,9 @@ export function HeroTile({ data, loc }: { data: AnalyticsData; loc: Loc }) {
       className="flex flex-col rounded-[26px] bg-pn-accent px-[26px] py-6 text-pn-accent-ink @min-[560px]/an:col-span-2 @min-[1040px]/an:row-span-2"
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[15px] font-semibold">{t(`an.hero.${p}` as "an.hero.day")}</span>
+        <span className="text-[15px] font-semibold">
+          {data.isPast ? t(`an.hero.${p}Past` as "an.hero.dayPast", { date: dayMonth(loc, data.today) }) : t(`an.hero.${p}` as "an.hero.day")}
+        </span>
         {delta && (
           <span
             data-testid="AN-HERO-delta"
@@ -223,7 +228,7 @@ export function ConversionTile({ data, t }: { data: AnalyticsData; t: PT }) {
   const tone = conversionTone(pct, target);
   const color = tone === "neutral" ? "var(--pn-text-2)" : TONE_VARS[tone].fg;
   const scale = gaugeScaleMax(target, pct);
-  const prevWord = t(`an.prev.${data.period}` as "an.prev.day");
+  const prevWord = t((data.isPast && data.period === "day" ? "an.prev.dayPast" : `an.prev.${data.period}`) as "an.prev.day");
   const L = data.labels;
   return (
     <section

@@ -7,9 +7,12 @@
  * firstDataDay'dan oldingi kunlar.
  * Rejimlar: single (kun), week (dushanba–yakshanba qatori), month (3×4 oy
  * va yil almashtirgich). Klaviatura: strelkalar, PageUp/PageDown — oy
- * (oy rejimida yil), Enter — tanlash, Esc — yopish (Popover). */
+ * (oy rejimida yil), Enter — tanlash, Esc — yopish (Popover).
+ *
+ * marks (2026-10-14): qo'ng'iroq bo'lgan kunlar — katak ostida nuqta va
+ * "N ta qo'ng'iroq" maslahati; footer — kalendar ostidagi tezkor tugmalar. */
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { Popover } from "./overlays";
 import { Icon } from "./Icon";
 import { usePT } from "../i18n";
@@ -35,6 +38,9 @@ export function DatePicker({
   loc,
   label,
   testId,
+  marks,
+  markTitle,
+  footer,
 }: {
   open: boolean;
   onClose: () => void;
@@ -48,6 +54,10 @@ export function DatePicker({
   loc: Loc;
   label: string;
   testId?: string;
+  /* kun -> son (faqat single/week rejimida ko'rsatiladi) */
+  marks?: Map<string, number> | null;
+  markTitle?: (count: number) => string;
+  footer?: ReactNode;
 }) {
   return (
     <Popover
@@ -63,8 +73,18 @@ export function DatePicker({
       {open && (mode === "month" ? (
         <MonthGrid value={value} onSelect={(d) => { onSelect(d); onClose(); }} today={today} min={min} loc={loc} />
       ) : (
-        <DayGrid mode={mode} value={value} onSelect={(d) => { onSelect(d); onClose(); }} today={today} min={min} loc={loc} />
+        <DayGrid
+          mode={mode}
+          value={value}
+          onSelect={(d) => { onSelect(d); onClose(); }}
+          today={today}
+          min={min}
+          loc={loc}
+          marks={marks}
+          markTitle={markTitle}
+        />
       ))}
+      {open && footer != null && <div className="mt-3 border-t border-pn-border pt-3">{footer}</div>}
     </Popover>
   );
 }
@@ -89,6 +109,8 @@ function DayGrid({
   today,
   min,
   loc,
+  marks,
+  markTitle,
 }: {
   mode: "single" | "week";
   value: string;
@@ -96,6 +118,8 @@ function DayGrid({
   today: string;
   min?: string | null;
   loc: Loc;
+  marks?: Map<string, number> | null;
+  markTitle?: (count: number) => string;
 }) {
   const t = usePT();
   const [month, setMonth] = useState(value.slice(0, 7));
@@ -173,6 +197,8 @@ function DayGrid({
           const selected = mode === "single" ? d === value : false;
           const weekEdge = mode === "week" && activeWeek != null && (d === activeWeek || d === addDays(activeWeek, 6));
           const inRange = mode === "week" && inWeek(d);
+          const mark = marks?.get(d) ?? 0;
+          const onAccent = selected || weekEdge;
           return (
             <button
               key={d}
@@ -184,6 +210,7 @@ function DayGrid({
               aria-selected={selected || (mode === "week" && selWeek != null && d >= selWeek && d <= addDays(selWeek, 6))}
               aria-disabled={off || undefined}
               aria-current={d === today ? "date" : undefined}
+              title={mark > 0 && markTitle ? markTitle(mark) : undefined}
               onPointerEnter={() => mode === "week" && !off && setHoverWeek(weekStart(d))}
               onFocus={() => mode === "week" && setHoverWeek(weekStart(d))}
               onClick={() => {
@@ -198,10 +225,22 @@ function DayGrid({
                 selected && "bg-pn-accent font-semibold text-pn-accent-ink",
                 inRange && !weekEdge && "bg-pn-accent-soft text-pn-text",
                 weekEdge && "bg-pn-accent font-semibold text-pn-accent-ink",
-                d === today && !selected && !weekEdge && "ring-1 ring-inset ring-pn-accent-strong"
+                d === today && !selected && !weekEdge && "ring-1 ring-inset ring-pn-accent-strong",
+                marks && !off && mark === 0 && !onAccent && "text-pn-subtle"
               )}
             >
-              {Number(d.slice(8, 10))}
+              <span className="relative leading-none">
+                {Number(d.slice(8, 10))}
+                {mark > 0 && (
+                  <span
+                    aria-hidden
+                    className={cx(
+                      "absolute -bottom-[7px] left-1/2 h-[4px] w-[4px] -translate-x-1/2 rounded-full",
+                      onAccent ? "bg-pn-accent-ink" : "bg-pn-accent"
+                    )}
+                  />
+                )}
+              </span>
             </button>
           );
         })}

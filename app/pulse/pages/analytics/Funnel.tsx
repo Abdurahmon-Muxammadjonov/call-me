@@ -7,6 +7,8 @@ import { SplitBar } from "../../charts";
 import { usePT } from "../../i18n";
 import { fmtInt } from "../../lib/format";
 import type { AnalyticsData, FunnelStage } from "../../data/analytics";
+import { useLocale } from "../../../lib/i18n";
+import { dayMonth, type Loc } from "../../lib/dates";
 
 const STAGE_COLOR: Record<FunnelStage, string> = {
   calls: "var(--pn-accent)",
@@ -18,6 +20,7 @@ const STAGE_COLOR: Record<FunnelStage, string> = {
 
 export function FunnelCard({ data }: { data: AnalyticsData }) {
   const t = usePT();
+  const loc = useLocale() as Loc;
   const s = data.norms.longCallSec ?? "—";
   const label = (st: FunnelStage) =>
     st === "calls"
@@ -39,7 +42,7 @@ export function FunnelCard({ data }: { data: AnalyticsData }) {
     >
       <div className="flex items-baseline justify-between">
         <h2 className="pn-card-title">{t("an.funnel.title")}</h2>
-        <span className="text-[12px] text-pn-muted">{t(`an.funnel.when.${data.period}` as "an.funnel.when.day")}</span>
+        <span className="text-[12px] text-pn-muted">{data.isPast && data.period === "day" ? dayMonth(loc, data.today) : t(`an.funnel.when.${data.period}` as "an.funnel.when.day")}</span>
       </div>
       <div className="pn-table-head grid grid-cols-[minmax(0,1fr)_64px_56px] gap-x-[10px]" role="row">
         <span role="columnheader">{t("an.funnel.stage")}</span>

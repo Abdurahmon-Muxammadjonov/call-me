@@ -19,6 +19,9 @@ import { pick, useUrlState } from "../../shell/useUrlState";
 import { useAnalytics, type Period } from "../../data/analytics";
 import { useMe } from "../../data/me";
 import { addDays, dayMonth, monthYear, rangeLabel, tashkentToday, weekStart, weekdayName, type Loc } from "../../lib/dates";
+import { DateButton } from "../../ui/DateButton";
+import { useCallDays } from "../../data/callDays";
+import { useSelectedDate } from "../../shell/useSelectedDate";
 import { HeroTile, PastelTile, ConversionTile } from "./Bento";
 import { DynamicsCard } from "./Dynamics";
 import { FunnelCard } from "./Funnel";
@@ -34,18 +37,19 @@ const TEAM = ["all", "behind", "ok"] as const;
  * chiqmaydi (o'lik tugma bo'lmasin, §0.3). */
 const REPORTS_READY = false;
 
-function useEyebrow(period: Period, loc: Loc): string {
+/* day — tanlangan kun; o'tgan kunda soat ko'rsatilmaydi (jonli emas). */
+function useEyebrow(period: Period, loc: Loc, day: string): string {
   useMinuteTick();
   const now = serverNow();
-  const today = tashkentToday(now);
-  const hm = tashkentHm(now);
+  const live = day >= tashkentToday(now);
+  const hm = live ? ` · ${tashkentHm(now)}` : "";
   const t = usePT();
-  if (period === "day") return `${weekdayName(loc, today)}, ${dayMonth(loc, today)} · ${hm}`;
+  if (period === "day") return `${weekdayName(loc, day)}, ${dayMonth(loc, day)}${hm}`;
   if (period === "week") {
-    const from = weekStart(today);
-    return `${t("an.eyebrow.week", { range: rangeLabel(loc, from, addDays(from, 6), true) })} · ${hm}`;
+    const from = weekStart(day);
+    return `${t(live ? "an.eyebrow.week" : "an.eyebrow.weekPast", { range: rangeLabel(loc, from, addDays(from, 6), true) })}${hm}`;
   }
-  return `${monthYear(loc, today)} · ${hm}`;
+  return `${monthYear(loc, day)}${hm}`;
 }
 
 export function AnalyticsPage() {
@@ -57,8 +61,10 @@ export function AnalyticsPage() {
   const sort = parseSort(url.get("teamSort"));
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const { data: me } = useMe();
-  const q = useAnalytics(period);
-  const eyebrow = useEyebrow(period, loc);
+  const days = useCallDays();
+  const sel = useSelectedDate(days.data?.firstDay);
+  const q = useAnalytics(period, sel.isToday ? null : sel.date);
+  const eyebrow = useEyebrow(period, loc, sel.date);
 
   usePageBusy(q.isFetching && q.isPlaceholderData);
 
@@ -85,10 +91,11 @@ export function AnalyticsPage() {
   return (
     <div className="@container/an flex flex-col gap-5">
       <PageHeader
-        eyebrow={<LiveEyebrow>{eyebrow}</LiveEyebrow>}
+        eyebrow={sel.isToday ? <LiveEyebrow>{eyebrow}</LiveEyebrow> : <span className="pn-eyebrow">{eyebrow}</span>}
         title={t("an.title")}
         actions={
           <>
+            <DateButton date={sel.date} today={sel.today} onChange={sel.setDate} testId="AN-DATE" />
             <Segmented<Period>
               size="lg"
               value={period}
@@ -155,7 +162,7 @@ export function AnalyticsPage() {
               series={data.leads?.series ?? null}
               sub={
                 data.leads
-                  ? `${t(`an.prev.${period}` as "an.prev.day")} ${data.leads.previous ?? "—"} · ${t("an.pastel.unique")}`
+                  ? `${t((data.isPast && period === "day" ? "an.prev.dayPast" : `an.prev.${period}`) as "an.prev.day")} ${data.leads.previous ?? "—"} · ${t("an.pastel.unique")}`
                   : null
               }
               canConnect={!!canAdmin}
