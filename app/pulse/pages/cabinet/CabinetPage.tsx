@@ -34,6 +34,7 @@ import { pctTone, scoreTone, TONE_VARS } from "../../lib/tones";
 import { fmtDec, fmtInt, DASH } from "../../lib/format";
 import { dayMonth, hoursMinutes, type Loc } from "../../lib/dates";
 import type { CallRow } from "../../../lib/calls";
+import { solutionFor } from "./solutions";
 
 export type CabinetTab = "overview" | "calls" | "guide" | "advice";
 export const CABINET_TABS: ReadonlyArray<{ id: CabinetTab; path: string; icon: IconName }> = [
@@ -234,6 +235,8 @@ function MyCalls({ date }: { date: string }) {
   const { data: meCo } = useMe();
   const sum = useMySummary(date);
   const me = useMyOperator();
+  const guide = useMyGuide();
+  const criteria = guide.data?.criteria ?? [];
   const filter = ((CAB_FILTERS as readonly string[]).includes(url.get("f") ?? "") ? url.get("f") : "all") as CallFilter;
   const page = Math.max(0, Number(url.get("page")) || 0);
   const openId = url.get("open");
@@ -283,6 +286,8 @@ function MyCalls({ date }: { date: string }) {
             loc={loc}
             autoPlay={autoPlay}
             onClose={() => { setAutoPlay(false); set({ open: null }); }}
+            deepLink={false}
+            solutionFor={(m, newLead) => solutionFor(m, newLead, criteria)}
           />
         </div>
       )}
@@ -340,11 +345,15 @@ function Advice({ date }: { date: string }) {
   const t = usePT();
   const loc = useLocale() as Loc;
   const q = useMySummary(date);
+  const guide = useMyGuide();
+  const criteria = guide.data?.criteria ?? [];
   const s = q.data?.data;
   if (q.isPending) return <Skeleton h={300} r={26} />;
   if (q.isError) return <Notice tone="bad">{t("cab.error")}</Notice>;
   if (!q.data?.linked) return null;
   const staff = s?.staff;
+  // Xato -> skriptdagi o'sha bosqich qoidasi (turi noma'lum: avval eski baza, keyin yangi lid).
+  const fixOf = (label: string) => solutionFor(label, false, criteria) ?? solutionFor(label, true, criteria);
   const weak = (staff?.stages ?? []).filter((x) => x.pct < 70).slice(0, 4);
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -397,7 +406,14 @@ function Advice({ date }: { date: string }) {
                   <span className="font-semibold text-pn-text">{m.label}</span>
                   <span className="pn-mono shrink-0" style={{ color: TONE_VARS.bad.text }}>×{m.count} · −{fmtDec(m.points_lost)}</span>
                 </div>
-                <p className="mt-1 text-[12px] text-pn-muted">{t("cab.solutionHint")}</p>
+                {fixOf(m.label) ? (
+                  <div className="mt-2 rounded-xl border-l-2 border-pn-good bg-pn-panel-2 px-3 py-2 text-[12px] leading-[1.5] text-pn-text-2">
+                    <span className="font-semibold text-pn-good-text">{t("calls.howTo")}: </span>
+                    {fixOf(m.label)}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-[12px] text-pn-muted">{t("cab.solutionHint")}</p>
+                )}
               </li>
             ))}
           </ul>

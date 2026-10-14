@@ -89,6 +89,8 @@ export function CallDetail({
   loc,
   autoPlay,
   onClose,
+  deepLink = true,
+  solutionFor,
 }: {
   id: string;
   name: string;
@@ -97,6 +99,10 @@ export function CallDetail({
   loc: Loc;
   autoPlay?: boolean;
   onClose: () => void;
+  /* "To'liq tahlil" (direktorning Chuqur tahlil sahifasi) — xodim kabinetida yo'q. */
+  deepLink?: boolean;
+  /* Xato uchun yechim — skriptdagi o'sha bosqich qoidasi (xodim kabineti). */
+  solutionFor?: (mistake: string, newLead: boolean) => string | null;
 }) {
   const t = usePT();
   const q = useCallDetail(id);
@@ -125,7 +131,7 @@ export function CallDetail({
   const lead = d ? (Number(d.new_leads_count) > 0 ? t("calls.newLead") : t("calls.oldBase")) : null;
 
   return (
-    <aside className="flex flex-col gap-5 rounded-[26px] border border-pn-border bg-pn-panel px-6 py-6" aria-label={t("calls.detail")} data-testid="CALL-DETAIL">
+    <aside className="@container/cd flex flex-col gap-5 rounded-[26px] border border-pn-border bg-pn-panel px-6 py-6" aria-label={t("calls.detail")} data-testid="CALL-DETAIL">
       <header className="flex items-start gap-3">
         <ExtBadge size="card" selected>{d?.operator_ext || "—"}</ExtBadge>
         <div className="min-w-0 flex-1">
@@ -239,6 +245,25 @@ export function CallDetail({
                     </Section>
                   )}
 
+                  {/* AI izohidagi "Kuchli tomoni" / "Yaxshilash kerak" (2026-10-15) —
+                      avval parse qilinardi, lekin ko'rsatilmasdi. */}
+                  {(parsed.strong || parsed.improve) && (
+                    <div className="grid grid-cols-1 gap-3 @min-[420px]/cd:grid-cols-2" data-testid="CALL-DETAIL-feedback">
+                      {parsed.strong && (
+                        <div className="rounded-2xl px-4 py-3" style={{ background: TONE_VARS.good.tint }}>
+                          <div className="pn-eyebrow" style={{ color: TONE_VARS.good.text }}>{t("calls.strong")}</div>
+                          <p className="mt-2 text-[13px] leading-[1.5] text-pn-text-2">{parsed.strong}</p>
+                        </div>
+                      )}
+                      {parsed.improve && (
+                        <div className="rounded-2xl px-4 py-3" style={{ background: TONE_VARS.warn.tint }}>
+                          <div className="pn-eyebrow" style={{ color: TONE_VARS.warn.text }}>{t("calls.improve")}</div>
+                          <p className="mt-2 text-[13px] leading-[1.5] text-pn-text-2">{parsed.improve}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {stages.length > 0 && (
                     <Section
                       title={t("calls.stages")}
@@ -272,12 +297,23 @@ export function CallDetail({
                   {parsed.mistakes.length > 0 && (
                     <Section title={t("calls.mistakes")}>
                       <ul className="flex flex-col gap-2">
-                        {parsed.mistakes.map((m, i) => (
-                          <li key={i} className="flex items-baseline justify-between gap-3 text-[13px]">
-                            <span className="min-w-0">{m.text}</span>
-                            {m.minus && <span className="pn-mono shrink-0 font-semibold text-pn-bad">−{m.minus} {t("stp.detail.pts")}</span>}
-                          </li>
-                        ))}
+                        {parsed.mistakes.map((m, i) => {
+                          const fix = solutionFor?.(m.text, Number(d.new_leads_count) > 0) ?? null;
+                          return (
+                            <li key={i} className="text-[13px]">
+                              <div className="flex items-baseline justify-between gap-3">
+                                <span className="min-w-0">{m.text}</span>
+                                {m.minus && <span className="pn-mono shrink-0 font-semibold text-pn-bad">−{m.minus} {t("stp.detail.pts")}</span>}
+                              </div>
+                              {fix && (
+                                <div className="mt-2 rounded-xl border-l-2 border-pn-good bg-pn-panel-2 px-3 py-2 text-[12px] leading-[1.5] text-pn-text-2">
+                                  <span className="font-semibold text-pn-good-text">{t("calls.howTo")}: </span>
+                                  {fix}
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </Section>
                   )}
@@ -290,8 +326,8 @@ export function CallDetail({
             </>
           )}
 
-          <div className="mt-auto grid grid-cols-2 gap-3 pt-2">
-            <Button variant="primary" href={`/dashboard/deep-audit?call=${d.id}`} testId="CALL-DETAIL-deep">{t("calls.fullAnalysis")}</Button>
+          <div className={`mt-auto grid gap-3 pt-2 ${deepLink ? "grid-cols-2" : "grid-cols-1"}`}>
+            {deepLink && <Button variant="primary" href={`/dashboard/deep-audit?call=${d.id}`} testId="CALL-DETAIL-deep">{t("calls.fullAnalysis")}</Button>}
             <Button variant="outline" onClick={() => setView((v) => (v === "transcript" ? "analysis" : "transcript"))} testId="CALL-DETAIL-transcript">
               {view === "transcript" ? t("calls.backToAnalysis") : t("calls.transcript")}
             </Button>
