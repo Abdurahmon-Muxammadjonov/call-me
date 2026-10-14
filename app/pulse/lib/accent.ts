@@ -9,15 +9,23 @@
  * bo'yashdan-oldingi skript ham, `node --test` ham uni to'g'ridan-to'g'ri
  * ishlata olsin. */
 
-export type AccentKey = "lime" | "blue" | "coral" | "violet";
+export type AccentKey = "crimson" | "lime" | "blue" | "coral" | "violet";
 
-export const ACCENT_KEYS: readonly AccentKey[] = ["lime", "blue", "coral", "violet"];
+export const ACCENT_KEYS: readonly AccentKey[] = ["crimson", "lime", "blue", "coral", "violet"];
 
-export const DEFAULT_ACCENT: AccentKey = "lime";
+/* Standart aksent — yumshoq qizil (2026-10-15, foydalanuvchi talabi: "to'q
+ * ko'k, ivory va azgina qizil — qizil kamroq, faqat aksent uchun"). Fon va
+ * matn tokens.css dagi to'q ko'k / ivory palitradan; qizil faqat asosiy
+ * tugma, faol menyu bandi va diqqat nuqtalarida. */
+export const DEFAULT_ACCENT: AccentKey = "crimson";
 
 /* `strongLight` — yorug' mavzuda aksent MATN/CHIZIQ/CHEGARA sifatida
  * ishlatilganda (§4.3 "Light-theme rule"). Qorong'ida u aksentning o'zi. */
-export const ACCENT_PRESETS: Record<AccentKey, { hex: string; strongLight: string }> = {
+/* `strongDark` (ixtiyoriy) — qorong'i fonda aksent MATN sifatida; berilmasa
+ * aksentning o'zi. To'q qizil to'q ko'k fonda kichik matn uchun AA kontrastga
+ * yetmaydi (3.6:1), shuning uchun ochroq variant (≈6.8:1). */
+export const ACCENT_PRESETS: Record<AccentKey, { hex: string; strongLight: string; strongDark?: string }> = {
+  crimson: { hex: "#C8323F", strongLight: "#A3202C", strongDark: "#F07A84" },
   lime: { hex: "#D4F570", strongLight: "#5A7A00" },
   blue: { hex: "#6E9BFF", strongLight: "#2F5FD0" },
   coral: { hex: "#FF8A5C", strongLight: "#C2410C" },
@@ -60,7 +68,7 @@ function rgba([r, g, b]: [number, number, number], a: number): string {
  * mavzuga bog'liq, shuning uchun bu yerda ikkala variant beriladi va
  * tokens.css mavzuga qarab keraklisini tanlaydi. */
 export function accentVars(key: AccentKey): Record<string, string> {
-  const { hex, strongLight } = ACCENT_PRESETS[key] ?? ACCENT_PRESETS[DEFAULT_ACCENT];
+  const { hex, strongLight, strongDark } = ACCENT_PRESETS[key] ?? ACCENT_PRESETS[DEFAULT_ACCENT];
   const rgb = parseHex(hex);
   const ink = accentInk(hex);
   const inkRgb = parseHex(ink);
@@ -75,7 +83,7 @@ export function accentVars(key: AccentKey): Record<string, string> {
     "--pn-on-accent-faint": rgba(inkRgb, 0.12),
     /* Faol menyu bandidagi hisoblagich foni (Nav.dc.html: siyoh 14%). */
     "--pn-on-accent-badge": rgba(inkRgb, 0.14),
-    "--pn-accent-strong-dark": hex,
+    "--pn-accent-strong-dark": strongDark ?? hex,
     "--pn-accent-strong-light": strongLight,
   };
 }

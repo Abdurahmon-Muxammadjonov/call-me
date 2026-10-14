@@ -66,9 +66,11 @@ export function DateButton({
           "pn-press inline-flex h-[46px] items-center gap-[10px] rounded-full border px-4 text-[13px] font-medium",
           date === today
             ? "border-pn-border bg-pn-panel text-pn-text hover:bg-pn-panel-2"
-            : "border-pn-accent bg-pn-accent-soft text-pn-text hover:bg-pn-panel-2"
+            : "border-pn-border-3 bg-pn-panel-2 text-pn-text hover:bg-pn-panel-3"
         )}
       >
+        {/* O'tgan kun tanlangan — kichik qizil nuqta (aksent faqat urg'u uchun). */}
+        {date !== today && <span aria-hidden className="-mr-1 h-[6px] w-[6px] rounded-full bg-pn-accent" />}
         <Icon name="calendar" size={16} />
         <span className="text-pn-subtle">{t("date.button")}</span>
         <span className="font-semibold">{label}</span>

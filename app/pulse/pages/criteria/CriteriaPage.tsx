@@ -17,6 +17,8 @@ import { Drawer, OverlayHeader } from "../../ui/overlays";
 import { ConfirmDialog, Field, Notice, SelectInput, Switch, TextArea, TextInput } from "../../ui/form";
 import { DateButton } from "../../ui/DateButton";
 import { DayStrip } from "../../ui/DayStrip";
+import { FilterBar } from "../../ui/FilterBar";
+import { useUrlState } from "../../shell/useUrlState";
 import { toast } from "../../ui/toast";
 import { PageHeader } from "../../shell/PageHeader";
 import { HeaderBell } from "../../shell/Notifications";
@@ -62,6 +64,15 @@ export function CriteriaPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const active = criteria.filter((c) => c.is_active).length;
+  const url = useUrlState();
+  const CR_FILTERS = ["all", "on", "off", "Majburiy", "Jarima", "Bonus"] as const;
+  type CrFilter = (typeof CR_FILTERS)[number];
+  const f = (CR_FILTERS as readonly string[]).includes(url.get("f") ?? "") ? (url.get("f") as CrFilter) : "all";
+  const q = (url.get("q") ?? "").trim().toLowerCase();
+  const match = (c: Criterion, x: CrFilter) => x === "all" || (x === "on" ? c.is_active : x === "off" ? !c.is_active : c.type === x);
+  const shown = criteria
+    .filter((c) => match(c, f))
+    .filter((c) => !q || `${c.title} ${c.description} ${c.category ?? ""}`.toLowerCase().includes(q));
 
   async function submit(input: NewCriterion) {
     setBusy(true);
@@ -144,6 +155,19 @@ export function CriteriaPage() {
             </span>
           )}
         </div>
+        <FilterBar<CrFilter>
+          className="px-6 pb-4"
+          ariaLabel={t("filter.label")}
+          testId="CR-F"
+          value={f}
+          onChange={(v) => url.set({ f: v === "all" ? null : v })}
+          options={CR_FILTERS.map((x) => ({
+            value: x,
+            label: x === "all" ? t("filter.all") : x === "on" ? t("cr.active") : x === "off" ? t("cr.inactive") : t(x === "Jarima" ? "cr.type.penalty" : x === "Bonus" ? "cr.type.bonus" : "cr.type.required"),
+            count: criteria.filter((c) => match(c, x)).length,
+          }))}
+          search={{ value: url.get("q") ?? "", onChange: (v) => url.set({ q: v || null }), placeholder: t("cr.f.search") }}
+        />
         <div className="overflow-x-auto">
           <div role="table" aria-label={t("cr.list")} className="min-w-[900px]">
             <TableHead
@@ -162,13 +186,15 @@ export function CriteriaPage() {
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="border-b border-pn-divider px-6 py-4"><Skeleton h={22} /></div>
               ))
+            ) : criteria.length > 0 && shown.length === 0 ? (
+              <div className="px-6 py-12 text-center text-[14px] text-pn-muted">{t("filter.none")}</div>
             ) : criteria.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
                 <p className="text-[14px] text-pn-muted">{t("cr.empty")}</p>
                 <Button variant="primary" icon="plus" onClick={() => setForm("new")}>{t("cr.new")}</Button>
               </div>
             ) : (
-              criteria.map((cr) => (
+              shown.map((cr) => (
                 <TableRow key={cr.id} template={TEMPLATE} onActivate={() => setForm(cr)} label={cr.title} testId={`CR-ROW-${cr.id}`} className="py-3">
                   <span className="flex min-w-0 flex-col gap-[2px]">
                     <span className="truncate text-[14px] font-semibold text-pn-text" title={cr.title}>{cr.title}</span>

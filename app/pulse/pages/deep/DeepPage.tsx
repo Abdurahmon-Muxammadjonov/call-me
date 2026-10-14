@@ -273,7 +273,10 @@ export function DeepPage() {
   const days = useCallDays();
   const sel = useSelectedDate(days.data?.firstDay);
   const page = Math.max(0, Number(url.get("page")) || 0);
-  const list = useCallsPage({ date: sel.date, filter: "all", page, pageSize: PAGE });
+  const DP_FILTERS = ["all", "scored", "low", "problem", "unscored"] as const;
+  type DpFilter = (typeof DP_FILTERS)[number];
+  const filter = (DP_FILTERS as readonly string[]).includes(url.get("f") ?? "") ? (url.get("f") as DpFilter) : "all";
+  const list = useCallsPage({ date: sel.date, filter, page, pageSize: PAGE });
   const nameOf = useCallNames();
   const rows = list.data?.rows ?? [];
   const callId = url.get("call") ?? rows[0]?.id ?? null;
@@ -306,6 +309,15 @@ export function DeepPage() {
           <div className="px-5 pt-5 pb-3">
             <h2 className="pn-card-title">{t("deep.pick")}</h2>
             <div className="mt-1 text-[12px] text-pn-muted">{t("deep.pickSub")}</div>
+            <select
+              value={filter}
+              onChange={(e) => url.set({ f: e.target.value === "all" ? null : e.target.value, page: null, call: null })}
+              aria-label={t("filter.label")}
+              data-testid="DP-FILTER"
+              className="mt-3 h-10 w-full cursor-pointer rounded-full border border-pn-border-2 bg-pn-field px-4 text-[13px] text-pn-text outline-none"
+            >
+              {DP_FILTERS.map((x) => <option key={x} value={x}>{t(`calls.f.${x}` as "calls.f.all")}</option>)}
+            </select>
           </div>
           <ul className="flex max-h-[640px] flex-col overflow-y-auto" role="listbox" aria-label={t("deep.pick")}>
             {rows.length === 0 && <li className="px-5 py-8 text-center text-[13px] text-pn-muted">{list.isLoading ? "…" : t("calls.empty")}</li>}

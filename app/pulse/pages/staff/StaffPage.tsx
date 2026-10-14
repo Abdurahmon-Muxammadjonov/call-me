@@ -24,6 +24,8 @@ import { useCallDays } from "../../data/callDays";
 import { useMe } from "../../data/me";
 import { useStaffStats, type StaffRow } from "../../data/staff";
 import { useOperatorDay } from "../../data/dayCalls";
+import { useManagerList, withRosterStaff } from "../../data/roster";
+import { FilterBar } from "../../ui/FilterBar";
 import { Ring } from "../../charts";
 import { pctTone, scoreTone, TONE_VARS, type Tone } from "../../lib/tones";
 import { fmtDec, fmtInt, DASH } from "../../lib/format";
@@ -368,15 +370,24 @@ export function StaffPage() {
   const q = useStaffStats(sel.date);
   const prevQ = useStaffStats(addDays(sel.date, -1));
   const ops = useOperatorDay(me?.company.id, sel.date);
+  const roster = useManagerList(me?.company.id);
   const query = (url.get("q") ?? "").trim().toLowerCase();
   const target = me?.norms.targetScore10 ?? null;
   const norm = me?.norms.dailyLongCallsNorm ?? null;
 
   usePageBusy(q.isFetching && q.isPlaceholderData);
 
-  const rows = useMemo(() => ranked(q.data ?? []), [q.data]);
+  // Operatorlar DOIM ko'rinadi — o'sha kuni qo'ng'iroq qilmaganlar nol bilan
+  // (data/roster.model.ts).
+  const rows = useMemo(() => ranked(withRosterStaff(q.data ?? [], roster.data)), [q.data, roster.data]);
   const prevBy = useMemo(() => new Map((prevQ.data ?? []).map((r) => [r.key, score10(r)])), [prevQ.data]);
-  const shown = query ? rows.filter((r) => r.name.toLowerCase().includes(query) || (r.ext ?? "").includes(query)) : rows;
+  const ST_FILTERS = ["all", "scored", "unscored", "idle"] as const;
+  type StFilter = (typeof ST_FILTERS)[number];
+  const sf = (ST_FILTERS as readonly string[]).includes(url.get("f") ?? "") ? (url.get("f") as StFilter) : "all";
+  const stMatch = (r: Ranked, x: StFilter) => x === "all" || (x === "scored" ? r.scored_calls > 0 : x === "unscored" ? r.calls > 0 && r.scored_calls === 0 : r.calls === 0);
+  const shown = rows
+    .filter((r) => stMatch(r, sf))
+    .filter((r) => !query || r.name.toLowerCase().includes(query) || (r.ext ?? "").includes(query));
   const selectedKey = url.get("op") ?? shown[0]?.key ?? null;
   const selected = rows.find((r) => r.key === selectedKey) ?? shown[0];
   const avg = teamAvg(rows);
@@ -424,6 +435,19 @@ export function StaffPage() {
             <Distribution rows={rows} avg={avg} target={target} />
             <TeamCard rows={rows} avg={avg} target={target} norm={norm} opsOf={opsOf} />
           </div>
+          {rows.length > 0 && (
+            <FilterBar<StFilter>
+              ariaLabel={t("filter.label")}
+              testId="ST-F"
+              value={sf}
+              onChange={(v) => url.set({ f: v === "all" ? null : v })}
+              options={ST_FILTERS.map((x) => ({
+                value: x,
+                label: x === "all" ? t("filter.all") : x === "idle" ? t("op.noCalls") : t(`calls.f.${x}` as "calls.f.scored"),
+                count: rows.filter((r) => stMatch(r, x)).length,
+              }))}
+            />
+          )}
           {rows.length === 0 ? (
             <Card className="py-12 text-center text-[14px] text-pn-muted" data-testid="ST-EMPTY">{t("stp.empty", { date: dayMonth(loc, sel.date) })}</Card>
           ) : (

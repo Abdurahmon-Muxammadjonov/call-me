@@ -18,6 +18,7 @@ import { Drawer, OverlayHeader } from "../../ui/overlays";
 import { CheckBox, ConfirmDialog, Field, TextInput } from "../../ui/form";
 import { DateButton } from "../../ui/DateButton";
 import { DayStrip } from "../../ui/DayStrip";
+import { FilterBar } from "../../ui/FilterBar";
 import { toast } from "../../ui/toast";
 import { PageHeader } from "../../shell/PageHeader";
 import { HeaderBell } from "../../shell/Notifications";
@@ -107,6 +108,7 @@ export function StaffManagePage() {
   const sel = useSelectedDate(days.data?.firstDay);
   const [editing, setEditing] = useState<Employee | "new" | null>(null);
   const [q, setQ] = useState("");
+  const [status, setStatus] = useState<"all" | "online" | "offline">("all");
   const key = ["v1", me?.company.id ?? "_", "/users?role=user"] as const;
   const list = useQuery({
     queryKey: key,
@@ -119,9 +121,10 @@ export function StaffManagePage() {
   const employees = useMemo(() => list.data ?? [], [list.data]);
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return employees;
-    return employees.filter((e) => `${e.name} ${e.email} ${e.phone}`.toLowerCase().includes(s));
-  }, [employees, q]);
+    return employees
+      .filter((e) => status === "all" || (status === "online" ? e.status === "online" : e.status !== "online"))
+      .filter((e) => !s || `${e.name} ${e.email} ${e.phone}`.toLowerCase().includes(s));
+  }, [employees, q, status]);
   const online = employees.filter((e) => e.status === "online").length;
 
   return (
@@ -150,17 +153,18 @@ export function StaffManagePage() {
               </span>
             )}
           </div>
-          <label className="flex h-10 w-full max-w-[280px] items-center gap-2 rounded-full border border-pn-border-2 bg-pn-field px-4 @max-[520px]/sm:max-w-none">
-            <Icon name="search" size={15} className="text-pn-subtle" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={t("sm.search")}
-              aria-label={t("sm.search")}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-pn-text outline-none placeholder:text-pn-subtle"
-              data-testid="SM-SEARCH"
-            />
-          </label>
+          <FilterBar<"all" | "online" | "offline">
+            ariaLabel={t("filter.label")}
+            testId="SM-F"
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: "all", label: t("filter.all"), count: employees.length },
+              { value: "online", label: t("sm.f.online"), count: online },
+              { value: "offline", label: t("sm.f.offline"), count: employees.length - online },
+            ]}
+            search={{ value: q, onChange: setQ, placeholder: t("sm.search") }}
+          />
         </div>
 
         <div className="border-t border-pn-border p-4">

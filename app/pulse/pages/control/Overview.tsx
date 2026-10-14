@@ -271,7 +271,7 @@ export function LoadCard({ panel, live, nowHour }: { panel: ControlPanel; live: 
                       ? "var(--pn-panel-3)"
                       : peak
                         ? "var(--pn-accent)"
-                        : `color-mix(in srgb, var(--pn-accent) ${Math.round(22 + (v / max) * 50)}%, transparent)`,
+                        : `color-mix(in srgb, var(--pn-text-3) ${Math.round(18 + (v / max) * 40)}%, transparent)`,
                 }}
               />
             );

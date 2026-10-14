@@ -1,6 +1,12 @@
 /* =====================================================================
  * PULSE NOIR — dizayn tokenlari (spetsifikatsiya §4.1, §4.2).
  *
+ * PALITRA 2026-10-15 (foydalanuvchi talabi): qorong'i mavzu — to'q ko'k
+ * yuzalar + ivory matn; yorug' mavzu — ivory yuzalar + to'q ko'k matn;
+ * aksent — yumshoq qizil (lib/accent.ts "crimson"), faqat asosiy tugma,
+ * faol menyu va diqqat nuqtalarida. Ton ranglari (yaxshi/ogoh/yomon)
+ * o'zgarmadi.
+ *
  * Qiymatlar tasdiqlangan manbalardan (design/pulse-noir/source/*.dc.html)
  * olingan. Komponentlar HECH QACHON xom hex ishlatmaydi — faqat shu
  * o'zgaruvchilar.
@@ -13,35 +19,35 @@
 
 :root[data-theme="dark"] {
   /* — Fonlar / yuzalar — */
-  --pn-bg: #0B0C0F;
-  --pn-panel: #121419;
-  --pn-panel-2: #181B21;
-  --pn-panel-3: #1F232B;
-  --pn-field: #0E1013;
-  --pn-row-open: #161920;
-  --pn-row-selected: #181C24;
-  --pn-card-selected: #171B22;
+  --pn-bg: #08111F;
+  --pn-panel: #0D1829;
+  --pn-panel-2: #122036;
+  --pn-panel-3: #182843;
+  --pn-field: #0A1424;
+  --pn-row-open: #101C30;
+  --pn-row-selected: #14223A;
+  --pn-card-selected: #132139;
 
   /* — Chegaralar / chiziqlar — */
-  --pn-border: #1E2128;
-  --pn-border-2: #23262E;
-  --pn-border-3: #2A2E37;
-  --pn-divider: #1A1D23;
-  --pn-grid: #1C1F25;
-  --pn-axis: #2A2E37;
-  --pn-track: #262A32;
-  --pn-track-inner: #23262E;
-  --pn-bar-dim: #2A2E37;
-  --pn-bar-dim-2: #3A3F49;
+  --pn-border: #1A2A44;
+  --pn-border-2: #20314E;
+  --pn-border-3: #2A3D5E;
+  --pn-divider: #152439;
+  --pn-grid: #172740;
+  --pn-axis: #2A3D5E;
+  --pn-track: #22344F;
+  --pn-track-inner: #20314E;
+  --pn-bar-dim: #2A3D5E;
+  --pn-bar-dim-2: #3A4F73;
 
   /* — Matn — */
-  --pn-text: #F3F2EE;
-  --pn-text-2: #C9CCD3;
-  --pn-text-3: #B4B8C0;
-  --pn-text-4: #E4E3DE;
-  --pn-muted: #9A9FA8;
-  --pn-subtle: #7D828C;
-  --pn-faint: #5E636C;
+  --pn-text: #F5EFE3;
+  --pn-text-2: #D8D2C4;
+  --pn-text-3: #BDB7AA;
+  --pn-text-4: #ECE6D9;
+  --pn-muted: #9AA3B5;
+  --pn-subtle: #7E889C;
+  --pn-faint: #5C6780;
 
   /* — Ton: yaxshi / ogohlantirish / yomon — */
   --pn-good: #5EDFA0;
@@ -86,41 +92,41 @@
 
   /* — Maxsus — */
   --pn-not-analyzed: #4a4128;
-  --pn-wave-idle: #343944;
-  --pn-wave-idle-list: #2f333c;
-  --pn-seg-active-bg: #f3f2ee;
-  --pn-seg-active-text: #0b0c0f;
-  --pn-scrim: rgba(5, 6, 8, 0.6);
+  --pn-wave-idle: #2A3A57;
+  --pn-wave-idle-list: #24344F;
+  --pn-seg-active-bg: #F5EFE3;
+  --pn-seg-active-text: #0B1526;
+  --pn-scrim: rgba(4, 9, 18, 0.62);
 }
 
 :root[data-theme="light"] {
-  --pn-bg: #f4f3ee;
-  --pn-panel: #ffffff;
-  --pn-panel-2: #f2f1ec;
-  --pn-panel-3: #e9e8e2;
-  --pn-field: #f2f1ec;
-  --pn-row-open: #faf9f5;
-  --pn-row-selected: #f3f6e6;
-  --pn-card-selected: #f3f6e6;
+  --pn-bg: #F5F0E6;
+  --pn-panel: #FFFCF6;
+  --pn-panel-2: #F1EADD;
+  --pn-panel-3: #E8DFCF;
+  --pn-field: #F3ECE0;
+  --pn-row-open: #FAF6EE;
+  --pn-row-selected: #F7ECE8;
+  --pn-card-selected: #F7ECE8;
 
-  --pn-border: #e4e2da;
-  --pn-border-2: #dad8cf;
-  --pn-border-3: #cfcdc4;
-  --pn-divider: #eeece6;
-  --pn-grid: #eeece6;
-  --pn-axis: #d6d4cc;
-  --pn-track: #e6e4dd;
-  --pn-track-inner: #e6e4dd;
-  --pn-bar-dim: #dad8d0;
-  --pn-bar-dim-2: #c9c7be;
+  --pn-border: #E5DCCB;
+  --pn-border-2: #DBD1BE;
+  --pn-border-3: #CFC4AF;
+  --pn-divider: #EEE7DA;
+  --pn-grid: #EEE7DA;
+  --pn-axis: #D6CCB8;
+  --pn-track: #E6DDCD;
+  --pn-track-inner: #E6DDCD;
+  --pn-bar-dim: #DAD0BD;
+  --pn-bar-dim-2: #C7BCA6;
 
-  --pn-text: #15161a;
-  --pn-text-2: #33363d;
-  --pn-text-3: #4a4e57;
-  --pn-text-4: #2a2d33;
-  --pn-muted: #5f636b;
-  --pn-subtle: #6e727a;
-  --pn-faint: #9a9da4;
+  --pn-text: #0E1B33;
+  --pn-text-2: #26344F;
+  --pn-text-3: #3E4B66;
+  --pn-text-4: #1B2843;
+  --pn-muted: #56627A;
+  --pn-subtle: #677289;
+  --pn-faint: #9AA1B0;
 
   --pn-good: #0f8a5f;
   --pn-good-tint: rgba(15, 138, 95, 0.12);
@@ -158,11 +164,11 @@
   --pn-pastel-faint: rgba(17, 19, 23, 0.1);
 
   --pn-not-analyzed: #e3d6a8;
-  --pn-wave-idle: #d6d4cc;
-  --pn-wave-idle-list: #dad8d0;
-  --pn-seg-active-bg: #15161a;
-  --pn-seg-active-text: #ffffff;
-  --pn-scrim: rgba(21, 22, 26, 0.35);
+  --pn-wave-idle: #D6CCB8;
+  --pn-wave-idle-list: #DAD0BD;
+  --pn-seg-active-bg: #0E1B33;
+  --pn-seg-active-text: #FFFCF6;
+  --pn-scrim: rgba(14, 27, 51, 0.35);
 }
 
 /* ---------------------------------------------------------------------
@@ -206,7 +212,7 @@
 }
 
 /* ---------------------------------------------------------------------
- * AKSENT (§4.3). Standart qiymatlar — laym preset. Bo'yashdan oldingi
+ * AKSENT (§4.3). Standart qiymatlar — crimson preset (2026-10-15; avval laym). Bo'yashdan oldingi
  * skript cookie `sp_accent` dagi presetni <html style> ga yozadi
  * (lib/accent.ts → accentVars), inline uslub bu deklaratsiyalardan ustun.
  *
@@ -215,23 +221,58 @@
  * sifatida panel ustida ishlatilganda (§4.3 "Light-theme rule").
  * ------------------------------------------------------------------- */
 :root {
-  --pn-accent: #D4F570;
-  --pn-accent-ink: #101114;
-  --pn-accent-soft: rgba(212, 245, 112, 0.14);
-  --pn-accent-area: rgba(212, 245, 112, 0.12);
-  --pn-accent-ring: rgba(212, 245, 112, 0.16);
-  --pn-on-accent-muted: rgba(16, 17, 20, 0.68);
-  --pn-on-accent-dim: rgba(16, 17, 20, 0.22);
-  --pn-on-accent-faint: rgba(16, 17, 20, 0.12);
-  --pn-on-accent-badge: rgba(16, 17, 20, 0.14);
-  --pn-accent-strong-dark: #D4F570;
-  --pn-accent-strong-light: #5A7A00;
+  --pn-accent: #C8323F;
+  --pn-accent-ink: #FFFFFF;
+  --pn-accent-soft: rgba(200, 50, 63, 0.14);
+  --pn-accent-area: rgba(200, 50, 63, 0.12);
+  --pn-accent-ring: rgba(200, 50, 63, 0.16);
+  --pn-on-accent-muted: rgba(255, 255, 255, 0.68);
+  --pn-on-accent-dim: rgba(255, 255, 255, 0.22);
+  --pn-on-accent-faint: rgba(255, 255, 255, 0.12);
+  --pn-on-accent-badge: rgba(255, 255, 255, 0.14);
+  --pn-accent-strong-dark: #F07A84;
+  --pn-accent-strong-light: #A3202C;
 }
 :root[data-theme="dark"] {
   --pn-accent-strong: var(--pn-accent-strong-dark);
 }
 :root[data-theme="light"] {
   --pn-accent-strong: var(--pn-accent-strong-light);
+}
+
+/* ---------------------------------------------------------------------
+ * PRIMARY (2026-10-15). Katta urg'u yuzalari — Analitikadagi bosh karta,
+ * menyuning faol bandi: qorong'ida ivory, yorug'da to'q ko'k. Qizil aksent
+ * katta maydonni egallamasin ("qizil kamroq, faqat aksent uchun").
+ * `.pn-primary-scope` ichida aksent o'zgaruvchilari shu ranglarga qayta
+ * yo'naltiriladi — ichki elementlar (hisoblagich, xira matn, chiziqlar)
+ * o'zgarishsiz to'g'ri rang oladi.
+ * ------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --pn-primary: #F5EFE3;
+  --pn-primary-ink: #0B1526;
+  --pn-primary-soft: rgba(245, 239, 227, 0.12);
+  --pn-primary-muted: rgba(11, 21, 38, 0.68);
+  --pn-primary-dim: rgba(11, 21, 38, 0.22);
+  --pn-primary-faint: rgba(11, 21, 38, 0.12);
+}
+:root[data-theme="light"] {
+  --pn-primary: #0E1B33;
+  --pn-primary-ink: #FFFCF6;
+  --pn-primary-soft: rgba(14, 27, 51, 0.08);
+  --pn-primary-muted: rgba(255, 252, 246, 0.72);
+  --pn-primary-dim: rgba(255, 252, 246, 0.24);
+  --pn-primary-faint: rgba(255, 252, 246, 0.14);
+}
+.pn-primary-scope {
+  --pn-accent: var(--pn-primary);
+  --pn-accent-ink: var(--pn-primary-ink);
+  --pn-accent-soft: var(--pn-primary-soft);
+  --pn-accent-strong: var(--pn-primary);
+  --pn-on-accent-muted: var(--pn-primary-muted);
+  --pn-on-accent-dim: var(--pn-primary-dim);
+  --pn-on-accent-faint: var(--pn-primary-faint);
+  --pn-on-accent-badge: var(--pn-primary-faint);
 }
 
 /* ---------------------------------------------------------------------

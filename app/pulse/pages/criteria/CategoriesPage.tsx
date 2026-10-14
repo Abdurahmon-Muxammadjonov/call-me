@@ -16,6 +16,8 @@ import { Modal, OverlayHeader } from "../../ui/overlays";
 import { Notice } from "../../ui/form";
 import { DateButton } from "../../ui/DateButton";
 import { DayStrip } from "../../ui/DayStrip";
+import { FilterBar } from "../../ui/FilterBar";
+import { useUrlState } from "../../shell/useUrlState";
 import { PageHeader } from "../../shell/PageHeader";
 import { HeaderBell } from "../../shell/Notifications";
 import { useSelectedDate } from "../../shell/useSelectedDate";
@@ -36,6 +38,13 @@ export function CategoriesPage() {
   const criteria = useMemo(() => crit.data ?? [], [crit.data]);
   const cats = useMemo(() => deriveCategories(criteria), [criteria]);
   const [open, setOpen] = useState<string | null>(null);
+  const url = useUrlState();
+  const CAT_FILTERS = ["all", "active", "inactive"] as const;
+  type CatFilter = (typeof CAT_FILTERS)[number];
+  const f = (CAT_FILTERS as readonly string[]).includes(url.get("f") ?? "") ? (url.get("f") as CatFilter) : "all";
+  const q = (url.get("q") ?? "").trim().toLowerCase();
+  const catMatch = (c: (typeof cats)[number], x: CatFilter) => x === "all" || (x === "active" ? c.activeCount > 0 : c.activeCount === 0);
+  const shownCats = cats.filter((c) => catMatch(c, f)).filter((c) => !q || c.name.toLowerCase().includes(q));
   const openIdx = cats.findIndex((c) => c.name === open);
   const openList = open ? criteria.filter((c) => ((c.category && c.category.trim()) || UNCATEGORIZED) === open) : [];
 
@@ -80,6 +89,21 @@ export function CategoriesPage() {
         </Card>
       )}
 
+      {cats.length > 0 && (
+        <FilterBar<CatFilter>
+          ariaLabel={t("filter.label")}
+          testId="CAT-F"
+          value={f}
+          onChange={(v) => url.set({ f: v === "all" ? null : v })}
+          options={CAT_FILTERS.map((x) => ({
+            value: x,
+            label: x === "all" ? t("filter.all") : x === "active" ? t("cr.active") : t("cr.inactive"),
+            count: cats.filter((c) => catMatch(c, x)).length,
+          }))}
+          search={{ value: url.get("q") ?? "", onChange: (v) => url.set({ q: v || null }), placeholder: t("cat.search") }}
+        />
+      )}
+
       {crit.isPending ? (
         <div className="grid grid-cols-1 gap-4 @min-[640px]/cat:grid-cols-2 @min-[1100px]/cat:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} h={190} r={26} />)}
@@ -92,9 +116,12 @@ export function CategoriesPage() {
             <Button variant="primary" icon="plus" href="/dashboard/criteria">{t("cr.new")}</Button>
           </Card>
         )
+      ) : shownCats.length === 0 ? (
+        <Card className="py-10 text-center text-[14px] text-pn-muted">{t("filter.none")}</Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 @min-[640px]/cat:grid-cols-2 @min-[1100px]/cat:grid-cols-3">
-          {cats.map((cat, i) => {
+          {shownCats.map((cat) => {
+            const i = cats.indexOf(cat);
             const color = PALETTE[i % PALETTE.length];
             return (
               <button

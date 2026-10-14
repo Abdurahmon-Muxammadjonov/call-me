@@ -139,14 +139,15 @@ export function Switch({
       onClick={() => onChange(!checked)}
       className={cx(
         "pn-press relative h-7 w-12 shrink-0 rounded-full border disabled:opacity-40",
-        checked ? "border-pn-accent bg-pn-accent" : "border-pn-border-2 bg-pn-panel-3"
+        // "Yoqilgan" — yashil (ma'no rangi); qizil aksent katta ro'yxatlarda ko'p bo'lib ketardi.
+        checked ? "border-pn-good bg-pn-good" : "border-pn-border-2 bg-pn-panel-3"
       )}
     >
       <span
         aria-hidden
         className={cx(
           "absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full transition-[left,background-color] duration-200",
-          checked ? "left-[24px] bg-pn-accent-ink" : "left-[3px] bg-pn-text-2"
+          checked ? "left-[24px] bg-pn-panel" : "left-[3px] bg-pn-text-2"
         )}
       />
     </button>

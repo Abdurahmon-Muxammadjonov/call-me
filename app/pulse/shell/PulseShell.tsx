@@ -159,10 +159,11 @@ export function PulseShell({ fontClass, children }: { fontClass: string; childre
             </Link>
           </header>
 
+          {/* Katta ekranda kontent cho'zilib ketmasin (2026-10-15): eng ko'pi 1600 px, markazda. */}
           <main
             id="pn-main"
             tabIndex={-1}
-            className={`relative flex min-w-0 flex-1 flex-col gap-5 px-4 pb-8 outline-none lg:pb-8 lg:pl-5 lg:pr-8 ${isRecordingsPage ? "pt-0 lg:pt-0" : "pt-4 lg:pt-6"}`}
+            className={`relative mx-auto flex w-full min-w-0 max-w-[1600px] flex-1 flex-col gap-5 px-4 pb-8 outline-none lg:pb-8 lg:pl-5 lg:pr-8 ${isRecordingsPage ? "pt-0 lg:pt-0" : "pt-4 lg:pt-6"}`}
             data-route={routeId ?? ""}
           >
             {busy && (

@@ -21,6 +21,9 @@ import { useSelectedDate } from "../../shell/useSelectedDate";
 import { useCallDays } from "../../data/callDays";
 import { useMe } from "../../data/me";
 import { useOperatorDay } from "../../data/dayCalls";
+import { useManagerList, withRosterOps } from "../../data/roster";
+import { useUrlState } from "../../shell/useUrlState";
+import { FilterBar } from "../../ui/FilterBar";
 import { apiFetch } from "../../data/api";
 import { getSupabase } from "../../../lib/supabase";
 import { scoreTone, TONE_VARS, type Tone } from "../../lib/tones";
@@ -45,6 +48,12 @@ export function OperatorsPage() {
   const days = useCallDays();
   const sel = useSelectedDate(days.data?.firstDay);
   const ops = useOperatorDay(me?.company.id, sel.date);
+  const roster = useManagerList(me?.company.id);
+  const url = useUrlState();
+  const OP_FILTERS = ["all", "active", "ok", "behind", "idle"] as const;
+  type OpFilter = (typeof OP_FILTERS)[number];
+  const f = (OP_FILTERS as readonly string[]).includes(url.get("f") ?? "") ? (url.get("f") as OpFilter) : "all";
+  const q = (url.get("q") ?? "").trim().toLowerCase();
   const crmKey = ["v1", me?.company.id ?? "_", "/crm/dashboard/managers"] as const;
   const crm = useQuery({
     queryKey: crmKey,
@@ -68,7 +77,25 @@ export function OperatorsPage() {
 
   const norm = me?.norms.dailyLongCallsNorm ?? null;
   const target = me?.norms.targetScore10 ?? null;
-  const rows = useMemo(() => (ops.data ?? []).filter((o) => o.key !== "—").sort((a, b) => b.calls - a.calls), [ops.data]);
+  // Operatorlar DOIM ko'rinadi: doimiy ro'yxat + o'sha kungi ko'rsatkichlar
+  // (qo'ng'iroq qilmaganlar nol bilan) — data/roster.model.ts.
+  const rows = useMemo(
+    () => withRosterOps((ops.data ?? []).filter((o) => o.key !== "—"), roster.data),
+    [ops.data, roster.data]
+  );
+  const loaded = !!ops.data || !!roster.data;
+  const isOk = (o: (typeof rows)[number]) => norm != null && o.calls > 0 && o.longCalls >= norm;
+  const isBehind = (o: (typeof rows)[number]) => norm != null && o.calls > 0 && o.longCalls < norm;
+  const counts: Record<OpFilter, number> = {
+    all: rows.length,
+    active: rows.filter((o) => o.calls > 0).length,
+    ok: rows.filter(isOk).length,
+    behind: rows.filter(isBehind).length,
+    idle: rows.filter((o) => o.calls === 0).length,
+  };
+  const shown = rows
+    .filter((o) => f === "all" || (f === "active" ? o.calls > 0 : f === "ok" ? isOk(o) : f === "behind" ? isBehind(o) : o.calls === 0))
+    .filter((o) => !q || `${o.name ?? ""} ${o.ext ?? ""}`.toLowerCase().includes(q));
   const active = rows.filter((o) => o.calls > 0).length;
   const meeting = norm != null ? rows.filter((o) => o.longCalls >= norm).length : null;
   const managers = crm.data?.managers ?? [];
@@ -101,32 +128,55 @@ export function OperatorsPage() {
       </div>
 
       <Card pad="none" className="overflow-hidden" data-testid="OP-DAY">
-        <div className="px-6 pt-[22px] pb-4">
-          <h2 className="pn-card-title">{t("op.day.title", { date: dayMonth(loc, sel.date) })}</h2>
-          <div className="mt-1 text-[13px] text-pn-muted">{norm != null ? t("op.day.sub", { n: norm }) : t("op.day.subNoNorm")}</div>
+        <div className="flex flex-col gap-4 px-6 pt-[22px] pb-4">
+          <div>
+            <h2 className="pn-card-title">{t("op.day.title", { date: dayMonth(loc, sel.date) })}</h2>
+            <div className="mt-1 text-[13px] text-pn-muted">{norm != null ? t("op.day.sub", { n: norm }) : t("op.day.subNoNorm")}</div>
+          </div>
+          <FilterBar<OpFilter>
+            ariaLabel={t("filter.label")}
+            testId="OP-F"
+            value={f}
+            onChange={(v) => url.set({ f: v === "all" ? null : v })}
+            options={[
+              { value: "all", label: t("filter.all"), count: counts.all },
+              { value: "active", label: t("op.f.active"), count: counts.active },
+              ...(norm != null
+                ? [
+                    { value: "ok" as const, label: t("ctl.rop.ok"), count: counts.ok },
+                    { value: "behind" as const, label: t("ctl.rop.behind"), count: counts.behind },
+                  ]
+                : []),
+              { value: "idle", label: t("op.noCalls"), count: counts.idle },
+            ]}
+            search={{ value: url.get("q") ?? "", onChange: (v) => url.set({ q: v || null }), placeholder: t("op.f.search") }}
+          />
         </div>
-        {ops.isError ? (
-          <div className="px-6 pb-8 text-[14px] text-pn-muted">{t("op.day.error")}</div>
-        ) : !ops.data ? (
+        {ops.isError && <div className="px-6 pb-4 text-[13px] text-pn-bad-text">{t("op.day.error")}</div>}
+        {!loaded ? (
           <div className="grid grid-cols-1 gap-3 px-6 pb-6 @min-[700px]/op:grid-cols-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-[120px] rounded-[18px]" />)}</div>
-        ) : rows.length === 0 ? (
-          <div className="px-6 pb-8 text-[14px] text-pn-muted">{t("op.day.empty")}</div>
+        ) : shown.length === 0 ? (
+          <div className="px-6 pb-8 text-[14px] text-pn-muted">{rows.length === 0 ? t("op.day.empty") : t("filter.none")}</div>
         ) : (
           <div className="grid grid-cols-1 gap-3 px-6 pb-6 @min-[640px]/op:grid-cols-2 @min-[1100px]/op:grid-cols-3">
-            {rows.map((o) => {
+            {shown.map((o) => {
               const ok = norm != null ? o.longCalls >= norm : null;
               const st = scoreTone(o.score10, target);
               return (
                 <Link
                   key={o.key}
                   href={`/dashboard/recordings?operator=${encodeURIComponent(o.ext ?? o.key)}&date=${sel.date}`}
-                  className="flex flex-col gap-4 rounded-[18px] border border-pn-border bg-pn-panel-2 px-4 py-4 transition-colors hover:border-pn-border-3"
+                  className={`flex flex-col gap-4 rounded-[18px] border border-pn-border bg-pn-panel-2 px-4 py-4 transition-colors hover:border-pn-border-3 ${o.calls === 0 ? "opacity-60 hover:opacity-100" : ""}`}
                   data-testid={`OP-CARD-${o.key}`}
                 >
                   <div className="flex items-center gap-3">
                     <ExtBadge size="card">{o.ext ?? "—"}</ExtBadge>
                     <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{o.name ?? `Operator ${o.ext ?? ""}`}</span>
-                    {ok != null && <StatusPill tone={ok ? "good" : "bad"} plain>{ok ? t("ctl.rop.ok") : t("ctl.rop.behind")}</StatusPill>}
+                    {o.calls === 0 ? (
+                      <StatusPill tone="neutral" plain>{t("op.noCalls")}</StatusPill>
+                    ) : (
+                      ok != null && <StatusPill tone={ok ? "good" : "bad"} plain>{ok ? t("ctl.rop.ok") : t("ctl.rop.behind")}</StatusPill>
+                    )}
                   </div>
                   <div className="grid grid-cols-4 items-center gap-2 text-[12px]">
                     <div><div className="text-pn-muted">{t("op.calls")}</div><div className="pn-mono mt-1 text-[15px] font-semibold">{fmtInt(o.calls)}</div></div>

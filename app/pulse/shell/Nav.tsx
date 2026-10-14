@@ -122,7 +122,8 @@ function NavItem({
   const t = usePT();
   const intent = useIntentPrefetch(route.id);
   const cls = `pn-press group flex h-11 items-center gap-3 rounded-xl pl-3 pr-[10px] text-[14px] ${
-    active ? "bg-pn-accent font-semibold text-pn-accent-ink" : "text-pn-text-3 hover:bg-pn-panel-2 hover:text-pn-text"
+    // Faol band — ivory/to'q ko'k (pn-primary-scope), qizil emas: qizil faqat urg'u uchun.
+    active ? "pn-primary-scope bg-pn-accent font-semibold text-pn-accent-ink" : "text-pn-text-3 hover:bg-pn-panel-2 hover:text-pn-text"
   }`;
   const body = (
     <>

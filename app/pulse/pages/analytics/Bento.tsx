@@ -58,7 +58,7 @@ export function HeroTile({ data, loc }: { data: AnalyticsData; loc: Loc }) {
   return (
     <section
       data-testid="AN-HERO"
-      className="flex flex-col rounded-[26px] bg-pn-accent px-[26px] py-6 text-pn-accent-ink @min-[560px]/an:col-span-2 @min-[1040px]/an:row-span-2"
+      className="pn-primary-scope flex flex-col rounded-[26px] bg-pn-accent px-[26px] py-6 text-pn-accent-ink @min-[560px]/an:col-span-2 @min-[1040px]/an:row-span-2"
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-[15px] font-semibold">

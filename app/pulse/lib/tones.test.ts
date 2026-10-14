@@ -52,10 +52,14 @@ test("deltaTone: ko'rsatkich yo'nalishi bo'yicha", () => {
   assert.equal(deltaTone(null, "up"), "neutral");
 });
 
-test("accentVars: to'rtala preset siyohi #101114 (§4.3)", () => {
-  for (const k of ACCENT_KEYS) {
+test("accentVars: dastlabki to'rtala preset siyohi #101114 (§4.3), crimson — oq", () => {
+  for (const k of ACCENT_KEYS.filter((x) => x !== "crimson")) {
     assert.equal(accentVars(k)["--pn-accent-ink"], "#101114");
   }
+  // Crimson (2026-10-15 standart): oq siyoh (kontrast 5.3:1), qorong'ida ochroq matn varianti.
+  assert.equal(accentVars("crimson")["--pn-accent-ink"], "#FFFFFF");
+  assert.equal(accentVars("crimson")["--pn-accent-strong-dark"], "#F07A84");
+  assert.equal(accentVars("lime")["--pn-accent-strong-dark"], "#D4F570");
   assert.equal(accentInk("#101114"), "#FFFFFF");
   assert.deepEqual(parseHex("zz"), [212, 245, 112]);
   assert.equal(accentVars("lime")["--pn-accent-soft"], "rgba(212, 245, 112, 0.14)");
