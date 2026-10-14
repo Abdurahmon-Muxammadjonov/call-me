@@ -112,7 +112,7 @@ export interface CallDetail extends CallRow {
   /* sales-ai-front (Whisper) diarizatsiyasi — kim gapirgani ajratilgan
    * segmentlar: [{speaker, text, start, end, vaqt}]. Dashboardda dialog
    * (sotuvchi/mijoz alohida) ko'rinishida ishlatiladi. */
-  transcript_segments?: Array<{ speaker?: string; text?: string; start?: number; end?: number; vaqt?: string }> | null;
+  transcript_segments?: Array<{ speaker?: string; role?: "seller" | "client"; text?: string; start?: number; end?: number; vaqt?: string }> | null;
   sentiment?: string | null;
   risk?: string | null;
   criteria_scores?: CriterionScore[];

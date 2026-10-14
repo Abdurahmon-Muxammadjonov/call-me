@@ -56,7 +56,9 @@ function Transcript({ d, onSeek }: { d: CallDetailT; onSeek: (s: number) => void
   return (
     <ul className="flex flex-col gap-3">
       {segs.map((s, i) => {
-        const op = s.speaker === first;
+        // Gemini STT rolni o'zi beradi (2026-10-15); bo'lmasa eski taxmin —
+        // birinchi gapirgan sotuvchi.
+        const op = s.role ? s.role === "seller" : s.speaker === first;
         return (
           <li key={i} className={op ? "pr-6" : "pl-6"}>
             <div className="mb-1 flex items-center gap-2 text-[11px]">

@@ -83,7 +83,7 @@ function Dialog({ d, onSeek }: { d: CallDetail; onSeek: (s: number) => void }) {
   return (
     <ul className="flex max-h-[520px] flex-col gap-3 overflow-y-auto pr-2">
       {segs.map((s, i) => {
-        const op = s.speaker === first;
+        const op = s.role ? s.role === "seller" : s.speaker === first; // Gemini roli bo'lsa — shu
         return (
           <li key={i} className={op ? "pr-8" : "pl-8"}>
             <div className="mb-1 flex items-center gap-2 text-[11px]">

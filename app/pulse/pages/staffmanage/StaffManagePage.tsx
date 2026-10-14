@@ -24,7 +24,7 @@ import { HeaderBell } from "../../shell/Notifications";
 import { useSelectedDate } from "../../shell/useSelectedDate";
 import { useCallDays } from "../../data/callDays";
 import { initialsOf, useMe } from "../../data/me";
-import { apiUrl } from "../../../lib/api";
+import { apiUrl, authHeadersAuto } from "../../../lib/api";
 import { listEmployees, addEmployee, updateEmployee, deleteEmployee, type Employee } from "../../../lib/store";
 import type { ScriptItem, ShiftTimes } from "../../../lib/realtime";
 import { TONE_VARS, type Tone } from "../../lib/tones";
@@ -51,7 +51,7 @@ function statusOf(s: Employee["status"]): { tone: Tone; key: "online" | "away" |
 /* ---------- Qo'shimcha maydonlar (eski StaffManager bilan bir xil REST) ---------- */
 async function fetchShift(id: string, signal?: AbortSignal): Promise<ShiftTimes> {
   try {
-    const res = await fetch(apiUrl(`/users/${id}/shift`), { headers: { Accept: "application/json" }, signal });
+    const res = await fetch(apiUrl(`/users/${id}/shift`), { headers: { Accept: "application/json", ...authHeadersAuto() }, signal });
     if (!res.ok) return { start: "", end: "" };
     const json = (await res.json()) as { data?: ShiftTimes };
     return { start: json.data?.start ?? "", end: json.data?.end ?? "" };
@@ -62,7 +62,7 @@ async function fetchShift(id: string, signal?: AbortSignal): Promise<ShiftTimes>
 
 async function fetchCredentials(id: string, signal?: AbortSignal): Promise<string> {
   try {
-    const res = await fetch(apiUrl(`/users/${id}/credentials`), { headers: { Accept: "application/json" }, signal });
+    const res = await fetch(apiUrl(`/users/${id}/credentials`), { headers: { Accept: "application/json", ...authHeadersAuto() }, signal });
     if (!res.ok) return "";
     const json = (await res.json()) as { data?: { password?: string | null } };
     return json.data?.password ?? "";
@@ -73,7 +73,7 @@ async function fetchCredentials(id: string, signal?: AbortSignal): Promise<strin
 
 async function fetchScripts(id: string, signal?: AbortSignal): Promise<ScriptItem[]> {
   try {
-    const res = await fetch(apiUrl(`/users/${id}/scripts`), { headers: { Accept: "application/json" }, signal });
+    const res = await fetch(apiUrl(`/users/${id}/scripts`), { headers: { Accept: "application/json", ...authHeadersAuto() }, signal });
     if (!res.ok) return [];
     const json = (await res.json()) as { data?: ScriptItem[] };
     return json.data ?? [];
@@ -86,13 +86,13 @@ async function persistExtras(id: string, payload: { password?: string; shift?: S
   // Har biri mustaqil; endpoint bo'lmasa ham saqlash to'xtamaydi.
   const calls: Promise<unknown>[] = [];
   if (payload.password) {
-    calls.push(fetch(apiUrl(`/users/${id}/credentials`), { method: "PUT", headers: JSON_HEADERS, body: JSON.stringify({ password: payload.password }) }).catch(() => {}));
+    calls.push(fetch(apiUrl(`/users/${id}/credentials`), { method: "PUT", headers: { ...JSON_HEADERS, ...authHeadersAuto() }, body: JSON.stringify({ password: payload.password }) }).catch(() => {}));
   }
   if (payload.shift) {
-    calls.push(fetch(apiUrl(`/users/${id}/shift`), { method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(payload.shift) }).catch(() => {}));
+    calls.push(fetch(apiUrl(`/users/${id}/shift`), { method: "PUT", headers: { ...JSON_HEADERS, ...authHeadersAuto() }, body: JSON.stringify(payload.shift) }).catch(() => {}));
   }
   if (payload.scripts) {
-    calls.push(fetch(apiUrl(`/users/${id}/scripts`), { method: "PUT", headers: JSON_HEADERS, body: JSON.stringify({ scripts: payload.scripts }) }).catch(() => {}));
+    calls.push(fetch(apiUrl(`/users/${id}/scripts`), { method: "PUT", headers: { ...JSON_HEADERS, ...authHeadersAuto() }, body: JSON.stringify({ scripts: payload.scripts }) }).catch(() => {}));
   }
   await Promise.all(calls);
 }

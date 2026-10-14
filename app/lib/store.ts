@@ -15,7 +15,7 @@
  * yet — those fields are returned as empty placeholders until the backend
  * exposes them. Identity (name/email/role/phone) is 100% dynamic from here. */
 
-import { apiUrl } from "./api";
+import { apiUrl, authHeadersAuto } from "./api";
 
 export interface Penalty {
   reason: string;
@@ -123,14 +123,14 @@ const JSON_HEADERS = { "Content-Type": "application/json", Accept: "application/
  * faqat xodimlar; direktor/admin chiqmaydi). Berilmasa — hamma rol. */
 export async function listEmployees(signal?: AbortSignal, role?: string): Promise<Employee[]> {
   const qs = role ? `?role=${encodeURIComponent(role)}` : "";
-  const res = await fetch(apiUrl(`/users${qs}`), { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl(`/users${qs}`), { headers: { Accept: "application/json", ...authHeadersAuto() }, signal });
   const users = await parse<BackendUser[]>(res);
   return users.map(toEmployee);
 }
 
 /* GET /users/:id */
 export async function getEmployee(id: string, signal?: AbortSignal): Promise<Employee | null> {
-  const res = await fetch(apiUrl(`/users/${id}`), { headers: { Accept: "application/json" }, signal });
+  const res = await fetch(apiUrl(`/users/${id}`), { headers: { Accept: "application/json", ...authHeadersAuto() }, signal });
   if (res.status === 404) return null;
   const user = await parse<BackendUser>(res);
   return toEmployee(user);
@@ -140,7 +140,7 @@ export async function getEmployee(id: string, signal?: AbortSignal): Promise<Emp
 export async function addEmployee(input: NewEmployee): Promise<Employee> {
   const res = await fetch(apiUrl("/users"), {
     method: "POST",
-    headers: JSON_HEADERS,
+    headers: { ...JSON_HEADERS, ...authHeadersAuto() },
     body: JSON.stringify({
       name: input.name.trim(),
       email: input.email.trim().toLowerCase(),
@@ -160,7 +160,7 @@ export async function updateEmployee(
 ): Promise<Employee> {
   const res = await fetch(apiUrl(`/users/${id}`), {
     method: "PUT",
-    headers: JSON_HEADERS,
+    headers: { ...JSON_HEADERS, ...authHeadersAuto() },
     body: JSON.stringify(patch),
   });
   const user = await parse<BackendUser>(res);
@@ -171,7 +171,7 @@ export async function updateEmployee(
 export async function deleteEmployee(id: string): Promise<void> {
   const res = await fetch(apiUrl(`/users/${id}`), {
     method: "DELETE",
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", ...authHeadersAuto() },
   });
   await parse<unknown>(res);
 }
@@ -181,7 +181,7 @@ export async function deleteEmployee(id: string): Promise<void> {
 /* GET /users/presence → onlayn foydalanuvchi id'lari. */
 export async function fetchOnlineIds(signal?: AbortSignal): Promise<string[]> {
   const res = await fetch(apiUrl("/users/presence"), {
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", ...authHeadersAuto() },
     signal,
   });
   return parse<string[]>(res);
@@ -190,7 +190,7 @@ export async function fetchOnlineIds(signal?: AbortSignal): Promise<string[]> {
 /* Heartbeat — xodim sahifasi davriy chaqiradi (onlayn ekanini bildiradi). */
 export async function pingPresence(id: string): Promise<void> {
   try {
-    await fetch(apiUrl(`/users/${id}/ping`), { method: "POST", headers: { Accept: "application/json" } });
+    await fetch(apiUrl(`/users/${id}/ping`), { method: "POST", headers: { Accept: "application/json", ...authHeadersAuto() } });
   } catch {
     /* ignore — presence is best-effort */
   }
@@ -199,7 +199,7 @@ export async function pingPresence(id: string): Promise<void> {
 /* Chiqishda darhol offline qilish. */
 export async function goOffline(id: string): Promise<void> {
   try {
-    await fetch(apiUrl(`/users/${id}/offline`), { method: "POST", headers: { Accept: "application/json" } });
+    await fetch(apiUrl(`/users/${id}/offline`), { method: "POST", headers: { Accept: "application/json", ...authHeadersAuto() } });
   } catch {
     /* ignore */
   }
