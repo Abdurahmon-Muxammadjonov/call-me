@@ -18,7 +18,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { apiFetch, API_V2 } from "./api";
 import { useMe, type Me } from "./me";
 import { useLocale, type Locale } from "../../lib/i18n";
-import { operatorsOf, useDayCalls, useManagerNames } from "./dayCalls";
+import { useOperatorDay } from "./dayCalls";
 import {
   addDays, dayDiff, hmOf, isoWeekday, monthStart, sameDayPrevMonth, shiftMonth, tashkentHourOf, tashkentToday, weekStart,
 } from "../lib/dates";
@@ -373,11 +373,10 @@ export function useAnalytics(period: Period, date: string | null = null) {
   // Solishtirish bilan umumiy kesh (dayCalls.ts).
   const v1Team = !API_V2 && period === "day";
   const today = page.data?.today ?? null;
-  const calls = useDayCalls(me?.company.id, today, v1Team);
-  const names = useManagerNames(me?.company.id, v1Team);
+  const calls = useOperatorDay(me?.company.id, today, v1Team);
   const derived = useMemo(() => {
     if (!v1Team || !calls.data || !me) return null;
-    const team: TeamRow[] = operatorsOf(calls.data, names.data ?? new Map(), me.norms.longCallSec).map((o) => ({
+    const team: TeamRow[] = calls.data.map((o) => ({
       key: o.key, ext: o.ext, name: o.name, calls: o.calls, longCalls: o.longCalls,
       incoming: o.incoming, outgoing: o.outgoing, leads: o.leads, score10: o.score10,
     }));
@@ -391,7 +390,7 @@ export function useAnalytics(period: Period, date: string | null = null) {
       };
     }
     return { team, lagging };
-  }, [v1Team, calls.data, names.data, me]);
+  }, [v1Team, calls.data, me]);
   const merged: AnalyticsData | undefined =
     page.data && v1Team ? { ...page.data, team: derived?.team ?? null, lagging: derived?.lagging ?? null } : page.data;
   return {

@@ -13,7 +13,7 @@ import { useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { apiFetch, API_V2 } from "./api";
 import { useMe, type Me } from "./me";
-import { operatorsOf, useDayCalls, useManagerNames } from "./dayCalls";
+import { useOperatorDay, type OperatorDay } from "./dayCalls";
 import { useLocale, type Locale } from "../../lib/i18n";
 import {
   addDays, dayDiff, daysInMonth, hmOf, monthStart, shiftMonth, tashkentHourOf, tashkentToday, weekStart,
@@ -234,10 +234,9 @@ export function useCompare(period: ComparePeriod, a: string, b: string) {
   });
   // Operatorlar ball o'zgarishi — faqat kun rejimida (v1).
   const dayMode = !API_V2 && period === "day";
-  const callsA = useDayCalls(me?.company.id, a, dayMode);
-  const callsB = useDayCalls(me?.company.id, b, dayMode);
-  const names = useManagerNames(me?.company.id, dayMode);
-  const movers = useMemo(() => moversOf(me, callsA.data, callsB.data, names.data), [me, callsA.data, callsB.data, names.data]);
+  const callsA = useOperatorDay(me?.company.id, a, dayMode);
+  const callsB = useOperatorDay(me?.company.id, b, dayMode);
+  const movers = useMemo(() => moversOf(me, callsA.data, callsB.data), [me, callsA.data, callsB.data]);
   return {
     ...page,
     movers: dayMode ? movers : null,
@@ -255,17 +254,11 @@ export interface Mover {
   delta: number;
 }
 
-function moversOf(
-  me: Me | undefined,
-  a: Parameters<typeof operatorsOf>[0] | undefined,
-  b: Parameters<typeof operatorsOf>[0] | undefined,
-  names: Map<string, string> | undefined
-): Mover[] | null {
+function moversOf(me: Me | undefined, a: OperatorDay[] | undefined, b: OperatorDay[] | undefined): Mover[] | null {
   if (!me || !a || !b) return null;
-  const nm = names ?? new Map<string, string>();
-  const opsA = new Map(operatorsOf(a, nm, me.norms.longCallSec).map((o) => [o.key, o]));
+  const opsA = new Map(a.map((o) => [o.key, o]));
   const out: Mover[] = [];
-  for (const o of operatorsOf(b, nm, me.norms.longCallSec)) {
+  for (const o of b) {
     const prev = opsA.get(o.key);
     if (o.score10 == null || prev?.score10 == null) continue;
     out.push({

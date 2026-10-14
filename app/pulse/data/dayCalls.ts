@@ -95,6 +95,25 @@ export function useDayCalls(companyId: string | undefined, date: string | null, 
   });
 }
 
+/* OPERATOR KESIMI SERVERDA (2026-10-14): GET /analytics/operators?date=
+ * (supabase/perf_13). Avval kunning barcha qo'ng'iroqlari /api/calls'dan
+ * 200 tadan sahifalab tortilib, operatorsOf() bilan brauzerda sanalardi —
+ * sekin va sahifalash paytida yangi qo'ng'iroq kelsa son sakrardi. Javob
+ * shakli OperatorDay bilan bir xil (ism ham serverda qo'yiladi). */
+export function operatorDayKey(companyId: string | undefined, date: string) {
+  return ["v1", companyId ?? "_", "/analytics/operators", date] as const;
+}
+
+export function useOperatorDay(companyId: string | undefined, date: string | null, enabled = true) {
+  return useQuery({
+    queryKey: operatorDayKey(companyId, date ?? ""),
+    queryFn: ({ signal }) => apiFetch<OperatorDay[]>(`/analytics/operators?date=${date}`, { signal }),
+    enabled: enabled && !!companyId && !!date,
+    staleTime: 15_000,
+    refetchInterval: 60_000,
+  });
+}
+
 export function useManagerNames(companyId: string | undefined, enabled = true) {
   return useQuery({
     queryKey: ["v1", companyId ?? "_", "manager-names"],
