@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { ManagementView } from "../../../components/ManagementView";
+import { ControlPage } from "../../../pulse/pages/control/ControlPage";
 
-/* Boshqaruv paneli — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Boshqaruv paneli — Pulse Noir (2026-10-14). Avval eski ManagementView
+ * (LegacyFrame ichida) edi. */
 export const metadata: Metadata = { title: "Boshqaruv paneli" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <ManagementView />
-    </LegacyFrame>
-  );
+  return <ControlPage />;
 }
