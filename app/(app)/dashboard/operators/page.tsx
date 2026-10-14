@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { ManagersDashboard } from "../../../components/ManagersDashboard";
+import { OperatorsPage } from "../../../pulse/pages/operators/OperatorsPage";
 
-/* Operatorlar — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Operatorlar — Pulse Noir (2026-10-14). Avval eski ManagersDashboard
+ * (LegacyFrame ichida) edi. */
 export const metadata: Metadata = { title: "Operatorlar" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <ManagersDashboard />
-    </LegacyFrame>
-  );
+  return <OperatorsPage />;
 }
