@@ -42,6 +42,12 @@
   --color-pn-bad: var(--pn-bad);
   --color-pn-bad-tint: var(--pn-bad-tint);
   --color-pn-bad-soft: var(--pn-bad-soft);
+  /* Forma/CRUD bo'limlari uchun (2026-10-14). */
+  --color-pn-good-text: var(--pn-good-text);
+  --color-pn-warn-text: var(--pn-warn-text);
+  --color-pn-bad-text: var(--pn-bad-text);
+  --color-pn-good-ring: var(--pn-good-ring);
+  --color-pn-bad-ring: var(--pn-bad-ring);
   --color-pn-alert-bg: var(--pn-alert-bg);
   --color-pn-alert-border: var(--pn-alert-border);
   --color-pn-lilac: var(--pn-lilac);

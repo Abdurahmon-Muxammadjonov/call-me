@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { AmoCrmView } from "../../../components/views";
+import { AmoCrmPage } from "../../../pulse/pages/amocrm/AmoCrmPage";
 
-/* amoCRM ulanishi — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* amoCRM ulanishi — Pulse Noir (2026-10-14). Avval eski AmoCrmView (LegacyFrame ichida) edi. */
 export const metadata: Metadata = { title: "amoCRM ulanishi" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <AmoCrmView />
-    </LegacyFrame>
-  );
+  return <AmoCrmPage />;
 }

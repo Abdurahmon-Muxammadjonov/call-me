@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { CriteriaView } from "../../../components/views";
+import { CriteriaPage } from "../../../pulse/pages/criteria/CriteriaPage";
 
-/* Baholash mezonlari — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Baholash mezonlari — Pulse Noir (2026-10-14). Avval eski CriteriaView (LegacyFrame ichida) edi. */
 export const metadata: Metadata = { title: "Baholash mezonlari" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <CriteriaView />
-    </LegacyFrame>
-  );
+  return <CriteriaPage />;
 }

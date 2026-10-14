@@ -35,8 +35,11 @@ function getSnapshot(): ToastItem[] {
   return toasts;
 }
 
+// Server snapshot BIR xil havola bo'lishi shart — har chaqiruvda yangi []
+// qaytarsa React "getServerSnapshot should be cached" deb ogohlantiradi.
+const EMPTY: ToastItem[] = [];
 function getServerSnapshot(): ToastItem[] {
-  return [];
+  return EMPTY;
 }
 
 const AUTO_DISMISS_MS = 3500;

@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { CategoriesView } from "../../../components/views";
+import { CategoriesPage } from "../../../pulse/pages/criteria/CategoriesPage";
 
-/* Mezon kategoriyalari — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Mezon kategoriyalari — Pulse Noir (2026-10-14). Avval eski CategoriesView (LegacyFrame ichida) edi. */
 export const metadata: Metadata = { title: "Mezon kategoriyalari" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <CategoriesView />
-    </LegacyFrame>
-  );
+  return <CategoriesPage />;
 }
