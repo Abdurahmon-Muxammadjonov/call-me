@@ -12,7 +12,7 @@
 import { useMemo } from "react";
 import { useLocale } from "../../../lib/i18n";
 import { usePT } from "../../i18n";
-import { Button, Card, DeltaPill, ExtBadge, ScoreChip, Skeleton, StatusPill } from "../../ui/primitives";
+import { Button, Card, DeltaPill, ExtBadge, Skeleton, StatusPill } from "../../ui/primitives";
 import { Icon } from "../../ui/Icon";
 import { DateButton } from "../../ui/DateButton";
 import { PageHeader } from "../../shell/PageHeader";
@@ -470,4 +470,3 @@ export function StaffPage() {
   );
 }
 
-export { ScoreChip };

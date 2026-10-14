@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { RecordingsView } from "../../../components/RecordingsView";
+import { AudioPage } from "../../../pulse/pages/calls/AudioPage";
 
-/* Audio yozuvlar — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Audio yozuvlar — Pulse Noir (2026-10-14). Avval eski RecordingsView
+ * (LegacyFrame ichida) edi. */
 export const metadata: Metadata = { title: "Audio yozuvlar" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <RecordingsView />
-    </LegacyFrame>
-  );
+  return <AudioPage />;
 }

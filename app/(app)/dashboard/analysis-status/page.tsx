@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { LegacyFrame } from "../../../pulse/shell/LegacyFrame";
-import { AnalysisStatusView } from "../../../components/AnalysisStatusView";
+import { StatusPage } from "../../../pulse/pages/status/StatusPage";
 
-/* Tahlil holati — hali Pulse Noir'ga ko'chirilmagan: eski ko'rinish yangi
- * doimiy qobiq ichida (qarang pulse/shell/LegacyFrame.tsx). */
+/* Tahlil holati — Pulse Noir (2026-10-14). Avval eski AnalysisStatusView
+ * (LegacyFrame ichida) edi. */
 export const metadata: Metadata = { title: "Tahlil holati" };
 
 export default function Page() {
-  return (
-    <LegacyFrame>
-      <AnalysisStatusView />
-    </LegacyFrame>
-  );
+  return <StatusPage />;
 }

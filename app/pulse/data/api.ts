@@ -38,7 +38,8 @@ async function once(url: string, init: RequestInit): Promise<Response> {
 
 export async function apiFetch<T>(
   path: string,
-  opts: { method?: string; body?: unknown; signal?: AbortSignal; v2?: boolean } = {}
+  /* raw — v1 konvertini ochmasdan butun javob (masalan { total, data }). */
+  opts: { method?: string; body?: unknown; signal?: AbortSignal; v2?: boolean; raw?: boolean } = {}
 ): Promise<T> {
   if (!API_BASE) throw new ApiError(0, path, "NEXT_PUBLIC_API_URL sozlanmagan");
   const url = `${API_BASE}${opts.v2 ? "/api/v2" : ""}${path.startsWith("/") ? path : `/${path}`}`;
@@ -75,6 +76,10 @@ export async function apiFetch<T>(
   const json = (await res.json()) as unknown;
   // v1 javoblari { success, data } konvertida keladi.
   if (!opts.v2 && json && typeof json === "object" && "success" in (json as Record<string, unknown>)) {
+    if (opts.raw) {
+      if ((json as { success?: boolean }).success === false) throw new ApiError(res.status, path, (json as { error?: string }).error);
+      return json as T;
+    }
     const env = json as { success?: boolean; data?: unknown; error?: string };
     if (env.success === false) throw new ApiError(res.status, path, env.error);
     return env.data as T;

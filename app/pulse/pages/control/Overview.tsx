@@ -8,7 +8,7 @@ import { usePT, type PT } from "../../i18n";
 import { Card, DeltaPill, StatusPill } from "../../ui/primitives";
 import { Icon, type IconName } from "../../ui/Icon";
 import { Ring } from "../../charts";
-import { indexTone, scoreTone, TONE_VARS, type Tone } from "../../lib/tones";
+import { indexTone, TONE_VARS, type Tone } from "../../lib/tones";
 import { fmtDec, fmtInt, DASH } from "../../lib/format";
 import { dayMonth, type Loc } from "../../lib/dates";
 import type { ControlPanel, OperatorDayRow } from "../../data/control";
@@ -16,10 +16,6 @@ import {
   load, lowerIsBetterTone, mmss, monthFunnel, negatives, pctChange, pulse, rings, score10Of, signals,
   type ControlNorms, type RingVal,
 } from "./model";
-
-function cx(...p: Array<string | false | null | undefined>) {
-  return p.filter(Boolean).join(" ");
-}
 
 function fmtPctDelta(v: number | null): string {
   if (v == null) return DASH;
@@ -438,4 +434,3 @@ export function SignalsCard({
   );
 }
 
-export { scoreTone, cx };
