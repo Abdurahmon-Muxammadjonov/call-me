@@ -18,6 +18,8 @@ import { Field, Notice, Switch, TextInput } from "../../ui/form";
 import { DateButton } from "../../ui/DateButton";
 import { DayStrip } from "../../ui/DayStrip";
 import { CrmManagersCard } from "./CrmManagersCard";
+import { TelegramReportCard } from "./TelegramReportCard";
+import { CrmIntegrationsCard } from "./CrmIntegrationsCard";
 import { PageHeader } from "../../shell/PageHeader";
 import { HeaderBell } from "../../shell/Notifications";
 import { useSelectedDate } from "../../shell/useSelectedDate";
@@ -286,6 +288,10 @@ export function AmoCrmPage() {
           </form>
         </Card>
       </div>
+
+      <CrmIntegrationsCard />
+
+      <TelegramReportCard />
 
       <CrmManagersCard />
     </div>
