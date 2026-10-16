@@ -179,7 +179,7 @@ export function StaffManagePage() {
       }
     }
     setBulk(false);
-    void qc.invalidateQueries({ queryKey: key });
+    void qc.invalidateQueries({ queryKey: ["v1", me?.company.id ?? "_"] });
     toast(t("sm.bulkDone", { ok, all: withoutAccount.length }), ok === withoutAccount.length ? "good" : "warn");
   }
   const shown = useMemo(() => {
@@ -293,7 +293,9 @@ export function StaffManagePage() {
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
-            void qc.invalidateQueries({ queryKey: key });
+            // Ism/raqam o'zgarishi HAMMA panelga darhol (2026-10-16): kompaniyaning
+            // barcha v1 keshlari (operatorlar ro'yxati, hisobotlar) yangilanadi.
+            void qc.invalidateQueries({ queryKey: ["v1", me?.company.id ?? "_"] });
           }}
         />
       )}

@@ -281,7 +281,7 @@ export function StatusPage() {
           <ReasonCards s={s} history={history} onListen={listen} />
           <OpsTable s={s} showAll={url.get("allOps") === "1"} onToggle={() => url.set({ allOps: url.get("allOps") === "1" ? null : "1" })} />
           <div id="as-list" className="flex scroll-mt-4 flex-col gap-4 @min-[1100px]/as:flex-row @min-[1100px]/as:items-start">
-            <Card pad="none" className="min-w-0 flex-[1.6_1_0] overflow-hidden">
+            <Card pad="none" className="min-w-0 overflow-hidden @min-[1100px]/as:flex-[1.6_1_0]">
               <div className="flex flex-wrap gap-2 px-5 py-4">
                 {chip("analyzed", t("as.chip.analyzed"), s.analyzed, "good")}
                 {chip("not", t("as.chip.not"), s.not_analyzed, "warn")}

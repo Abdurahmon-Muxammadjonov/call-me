@@ -249,7 +249,7 @@ function MyCalls({ date }: { date: string }) {
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-      <Card pad="none" className="min-w-0 flex-[1.6_1_0] overflow-hidden">
+      <Card pad="none" className="min-w-0 overflow-hidden lg:flex-[1.6_1_0]">
         <div className="px-5 py-4">
           <FilterBar<(typeof CAB_FILTERS)[number]>
             ariaLabel={t("filter.label")}

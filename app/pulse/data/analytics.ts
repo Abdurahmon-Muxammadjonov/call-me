@@ -78,7 +78,7 @@ export interface AnalyticsData {
     conversionTargetPct: number | null;
     targetScore10: number | null;
   };
-  lagging: { count: number; top: Array<{ ext: string; longCalls: number; normTarget: number }> } | null;
+  lagging: { count: number; top: Array<{ ext: string; name?: string | null; longCalls: number; normTarget: number }> } | null;
   total: { current: number; previous: number | null };
   buckets: Bucket[];
   talkSec: number | null;
@@ -386,7 +386,7 @@ export function useAnalytics(period: Period, date: string | null = null) {
       const behind = team.filter((r) => r.calls > 0 && r.longCalls < dailyNorm).sort((a, b) => a.longCalls - b.longCalls);
       lagging = {
         count: behind.length,
-        top: behind.slice(0, 3).map((r) => ({ ext: r.ext ?? r.name ?? r.key, longCalls: r.longCalls, normTarget: dailyNorm })),
+        top: behind.slice(0, 3).map((r) => ({ ext: r.ext ?? r.name ?? r.key, name: r.name, longCalls: r.longCalls, normTarget: dailyNorm })),
       };
     }
     return { team, lagging };

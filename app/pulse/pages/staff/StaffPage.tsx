@@ -452,7 +452,7 @@ export function StaffPage() {
             <Card className="py-12 text-center text-[14px] text-pn-muted" data-testid="ST-EMPTY">{t("stp.empty", { date: dayMonth(loc, sel.date) })}</Card>
           ) : (
             <div className="flex flex-col gap-4 @min-[1100px]/st:flex-row @min-[1100px]/st:items-start">
-              <div className="grid min-w-0 flex-[2.2_1_0] grid-cols-1 gap-4 @min-[560px]/st:grid-cols-2 @min-[1100px]/st:grid-cols-3">
+              <div className="grid min-w-0 @min-[1100px]/st:flex-[2.2_1_0] grid-cols-1 gap-4 @min-[560px]/st:grid-cols-2 @min-[1100px]/st:grid-cols-3">
                 {shown.map((r) => (
                   <OpCard
                     key={r.key}

@@ -198,7 +198,8 @@ export function signals(
     const active = activeOperators(ops);
     const behind = active.filter((o) => o.longCalls < norm).sort((a, b) => a.longCalls - b.longCalls);
     if (behind.length > 0) {
-      const names = behind.slice(0, 3).map((o) => o.ext ?? o.name ?? "—").join(", ");
+      // Ism — "Xodimlarni boshqarish"dagi (backend beradi), bo'lmasa ichki raqam (2026-10-16).
+      const names = behind.slice(0, 3).map((o) => o.name ?? o.ext ?? "—").join(", ");
       out.push({
         key: "lagging",
         tone: behind.length * 2 >= active.length ? "bad" : "warn",

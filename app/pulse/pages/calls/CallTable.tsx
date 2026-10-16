@@ -88,7 +88,11 @@ export function CallTable({
                 >
                   <span className="flex min-w-0 items-center gap-3" title={nameOf(r)}>
                     <ExtBadge size="audio" selected={selected}>{r.operator_ext || "—"}</ExtBadge>
-                    <span className="truncate text-[14px]">{Number(r.new_leads_count) > 0 ? t("calls.newLead") : t("calls.oldBase")}</span>
+                    {/* Ism — "Xodimlarni boshqarish"dagi (2026-10-16); tagida mijoz turi. */}
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-[14px] font-medium">{nameOf(r)}</span>
+                      <span className="truncate text-[11px] text-pn-subtle">{Number(r.new_leads_count) > 0 ? t("calls.newLead") : t("calls.oldBase")}</span>
+                    </span>
                   </span>
                   <span className="pn-mono flex items-center gap-1 text-[14px] font-semibold">
                     {hmOf(new Date(r.created_at))}

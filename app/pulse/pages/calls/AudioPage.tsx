@@ -163,7 +163,7 @@ export function AudioPage() {
       </Card>
 
       <div className="flex flex-col gap-4 @min-[1100px]/au:flex-row @min-[1100px]/au:items-start">
-        <Card pad="none" className="min-w-0 flex-[1.6_1_0] overflow-hidden">
+        <Card pad="none" className="min-w-0 overflow-hidden @min-[1100px]/au:flex-[1.6_1_0]">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <div role="tablist" aria-label={t("calls.filter")} className="flex flex-wrap gap-1 rounded-full border border-pn-border bg-pn-panel-2 p-1">
               {FILTERS.map((f) => (

@@ -45,7 +45,8 @@ export function NormBanner({
               onClick={() => onChip(l.ext)}
               className={`pn-press pn-mono inline-flex h-8 items-center gap-2 whitespace-nowrap rounded-full border border-pn-track bg-pn-panel-2 px-3 text-[12px] font-medium text-pn-text-2 hover:border-pn-border-3 ${chipHide[i]}`}
             >
-              {l.ext}
+              {/* Ism (Xodimlarni boshqarishdagi), bo'lmasa ichki raqam. */}
+              <span className="max-w-[140px] truncate font-sans" title={l.name ?? l.ext}>{l.name ?? l.ext}</span>
               <span className="text-pn-bad-soft">
                 {l.longCalls}/{l.normTarget}
               </span>
