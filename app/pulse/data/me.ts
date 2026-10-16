@@ -119,7 +119,10 @@ async function fetchMeLegacy(signal?: AbortSignal): Promise<Me> {
       targetScore10: null,
       lowScoreThreshold10: V1_LOW_SCORE_THRESHOLD10,
       longCallSec: typeof settings?.qualified_call_seconds === "number" ? settings.qualified_call_seconds : null,
-      dailyLongCallsNorm: typeof settings?.min_qualified_calls_day === "number" ? settings.min_qualified_calls_day : null,
+      // KPI (kunlik uzun qo'ng'iroq normasi) OLIB TASHLANDI (2026-10-16, foydalanuvchi
+      // talabi: "KPI hisoblashni, bannerni, hammasini olib tashla"). null — norma
+      // banneri, "normada/orqada", Intizom va signal hamma joyda ko'rinmaydi.
+      dailyLongCallsNorm: null,
     },
     preferences: { theme: null, locale: null },
     serverTime: null,
@@ -145,6 +148,7 @@ async function fetchMeV2(signal?: AbortSignal): Promise<Me> {
   return {
     ...me,
     company: { ...me.company, accent: isAccentKey(me.company.accent) ? me.company.accent : DEFAULT_ACCENT },
+    norms: { ...me.norms, dailyLongCallsNorm: null }, // KPI olib tashlandi (2026-10-16)
     source: "v2",
   };
 }

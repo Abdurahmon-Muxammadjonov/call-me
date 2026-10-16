@@ -63,7 +63,7 @@ export function PulseCard({ panel, ops, norms }: { panel: ControlPanel; ops: Ope
         </div>
         <p className="mt-[14px] text-[14px] leading-[1.5] text-pn-text-2">{text}</p>
       </div>
-      <div className="grid flex-1 grid-cols-2 gap-[14px] @min-[700px]/ctl:grid-cols-4">
+      <div className={`grid flex-1 grid-cols-2 gap-[14px] ${rs.length === 3 ? "@min-[700px]/ctl:grid-cols-3" : "@min-[700px]/ctl:grid-cols-4"}`}>
         {rs.map((r) => {
           const rt = indexTone(r.value);
           return (

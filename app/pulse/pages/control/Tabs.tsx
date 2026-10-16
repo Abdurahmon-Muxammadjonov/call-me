@@ -7,9 +7,9 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePT } from "../../i18n";
-import { Card, DeltaPill, ExtBadge, ScoreChip, StatusPill } from "../../ui/primitives";
+import { Card, DeltaPill, ExtBadge, ScoreChip } from "../../ui/primitives";
 import { TableHead, TableRow } from "../../ui/table";
-import { MiniBars, Ring } from "../../charts";
+import { MiniBars } from "../../charts";
 import { scoreTone, TONE_VARS, type Tone } from "../../lib/tones";
 import { fmtDec, fmtInt, DASH } from "../../lib/format";
 import { dayMonth, dayMonthShort, hoursMinutes, type Loc } from "../../lib/dates";
@@ -124,7 +124,8 @@ export function StrategicTab({ panel, loc }: { panel: ControlPanel; loc: Loc }) 
   );
 }
 
-const ROP_TEMPLATE = "32px minmax(160px,1.6fr) 80px 120px 90px minmax(120px,1fr) 70px 110px";
+// KPI (norma) va "Holat" ustuni olib tashlandi (2026-10-16).
+const ROP_TEMPLATE = "32px minmax(180px,1.8fr) 80px 90px 90px minmax(120px,1fr) 70px";
 
 export function RopTab({
   ops,
@@ -164,7 +165,6 @@ export function RopTab({
               { key: "talk", label: t("ctl.rop.talk"), align: "right" },
               { key: "dir", label: t("ctl.rop.dir") },
               { key: "score", label: t("ctl.rop.score"), align: "center" },
-              { key: "status", label: t("ctl.rop.status") },
             ]}
           />
           {rows.length === 0 ? (
@@ -184,13 +184,7 @@ export function RopTab({
                     <span className="truncate text-[14px]">{o.name ?? (o.ext ? `Operator ${o.ext}` : t("ctl.rop.unknown"))}</span>
                   </span>
                   <span className="pn-mono text-right text-[14px]">{fmtInt(o.calls)}</span>
-                  <span className="flex items-center gap-[10px]">
-                    <Ring size={28} r={11} stroke={4} pct={norm ? (o.longCalls / norm) * 100 : 0} color={TONE_VARS[ringTone].fg} />
-                    <span className="pn-mono text-[14px]">
-                      <span style={{ color: TONE_VARS[ringTone].text }}>{o.longCalls}</span>
-                      <span className="text-pn-subtle"> / {norm ?? DASH}</span>
-                    </span>
-                  </span>
+                  <span className="pn-mono text-[14px]" style={{ color: TONE_VARS[ringTone].text }}>{o.longCalls}</span>
                   <span className="pn-mono text-right text-[13px] text-pn-text-2">{hoursMinutes(o.talkSec)}</span>
                   <span className="flex items-center gap-2">
                     <span className="h-[6px] min-w-0 flex-1 overflow-hidden rounded-full bg-pn-panel-3">
@@ -200,13 +194,6 @@ export function RopTab({
                   </span>
                   <span className="flex justify-center">
                     <ScoreChip tone={st.tone}>{o.score10 == null ? DASH : fmtDec(o.score10)}</ScoreChip>
-                  </span>
-                  <span>
-                    {ok == null ? (
-                      <span className="text-pn-subtle">{t("ctl.rop.noNorm")}</span>
-                    ) : (
-                      <StatusPill tone={ok ? "good" : "bad"}>{ok ? t("ctl.rop.ok") : t("ctl.rop.behind")}</StatusPill>
-                    )}
                   </span>
                 </TableRow>
               );

@@ -7,8 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ring } from "../../charts";
-import { Button, ExtBadge, ScoreChip, Segmented, Skeleton, StatusPill } from "../../ui/primitives";
+import { Button, ExtBadge, ScoreChip, Segmented, Skeleton } from "../../ui/primitives";
 import { Cell, TableHead, TableRow, type Column, type SortDir } from "../../ui/table";
 import { usePT } from "../../i18n";
 import { DASH, fmtDec, fmtInt } from "../../lib/format";
@@ -18,8 +17,9 @@ import type { AnalyticsData, TeamRow } from "../../data/analytics";
 export type TeamFilter = "all" | "behind" | "ok";
 export type TeamSortKey = "calls" | "long" | "dir" | "leads" | "score";
 
+// KPI (norma) va "Holat" ustuni olib tashlandi (2026-10-16).
 const TEMPLATE =
-  "32px minmax(0,1.6fr) minmax(0,0.8fr) minmax(0,1.3fr) minmax(0,1.4fr) minmax(0,0.7fr) minmax(0,0.8fr) minmax(0,0.9fr)";
+  "32px minmax(0,1.8fr) minmax(0,0.8fr) minmax(0,1fr) minmax(0,1.4fr) minmax(0,0.7fr) minmax(0,0.8fr)";
 const INITIAL_ROWS = 6;
 
 export function parseSort(v: string | null): { key: TeamSortKey; dir: SortDir } {
@@ -107,7 +107,6 @@ export function TeamCard({
     { key: "dir", label: t("an.team.col.dir"), sortable: true },
     { key: "leads", label: t("an.team.col.leads"), sortable: true },
     { key: "score", label: t("an.team.col.score"), sortable: true },
-    { key: "status", label: t("an.team.col.status") },
   ];
 
   return (
@@ -215,11 +214,7 @@ export function TeamCard({
                       </Cell>
                       <Cell mono className="text-[14px] text-pn-text-4">{fmtInt(r.calls)}</Cell>
                       <Cell className="gap-[10px]">
-                        <Ring pct={norm ? (r.longCalls / norm) * 100 : 0} color={color} />
-                        <span className="pn-mono text-[13px] font-semibold" style={{ color }}>
-                          {fmtInt(r.longCalls)}
-                          <span className="font-normal text-pn-subtle"> / {norm ?? DASH}</span>
-                        </span>
+                        <span className="pn-mono text-[13px] font-semibold" style={{ color }}>{fmtInt(r.longCalls)}</span>
                       </Cell>
                       <Cell className="gap-[10px]">
                         <span className="flex h-[6px] min-w-9 max-w-[84px] flex-1 overflow-hidden rounded-[3px] bg-pn-bar-dim" aria-hidden>
@@ -232,13 +227,6 @@ export function TeamCard({
                       <Cell mono className="text-[14px] text-pn-text-4">{fmtInt(r.leads)}</Cell>
                       <Cell>
                         <ScoreChip tone={sTone}>{r.score10 == null ? DASH : fmtDec(r.score10)}</ScoreChip>
-                      </Cell>
-                      <Cell>
-                        {norm == null ? (
-                          <span className="text-pn-faint">{DASH}</span>
-                        ) : (
-                          <StatusPill tone={ok ? "good" : "bad"}>{ok ? t("an.team.status.ok") : t("an.team.status.behind")}</StatusPill>
-                        )}
                       </Cell>
                     </TableRow>
                   </div>

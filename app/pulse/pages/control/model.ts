@@ -65,7 +65,8 @@ export function rings(day: PanelDay | undefined, ops: OperatorDayRow[] | null, n
       },
     },
     { key: "quality", value: quality, vars: { score: quality == null ? "—" : (Math.round(quality) / 10).toFixed(1) } },
-    { key: "discipline", value: discipline, vars: { meeting, active: active.length } },
+    // Intizom — KPI normasiga bog'liq; norma olib tashlangan bo'lsa (2026-10-16) halqa ko'rsatilmaydi.
+    ...(isNum(norm) ? [{ key: "discipline" as const, value: discipline, vars: { meeting, active: active.length } }] : []),
   ];
 }
 

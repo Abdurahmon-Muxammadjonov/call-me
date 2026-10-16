@@ -96,19 +96,16 @@ function Distribution({ rows, avg, target }: { rows: Ranked[]; avg: number | nul
   );
 }
 
-function TeamCard({ rows, avg, target, norm, opsOf }: {
+function TeamCard({ rows, avg, target }: {
   rows: Ranked[];
   avg: number | null;
   target: number | null;
-  norm: number | null;
-  opsOf: (r: StaffRow) => { longCalls: number } | undefined;
 }) {
   const t = usePT();
   const scored = rows.filter((r) => r.s10 != null);
   const best = scored[0];
   const worst = scored[scored.length - 1];
   const active = rows.filter((r) => r.calls > 0);
-  const meeting = norm != null ? active.filter((r) => (opsOf(r)?.longCalls ?? 0) >= norm).length : null;
   const st = scoreTone(avg, target);
   return (
     <Card className="flex min-w-0 flex-col justify-between gap-4 @min-[1100px]/st:flex-[1_1_0]" data-testid="ST-TEAM">
@@ -134,12 +131,13 @@ function TeamCard({ rows, avg, target, norm, opsOf }: {
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <div className="text-[12px] text-pn-muted">{t("stp.team.norm")}</div>
-          <div className="pn-mono mt-1 text-[15px] font-semibold">{meeting == null ? DASH : `${meeting} / ${active.length}`}</div>
+          {/* KPI normasi olib tashlandi (2026-10-16) — o'rniga faol operatorlar. */}
+          <div className="text-[12px] text-pn-muted">{t("stp.team.active")}</div>
+          <div className="pn-mono mt-1 text-[15px] font-semibold">{`${active.length} / ${rows.length}`}</div>
         </div>
         <div className="min-w-0">
           <div className="text-[12px] text-pn-muted">{t("stp.team.best")}</div>
-          <div className="pn-mono mt-1 truncate text-[15px] font-semibold">{best ? `${best.ext ?? best.name} · ${fmtDec(best.s10)}` : DASH}</div>
+          <div className="pn-mono mt-1 truncate text-[15px] font-semibold">{best ? `${best.name || best.ext} · ${fmtDec(best.s10)}` : DASH}</div>
         </div>
         <div className="min-w-0">
           <div className="text-[12px] text-pn-muted">{t("stp.team.worst")}</div>
@@ -254,7 +252,7 @@ function Detail({ r, total, prev, op, norm, target, date, loc }: {
         </div>
         <div className="grid flex-1 grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
           <div><div className="text-pn-muted">{t("stp.detail.scored")}</div><div className="pn-mono mt-[2px] text-[15px] font-semibold">{fmtInt(r.scored_calls)}</div></div>
-          <div><div className="text-pn-muted">{t("stp.detail.norm")}</div><div className="pn-mono mt-[2px] text-[15px] font-semibold" style={{ color: ok == null ? undefined : TONE_VARS[ok ? "good" : "bad"].text }}>{op ? `${op.longCalls} / ${norm ?? DASH}` : DASH}</div></div>
+          <div><div className="text-pn-muted">{t("stp.detail.long")}</div><div className="pn-mono mt-[2px] text-[15px] font-semibold" style={{ color: ok == null ? undefined : TONE_VARS[ok ? "good" : "bad"].text }}>{op ? fmtInt(op.longCalls) : DASH}</div></div>
           <div><div className="text-pn-muted">{t("stp.detail.incoming")}</div><div className="pn-mono mt-[2px] text-[15px] font-semibold">{op ? `${op.incoming} · ${op.outgoing}` : DASH}</div></div>
           <div><div className="text-pn-muted">{t("stp.detail.vsPrev")}</div><div className="pn-mono mt-[2px] text-[15px] font-semibold" style={{ color: delta == null || delta === 0 ? undefined : TONE_VARS[delta > 0 ? "good" : "bad"].text }}>{delta == null ? DASH : `${delta > 0 ? "↑" : delta < 0 ? "↓" : ""} ${fmtDec(Math.abs(delta))}`}</div></div>
         </div>
@@ -433,7 +431,7 @@ export function StaffPage() {
         <div className="flex flex-col gap-5 transition-opacity" style={{ opacity: q.isPlaceholderData ? 0.6 : 1 }}>
           <div className="flex flex-col gap-4 @min-[1100px]/st:flex-row">
             <Distribution rows={rows} avg={avg} target={target} />
-            <TeamCard rows={rows} avg={avg} target={target} norm={norm} opsOf={opsOf} />
+            <TeamCard rows={rows} avg={avg} target={target} />
           </div>
           {rows.length > 0 && (
             <FilterBar<StFilter>

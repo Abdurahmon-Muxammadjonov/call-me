@@ -134,7 +134,6 @@ export function CompanyPopover({
       {canAdmin && (
         <div className="flex flex-col gap-[2px] border-t border-pn-border py-2">
           <MenuLink href="/settings/branding" icon="brand" label={t("nav.brand")} testId="NAV-02-brand" onClick={() => { onClose(); onNavigate?.(); }} />
-          <MenuLink href="/settings/norms" icon="target" label={t("nav.norms")} testId="NAV-02-norms" onClick={() => { onClose(); onNavigate?.(); }} />
         </div>
       )}
 

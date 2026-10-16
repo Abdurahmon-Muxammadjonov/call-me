@@ -11,7 +11,7 @@ import { Icon } from "../ui/Icon";
 import { CountBadge } from "../ui/primitives";
 import { Tooltip } from "../ui/overlays";
 import { usePT } from "../i18n";
-import { MAIN_ROUTES, SETTINGS_ROUTES, activeRouteId, type NavRoute, type RouteId } from "./routes";
+import { HUBS, MAIN_ROUTES, SETTINGS_ROUTES, activeRouteId, routeById, type HubId, type NavRoute, type RouteId } from "./routes";
 import { useIntentPrefetch } from "./prefetch";
 import { CompanyPopover } from "./CompanyPopover";
 import { LanguageButton } from "./LanguageButton";
@@ -69,17 +69,20 @@ export function Nav({
       <div className="pn-scroll-hidden -mx-1 min-h-0 flex-1 overflow-y-auto px-1">
         <nav aria-label={t("nav.aria")} className="flex flex-col gap-[2px]">
           <div className="pn-nav-label px-[10px] pb-[6px] pt-1">{t("nav.section.main")}</div>
-          {MAIN_ROUTES.map((r) => (
-            <NavItem
-              key={r.id}
-              route={r}
-              active={active === r.id}
-              locked={gate.isLocked(r)}
-              onLockedClick={gate.onLockedClick}
-              onNavigate={onNavigate}
-              badge={r.id === "audio" ? <AudioBadge me={me} badges={badges} onAccent={active === r.id} /> : null}
-            />
-          ))}
+          {mainEntries(gate).map(({ route: r, hub }) => {
+            const isActive = hub ? HUBS[hub].tabs.includes(active as RouteId) : active === r.id;
+            return (
+              <NavItem
+                key={hub ?? r.id}
+                route={r}
+                active={isActive}
+                locked={gate.isLocked(r)}
+                onLockedClick={gate.onLockedClick}
+                onNavigate={onNavigate}
+                badge={hub === "calls" ? <AudioBadge me={me} badges={badges} onAccent={isActive} /> : null}
+              />
+            );
+          })}
           <div className="pn-nav-label px-[10px] pb-[6px] pt-[14px]">{t("nav.section.settings")}</div>
           {SETTINGS_ROUTES.filter((r) => !r.adminOnly || gate.canAdmin).map((r) => (
             <NavItem
@@ -100,6 +103,28 @@ export function Nav({
       </div>
     </aside>
   );
+}
+
+/* Menyu bandlari: hub'dagi bo'limlar BITTA band bo'ladi (2026-10-16) — u
+ * hubning birinchi ochiq (tarifda yopilmagan) tabiga olib boradi; hammasi
+ * yopiq bo'lsagina band qulf bilan ko'rinadi. */
+function mainEntries(gate: NavGate): Array<{ route: NavRoute; hub: HubId | null }> {
+  const out: Array<{ route: NavRoute; hub: HubId | null }> = [];
+  const seen = new Set<HubId>();
+  for (const r of MAIN_ROUTES) {
+    if (r.adminOnly && !gate.canAdmin) continue;
+    if (!r.hub) {
+      out.push({ route: r, hub: null });
+      continue;
+    }
+    if (seen.has(r.hub)) continue;
+    seen.add(r.hub);
+    const hub = HUBS[r.hub];
+    const tabs = hub.tabs.map((id) => routeById(id)).filter((x): x is NavRoute => !!x);
+    const target = tabs.find((x) => !gate.isLocked(x)) ?? tabs[0];
+    out.push({ route: { ...target, icon: hub.icon, label: hub.label, hub: hub.id }, hub: hub.id });
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------ NAV-03 */
@@ -132,7 +157,7 @@ function NavItem({
       {locked ? <Icon name="lock" size={14} className="text-pn-faint" /> : badge}
     </>
   );
-  const testId = `NAV-03-${route.id}`;
+  const testId = route.hub ? `NAV-03-hub-${route.hub}` : `NAV-03-${route.id}`;
   if (locked) {
     // Tarifda yopiq: sahifaga o'tmaydi, kod kiritish oynasini ochadi.
     return (

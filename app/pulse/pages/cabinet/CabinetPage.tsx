@@ -20,7 +20,6 @@ import { Icon, type IconName } from "../../ui/Icon";
 import { Notice } from "../../ui/form";
 import { DateButton } from "../../ui/DateButton";
 import { FilterBar } from "../../ui/FilterBar";
-import { Ring } from "../../charts";
 import { ThemeButton } from "../../shell/ThemeButton";
 import { useSelectedDate } from "../../shell/useSelectedDate";
 import { useUrlState } from "../../shell/useUrlState";
@@ -132,11 +131,9 @@ function Overview({ date, onTab }: { date: string; onTab: (t: CabinetTab) => voi
   const s = q.data?.data;
   const day = s?.day;
   const staff = s?.staff;
-  const norm = s?.norm ?? null;
   const target = meCo?.norms.targetScore10 ?? null;
   const s10 = day?.score10 ?? null;
   const st = scoreTone(s10, target);
-  const longPct = norm ? Math.min(100, ((day?.longCalls ?? 0) / norm) * 100) : 0;
 
   if (q.isPending) return <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} h={120} r={22} />)}</div>;
   if (q.isError) return <Notice tone="bad">{t("cab.error")}</Notice>;
@@ -150,10 +147,8 @@ function Overview({ date, onTab }: { date: string; onTab: (t: CabinetTab) => voi
           <span className="text-[12px] text-pn-subtle">{t("cab.inOut", { i: fmtInt(day?.incoming ?? 0), o: fmtInt(day?.outgoing ?? 0) })}</span>
         </Tile>
         <Tile label={t("cab.long", { s: s?.long_sec ?? 60 })} testId="CAB-T-long">
-          <span className="flex items-center gap-3">
-            <Ring size={44} r={18} stroke={6} pct={longPct} color={TONE_VARS[norm == null ? "neutral" : (day?.longCalls ?? 0) >= norm ? "good" : "bad"].fg} />
-            <span className="pn-display text-[30px] leading-none">{fmtInt(day?.longCalls ?? 0)}<span className="text-[16px] text-pn-subtle"> / {norm ?? DASH}</span></span>
-          </span>
+          <span className="pn-display text-[34px] leading-none">{fmtInt(day?.longCalls ?? 0)}</span>
+          <span className="text-[12px] text-pn-subtle">{t("cab.ofCalls", { n: fmtInt(day?.calls ?? 0) })}</span>
         </Tile>
         <Tile label={t("cab.avg")} testId="CAB-T-avg">
           <span className="pn-display text-[34px] leading-none" style={{ color: s10 == null ? undefined : TONE_VARS[st.tone].text }}>{s10 == null ? DASH : fmtDec(s10)}</span>

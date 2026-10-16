@@ -26,7 +26,8 @@ import { useLiveStore } from "./liveStore";
 import { useIdlePrefetch } from "./prefetch";
 import "../data/prefetchRegistry";
 import { setServerTime } from "./clock";
-import { activeRouteId, type NavRoute } from "./routes";
+import { activeRouteId, hubOf, type NavRoute } from "./routes";
+import { HubTabs } from "./HubTabs";
 import { InPulseShellContext } from "./context";
 import { Icon } from "../ui/Icon";
 import { Button, IconButton } from "../ui/primitives";
@@ -180,6 +181,12 @@ export function PulseShell({ fontClass, children }: { fontClass: string; childre
                 <Icon name="warning" size={20} className="text-pn-bad" />
                 {t("offline.banner")}
               </div>
+            )}
+            {/* Birlashtirilgan bo'lim (Dashboard / Qo'ng'iroqlar tahlili) — tablar (2026-10-16). */}
+            {allowed && hubOf(routeId) && (
+              <Suspense fallback={null}>
+                <HubTabs hub={hubOf(routeId)!} active={routeId} isLocked={gate.isLocked} onLockedClick={gate.onLockedClick} />
+              </Suspense>
             )}
             {allowed ? <InPulseShellContext.Provider value={true}>{children}</InPulseShellContext.Provider> : <PageSkeleton />}
           </main>

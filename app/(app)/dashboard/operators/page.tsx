@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
-import { OperatorsPage } from "../../../pulse/pages/operators/OperatorsPage";
+import { redirect } from "next/navigation";
 
-/* Operatorlar — Pulse Noir (2026-10-14). Avval eski ManagersDashboard
- * (LegacyFrame ichida) edi. */
-export const metadata: Metadata = { title: "Operatorlar" };
-
+/* Operatorlar bo'limi olib tashlandi (2026-10-16, foydalanuvchi talabi):
+ * kunlik ko'rsatkichlar — Xodimlar statistikasida, akkauntlar — Xodimlarni
+ * boshqarishda, amoCRM menejerlari — CRM ulanishi sahifasida. Eski havola
+ * Xodimlar statistikasiga yo'naltiriladi. */
 export default function Page() {
-  return <OperatorsPage />;
+  redirect("/dashboard/staff-stats");
 }

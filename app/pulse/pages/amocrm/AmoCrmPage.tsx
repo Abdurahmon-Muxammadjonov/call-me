@@ -17,6 +17,7 @@ import { Icon, type IconName } from "../../ui/Icon";
 import { Field, Notice, Switch, TextInput } from "../../ui/form";
 import { DateButton } from "../../ui/DateButton";
 import { DayStrip } from "../../ui/DayStrip";
+import { CrmManagersCard } from "./CrmManagersCard";
 import { PageHeader } from "../../shell/PageHeader";
 import { HeaderBell } from "../../shell/Notifications";
 import { useSelectedDate } from "../../shell/useSelectedDate";
@@ -285,6 +286,8 @@ export function AmoCrmPage() {
           </form>
         </Card>
       </div>
+
+      <CrmManagersCard />
     </div>
   );
 }
