@@ -7,6 +7,7 @@
  * sarlavha tepasida 2 px progress, skelet chaqnamaydi (§3.2). */
 
 import { useCallback, useState } from "react";
+import { LeadQualityCard } from "./LeadQuality";
 import { useLocale } from "../../../lib/i18n";
 import { usePT } from "../../i18n";
 import { Button, Segmented } from "../../ui/primitives";
@@ -195,6 +196,8 @@ export function AnalyticsPage() {
             <DynamicsCard data={data} loc={loc} />
             <FunnelCard data={data} />
           </div>
+
+          <LeadQualityCard from={data.range.from} to={data.range.to} />
 
           <TeamCard
             data={data}
