@@ -24,14 +24,14 @@ export function TelegramReportCard() {
   const { data: me } = useMe();
   const key = ["v1", me?.company.id ?? "_", "/company/telegram"] as const;
   const q = useQuery({ queryKey: key, queryFn: ({ signal }) => apiFetch<TgState>("/company/telegram", { signal }), enabled: !!me });
-  const [links, setLinks] = useState<{ link: string; group_link: string } | null>(null);
+  const [links, setLinks] = useState<{ link: string; group_link: string; code?: string; bot?: string } | null>(null);
   const [busy, setBusy] = useState<"link" | "test" | null>(null);
   const refresh = () => void qc.invalidateQueries({ queryKey: key });
 
   async function makeLink() {
     setBusy("link");
     try {
-      setLinks(await apiFetch<{ link: string; group_link: string }>("/company/telegram/link", { method: "POST", body: {} }));
+      setLinks(await apiFetch<{ link: string; group_link: string; code?: string; bot?: string }>("/company/telegram/link", { method: "POST", body: {} }));
     } catch (e) {
       toast((e as Error).message || t("tg.err"), "bad");
     } finally {
@@ -93,6 +93,26 @@ export function TelegramReportCard() {
             <Button variant="primary" icon="link" href={links.link} testId="TG-OPEN-DM">{t("tg.dm")}</Button>
             <Button variant="outline" icon="users" href={links.group_link} testId="TG-OPEN-GROUP">{t("tg.group")}</Button>
           </div>
+          {links.code && (
+            <div className="mt-4 rounded-2xl border border-pn-border-2 bg-pn-panel px-4 py-3" data-testid="TG-CODE">
+              {/* Bot bilan chat avvaldan ochiq bo'lsa Telegram havoladagi kodni yubormaydi — qo'lda yuborish (2026-10-16). */}
+              <p className="text-[13px] text-pn-text-2">{t("tg.codeHint", { bot: links.bot ? `@${links.bot}` : "bot" })}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <code className="pn-mono select-all rounded-xl bg-pn-panel-3 px-3 py-2 text-[14px] text-pn-text">/ulash {links.code}</code>
+                <Button
+                  variant="outline"
+                  compact
+                  icon="file"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(`/ulash ${links.code}`).then(() => toast(t("tg.copied"), "good"), () => {});
+                  }}
+                  testId="TG-COPY"
+                >
+                  {t("tg.copy")}
+                </Button>
+              </div>
+            </div>
+          )}
           <p className="mt-2 text-[12px] text-pn-muted">{t("tg.linkTtl")}</p>
         </Notice>
       )}
