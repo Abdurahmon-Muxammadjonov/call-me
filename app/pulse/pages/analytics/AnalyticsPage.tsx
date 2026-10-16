@@ -6,8 +6,10 @@
  * Parametr almashganda eski ko'rinish 60% xiralashib qoladi (keepPreviousData),
  * sarlavha tepasida 2 px progress, skelet chaqnamaydi (§3.2). */
 
-import { useCallback, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import { LeadQualityCard } from "./LeadQuality";
+import { DashCustomizer } from "./DashCustomizer";
+import { useDashLayout } from "../../data/dashLayout";
 import { useLocale } from "../../../lib/i18n";
 import { usePT } from "../../i18n";
 import { Button, Segmented } from "../../ui/primitives";
@@ -86,6 +88,8 @@ export function AnalyticsPage() {
     requestAnimationFrame(() => document.getElementById("an-team")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }, [url]);
 
+  const dash = useDashLayout(me ? `${me.company.id}:${me.user.id}` : undefined);
+  const [dashOpen, setDashOpen] = useState(false);
   const data = q.data;
   const canAdmin = me?.user.role === "director" || me?.user.role === "admin" || me?.user.role === "owner";
 
@@ -109,6 +113,7 @@ export function AnalyticsPage() {
                 { value: "month", label: t("an.period.month"), testId: "AN-01-month" },
               ]}
             />
+            <Button variant="secondary" icon="layers" onClick={() => setDashOpen(true)} testId="AN-CUSTOMIZE">{t("dash.customize")}</Button>
             <HeaderBell />
             {REPORTS_READY && me?.features.reports && (
               <Button variant="primary" icon="download" href="/dashboard/reports" testId="AN-02">
@@ -153,66 +158,79 @@ export function AnalyticsPage() {
             }}
           />
 
-          <div className="grid grid-cols-1 gap-4 @min-[560px]/an:grid-cols-2 @min-[1040px]/an:grid-cols-4 @min-[1040px]/an:grid-rows-[172px_172px]">
-            <HeroTile data={data} loc={loc} />
-            <PastelTile
-              tone="lilac"
-              title={data.labels.leads.plural}
-              value={data.leads?.current ?? null}
-              previous={data.leads?.previous ?? null}
-              series={data.leads?.series ?? null}
-              sub={
-                data.leads
-                  ? `${t((data.isPast && period === "day" ? "an.prev.dayPast" : `an.prev.${period}`) as "an.prev.day")} ${data.leads.previous ?? "—"} · ${t("an.pastel.unique")}`
-                  : null
-              }
-              canConnect={!!canAdmin}
-              noCrm={data.features.amocrm === false}
-              loc={loc}
-              period={period}
-              testId="AN-LEADS"
-            />
-            <PastelTile
-              tone="sky"
-              title={data.labels.offers.plural}
-              value={data.offers?.current ?? null}
-              previous={data.offers?.previous ?? null}
-              series={data.offers?.series ?? null}
-              sub={
-                data.offers?.shareOfLeadsPct != null
-                  ? t("an.pastel.share", { pct: fmtDec(data.offers.shareOfLeadsPct) })
-                  : null
-              }
-              canConnect={!!canAdmin}
-              noCrm={data.features.amocrm === false}
-              loc={loc}
-              period={period}
-              testId="AN-OFFERS"
-            />
-            <ConversionTile data={data} t={t} />
-          </div>
-
-          <div className="flex flex-col gap-4 @min-[1040px]/an:min-h-[372px] @min-[1040px]/an:flex-row">
-            <DynamicsCard data={data} loc={loc} />
-            <FunnelCard data={data} />
-          </div>
-
-          <LeadQualityCard from={data.range.from} to={data.range.to} />
-
-          <TeamCard
-            data={data}
-            loading={q.teamLoading}
-            error={q.teamError}
-            onRetry={() => void q.refetchTeam()}
-            filter={team}
-            onFilter={setTeam}
-            sort={sort}
-            onSort={setSort}
-            focusKey={focusKey}
-            onShowDay={() => setPeriod("day")}
-          />
+          {/* Bloklar foydalanuvchi sozlagan tartibda (2026-10-16, data/dashLayout.ts). */}
+          {dash.layout.order
+            .filter((id) => !dash.layout.hidden.includes(id))
+            .map((id) => (
+              <Fragment key={id}>
+                {id === "tiles" && (
+                      <div className="grid grid-cols-1 gap-4 @min-[560px]/an:grid-cols-2 @min-[1040px]/an:grid-cols-4 @min-[1040px]/an:grid-rows-[172px_172px]">
+                        <HeroTile data={data} loc={loc} />
+                        <PastelTile
+                          tone="lilac"
+                          title={data.labels.leads.plural}
+                          value={data.leads?.current ?? null}
+                          previous={data.leads?.previous ?? null}
+                          series={data.leads?.series ?? null}
+                          sub={
+                            data.leads
+                              ? `${t((data.isPast && period === "day" ? "an.prev.dayPast" : `an.prev.${period}`) as "an.prev.day")} ${data.leads.previous ?? "—"} · ${t("an.pastel.unique")}`
+                              : null
+                          }
+                          canConnect={!!canAdmin}
+                          noCrm={data.features.amocrm === false}
+                          loc={loc}
+                          period={period}
+                          testId="AN-LEADS"
+                        />
+                        <PastelTile
+                          tone="sky"
+                          title={data.labels.offers.plural}
+                          value={data.offers?.current ?? null}
+                          previous={data.offers?.previous ?? null}
+                          series={data.offers?.series ?? null}
+                          sub={
+                            data.offers?.shareOfLeadsPct != null
+                              ? t("an.pastel.share", { pct: fmtDec(data.offers.shareOfLeadsPct) })
+                              : null
+                          }
+                          canConnect={!!canAdmin}
+                          noCrm={data.features.amocrm === false}
+                          loc={loc}
+                          period={period}
+                          testId="AN-OFFERS"
+                        />
+                        <ConversionTile data={data} t={t} />
+                      </div>
+                )}
+                {id === "dynamics" && (
+                      <div className="flex flex-col gap-4 @min-[1040px]/an:min-h-[372px] @min-[1040px]/an:flex-row">
+                        <DynamicsCard data={data} loc={loc} />
+                        <FunnelCard data={data} />
+                      </div>
+                )}
+                {id === "leadQuality" && (
+                      <LeadQualityCard from={data.range.from} to={data.range.to} />
+                )}
+                {id === "team" && (
+                      <TeamCard
+                        data={data}
+                        loading={q.teamLoading}
+                        error={q.teamError}
+                        onRetry={() => void q.refetchTeam()}
+                        filter={team}
+                        onFilter={setTeam}
+                        sort={sort}
+                        onSort={setSort}
+                        focusKey={focusKey}
+                        onShowDay={() => setPeriod("day")}
+                      />
+                )}
+              </Fragment>
+            ))}
         </div>
       )}
+      <DashCustomizer open={dashOpen} onClose={() => setDashOpen(false)} layout={dash.layout} onChange={dash.update} onReset={dash.reset} />
     </div>
   );
 }
