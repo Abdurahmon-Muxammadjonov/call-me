@@ -137,11 +137,13 @@ export function SalesPage() {
         title={t("sd.title")}
         actions={
           <>
-            <button type="button" onClick={() => setSearch(true)} className="pn-press flex h-[46px] min-w-0 items-center gap-2 rounded-full border border-pn-border bg-pn-panel px-4 text-[13px] text-pn-subtle hover:bg-pn-panel-2 max-md:w-full" data-testid="SD-search-btn">
-              <Icon name="search" size={16} /><span className="truncate">{t("sd.search.ph")}</span>
-              <span className="pn-mono ml-auto rounded-md border border-pn-border-2 px-[6px] text-[11px] max-md:hidden">Ctrl+K</span>
-            </button>
-            <HeaderBell />
+            <div className="flex w-full min-w-0 items-center gap-[10px] md:w-auto">
+              <button type="button" onClick={() => setSearch(true)} className="pn-press flex h-[46px] min-w-0 flex-1 items-center gap-2 rounded-full border border-pn-border bg-pn-panel px-4 text-[13px] text-pn-subtle hover:bg-pn-panel-2 md:w-[340px] md:flex-none" data-testid="SD-search-btn">
+                <Icon name="search" size={16} /><span className="min-w-0 truncate">{t("sd.search.ph")}</span>
+                <span className="pn-mono ml-auto rounded-md border border-pn-border-2 px-[6px] text-[11px] max-md:hidden">Ctrl+K</span>
+              </button>
+              <HeaderBell />
+            </div>
           </>
         }
       />
@@ -150,31 +152,31 @@ export function SalesPage() {
       <div className="flex flex-col items-center gap-2 text-center">
         <span className="grid h-12 w-12 place-items-center rounded-2xl bg-pn-accent text-[20px] font-semibold text-pn-accent-ink">{(ownerName.trim()[0] ?? "S").toUpperCase()}</span>
         <p className="text-[16px] font-semibold">{ownerName}</p>
-        <p className="text-[13px] text-pn-muted">{t("sd.sub", { from: range.from, to: range.to, p: pipeName })}</p>
+        <p className="px-2 text-[13px] text-pn-muted">{t("sd.sub", { from: range.from, to: range.to, p: pipeName })}</p>
       </div>
 
       {/* Filtrlar */}
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1">
+        <div className="flex w-full flex-wrap items-end gap-3 md:w-auto">
+          <label className="flex min-w-0 flex-col gap-1 max-md:w-full">
             <span className="pn-section-label text-pn-muted">{t("sd.f.pipeline")}</span>
-            <SelectInput value={query.pipeline ?? ""} onChange={(e) => url.set({ pipeline: e.target.value || null })} className="h-10! min-w-[200px] text-[13px]!" data-testid="SD-pipeline">
+            <SelectInput value={query.pipeline ?? ""} onChange={(e) => url.set({ pipeline: e.target.value || null })} className="h-10! text-[13px]! md:min-w-[220px]" data-testid="SD-pipeline">
               <option value="">{t("sd.f.allPipelines")}</option>
               {pipelines.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </SelectInput>
           </label>
           {groups.length > 0 && (
-            <label className="flex flex-col gap-1">
+            <label className="flex min-w-0 flex-col gap-1 max-md:w-full">
               <span className="pn-section-label text-pn-muted">{t("sd.f.branch")}</span>
-              <SelectInput value={query.group ?? ""} onChange={(e) => url.set({ group: e.target.value || null })} className="h-10! min-w-[180px] text-[13px]!" data-testid="SD-group">
+              <SelectInput value={query.group ?? ""} onChange={(e) => url.set({ group: e.target.value || null })} className="h-10! text-[13px]! md:min-w-[180px]" data-testid="SD-group">
                 <option value="">{t("sd.f.allBranches")}</option>
                 {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
               </SelectInput>
             </label>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span ref={rangeBtn as never}>
+        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
+          <span ref={rangeBtn as never} className="max-w-full overflow-x-auto [scrollbar-width:none] max-md:w-full [&::-webkit-scrollbar]:hidden">
             <Segmented<Period>
               value={period}
               onChange={setPeriod}

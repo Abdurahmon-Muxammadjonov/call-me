@@ -1,7 +1,7 @@
 "use client";
 
 /* AI YORDAMCHI — har sahifada o'ng pastda kichik tugma (2026-10-20,
- * foydalanuvchi talabi). Bosilsa o'ng pastda 500×500 yumaloq oyna (sahifani
+ * foydalanuvchi talabi). Bosilsa o'ng pastda 400×560 yumaloq oyna (sarlavha — SalesAi) (sahifani
  * to'smaydi, layout'da — sahifa almashsa ham yopilmaydi): messenjer kabi yozishuv.
  * Savollar: "bugun nechta audio tushdi", "nechtasi muvaffaqiyatli", "qaysi
  * xodim zo'r ishlayapti", "audiolardan xulosa" — javob GPT'dan, faqat shu
@@ -86,21 +86,21 @@ export function AssistantButton() {
         {open && (
           <motion.div
             role="dialog"
-            aria-label={t("ast.title")}
+            aria-label="SalesAi"
             data-testid="AI-ASSIST"
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             style={{ transformOrigin: "bottom right" }}
-            className="fixed bottom-[76px] right-5 z-50 flex h-[min(500px,calc(100dvh-110px))] w-[min(500px,calc(100vw-32px))] flex-col overflow-hidden rounded-[22px] border border-pn-border-3 bg-pn-panel text-pn-text shadow-2xl max-lg:right-4"
+            className="fixed bottom-[148px] right-5 z-50 flex h-[min(560px,calc(100dvh-180px))] w-[min(400px,calc(100vw-32px))] flex-col overflow-hidden rounded-[22px] border border-pn-border-3 bg-pn-panel text-pn-text shadow-2xl max-lg:bottom-[136px] max-lg:right-4"
             onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
           >
             <div className="flex items-center justify-between gap-3 border-b border-pn-border-2 px-4 py-3">
               <span className="flex min-w-0 items-center gap-2">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-pn-accent text-pn-accent-ink"><Icon name="sparkle" size={15} /></span>
                 <span className="min-w-0">
-                  <span className="block truncate text-[14px] font-semibold">{t("ast.title")}</span>
+                  <span className="block truncate text-[14px] font-semibold">SalesAi</span>
                   <span className="block truncate text-[11px] text-pn-muted">{t("ast.sub")}</span>
                 </span>
               </span>
@@ -139,7 +139,7 @@ export function AssistantButton() {
                 onChange={(e) => setText(e.target.value)}
                 rows={1}
                 placeholder={t("ast.ph")}
-                className="max-h-24 min-h-0 resize-none py-[10px]!"
+                className="h-11! max-h-28 min-h-11! resize-none py-[10px]! leading-snug!"
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(text); } }}
                 data-testid="AI-ASSIST-input"
               />
@@ -152,7 +152,7 @@ export function AssistantButton() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="pn-press fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-pn-accent px-4 py-3 text-[13px] font-semibold text-pn-accent-ink shadow-lg hover:opacity-90 max-lg:bottom-4 max-lg:right-4"
+        className="pn-press fixed bottom-[88px] right-5 z-50 flex items-center gap-2 rounded-full bg-pn-accent px-4 py-3 text-[13px] font-semibold text-pn-accent-ink shadow-lg hover:opacity-90 max-lg:bottom-[76px] max-lg:right-4"
         aria-label={t("ast.title")}
         data-testid="AI-ASSIST-BTN"
       >

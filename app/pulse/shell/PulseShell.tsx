@@ -185,8 +185,9 @@ export function PulseShell({ fontClass, children }: { fontClass: string; childre
             )}
             {/* Birlashtirilgan bo'lim (Dashboard / Qo'ng'iroqlar tahlili) — tablar (2026-10-16). */}
             {allowed && hubOf(routeId) && (
-              // Pastga tushganda ham ko'rinib turadi (2026-10-20, foydalanuvchi talabi).
-              <div className="sticky top-16 z-20 -mx-4 bg-pn-bg/90 px-4 py-2 backdrop-blur-md lg:top-0 lg:-ml-5 lg:-mr-8 lg:pl-5 lg:pr-8" data-testid="HUB-STICKY">
+              // Pastga tushganda ham ko'rinib turadi: tepadan oraliq bilan suzuvchi shaffof
+              // (shisha) panel; bo'sh joyi bosishni to'smaydi (2026-10-20, foydalanuvchi talabi).
+              <div className="pointer-events-none sticky top-[76px] z-20 mt-1 flex lg:top-4" data-testid="HUB-STICKY">
                 <Suspense fallback={null}>
                   <HubTabs hub={hubOf(routeId)!} active={routeId} isLocked={gate.isLocked} onLockedClick={gate.onLockedClick} />
                 </Suspense>

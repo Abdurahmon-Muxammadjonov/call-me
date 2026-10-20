@@ -12,7 +12,7 @@ import { TONE_VARS } from "../../lib/tones";
 import { fmtInt } from "../../lib/format";
 import { useWidth } from "../../charts";
 import type { Comparison, Debt, Dynamics, FieldDist, Funnel, Kpis, PlanFact, Quick } from "../../data/sales";
-import { ACCENTS, Bar, CountUp, GrowthLine, IconTile, Muted, WidgetCard, pctText, shortSum, sumText } from "./kit";
+import { ACCENTS, Bar, CountUp, GrowthLine, IconTile, Muted, ROW, ROW_BAR, ROW_VAL, WidgetCard, pctText, shortSum, sumText } from "./kit";
 
 type Base = { t: PT; loading: boolean; error: boolean; index: number; onSettings?: () => void };
 const BLUE = "#3B82F6";
@@ -30,11 +30,19 @@ export function KpiWidget({ d, t, loading, error, index, onSettings }: Base & { 
   ] : [];
   return (
     <WidgetCard id="kpis" title={t("sd.w.kpis")} icon="stats" accent={ACCENTS.money} loading={loading} error={error} index={index} onSettings={onSettings}>
-      <div className="grid grid-cols-1 gap-3 @min-[420px]/w:grid-cols-2 @min-[760px]/w:grid-cols-3 @min-[1180px]/w:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 @min-[420px]/w:gap-3 @min-[760px]/w:grid-cols-3 @min-[1180px]/w:grid-cols-6">
         {cards.map((c) => (
-          <div key={c.k} className="flex min-w-0 flex-col gap-1 rounded-xl bg-pn-panel-2 p-3" data-testid={`SD-kpi-${c.k}`}>
-            <span className="flex items-center gap-2"><IconTile icon={c.icon} color={c.color} /><span className="truncate text-[12px] text-pn-muted">{c.label}</span></span>
-            <span className="pn-mono mt-1 truncate text-[22px] font-semibold leading-tight tabular-nums @min-[1180px]/w:text-[20px]"><CountUp value={c.value} format={c.fmt} /></span>
+          <div key={c.k} className="flex min-w-0 flex-col gap-1 rounded-xl bg-pn-panel-2 p-[10px] @min-[420px]/w:p-3" data-testid={`SD-kpi-${c.k}`}>
+            <span className="flex min-w-0 items-center gap-2"><IconTile icon={c.icon} color={c.color} /><span className="min-w-0 truncate text-[12px] text-pn-muted">{c.label}</span></span>
+            <span className="pn-mono mt-1 truncate text-[16px] font-semibold leading-tight tabular-nums @min-[420px]/w:text-[19px] @min-[760px]/w:text-[22px] @min-[1180px]/w:text-[20px]">
+              {/* Telefonda summa qisqa (416,5 mln so'm) — to'liq raqam sig'maydi. */}
+              {c.money ? (
+                <>
+                  <span className="@min-[520px]/w:hidden"><CountUp value={c.value} format={(v) => `${shortSum(t, v)} ${t("cm.som")}`} /></span>
+                  <span className="hidden @min-[520px]/w:inline"><CountUp value={c.value} format={c.fmt} /></span>
+                </>
+              ) : <CountUp value={c.value} format={c.fmt} />}
+            </span>
             <span className="text-[12px]"><GrowthLine g={c.g} money={c.money} t={t} /></span>
             <Muted>({c.sub})</Muted>
             {"warn" in c && c.warn && <span className="text-[12px]" style={{ color: TONE_VARS.bad.text }}>{c.warn}</span>}
@@ -85,10 +93,10 @@ export function DebtWidget({ d, t, loading, error, index, onSettings }: Base & {
           </div>
           <ul className="flex flex-col gap-[10px]">
             {d.managers.slice(0, 12).map((m, i) => (
-              <li key={m.name} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-[13px]">
+              <li key={m.name} className={ROW}>
                 <span className="truncate" style={{ color: TONE_VARS.bad.text }}>{m.name}</span>
-                <Bar pct={(m.sum / max) * 100} color={RED} i={i} />
-                <span className="pn-mono whitespace-nowrap text-[12px] text-pn-muted">{fmtInt(m.sum)} · {m.count} {t("sd.pcs")}</span>
+                <span className={ROW_BAR}><Bar pct={(m.sum / max) * 100} color={RED} i={i} /></span>
+                <span className={`pn-mono whitespace-nowrap text-right text-[12px] text-pn-muted ${ROW_VAL}`}>{fmtInt(m.sum)} · {m.count} {t("sd.pcs")}</span>
               </li>
             ))}
           </ul>
@@ -128,10 +136,10 @@ export function FunnelWidget({ d, t, loading, error, index, onSettings, onPickPi
 
 function Row({ label, pct, color, right, extra, i }: { label: ReactNode; pct: number; color: string; right: string; extra?: string; i: number }) {
   return (
-    <div className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-[13px] max-[480px]:grid-cols-[minmax(0,7rem)_1fr_auto]">
+    <div className={ROW}>
       <span className="min-w-0 truncate">{label}</span>
-      <Bar pct={pct} color={color} i={i} />
-      <span className="pn-mono whitespace-nowrap text-right text-[12px]">
+      <span className={ROW_BAR}><Bar pct={pct} color={color} i={i} /></span>
+      <span className={`pn-mono whitespace-nowrap text-right text-[12px] ${ROW_VAL}`}>
         {right}
         {extra && <span className="block text-[11px] text-pn-subtle">{extra}</span>}
       </span>
@@ -181,7 +189,7 @@ export function DynamicsWidget({ d, t, loading, error, index, onSettings, gran, 
       )}>
       {d && (
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 @min-[440px]/w:grid-cols-2">
             <div className="rounded-xl bg-pn-panel-2 p-3"><Muted>{t("sd.dyn.total")}</Muted><p className="pn-mono text-[16px] font-semibold">{sumText(t, d.current.sum)}<span className="text-[12px] font-normal text-pn-muted"> · {t("sd.dyn.sales", { n: d.current.count })}</span></p></div>
             <div className="rounded-xl bg-pn-panel-2 p-3"><Muted>{t("sd.dyn.prev")}</Muted><p className="pn-mono text-[16px] font-semibold text-pn-muted">{sumText(t, d.previous.sum)}<span className="text-[12px] font-normal"> · {t("sd.dyn.sales", { n: d.previous.count })}</span></p></div>
           </div>
@@ -280,10 +288,10 @@ export function FieldWidget({ d, t, loading, error, index, onSettings, onField }
         <div className="flex flex-col gap-[10px]">
           <p className="text-[13px] text-pn-muted">{t("sd.dyn.total")}: <b className="pn-mono text-pn-text">{fmtInt(d.total)}</b> {t("sd.lead")}</p>
           {d.rows.map((r, i) => (
-            <div key={r.answer} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-[13px]">
+            <div key={r.answer} className={ROW}>
               <span className="truncate" title={r.answer}>{r.answer}</span>
-              <Bar pct={(r.leads / max) * 100} color={BLUE} i={i} />
-              <span className="pn-mono whitespace-nowrap text-right text-[12px]">
+              <span className={ROW_BAR}><Bar pct={(r.leads / max) * 100} color={BLUE} i={i} /></span>
+              <span className={`pn-mono whitespace-nowrap text-right text-[12px] ${ROW_VAL}`}>
                 {fmtInt(r.leads)} {t("sd.lead")}
                 <span className="block text-[11px] text-pn-subtle">{t("sd.field.share", { p: pctText(r.share), n: r.sales })}</span>
               </span>

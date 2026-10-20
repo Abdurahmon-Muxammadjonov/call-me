@@ -77,6 +77,12 @@ export function CountUp({ value, format }: { value: number | null; format: (v: n
   return <>{value == null ? "—" : format(shown ?? 0)}</>;
 }
 
+/* Chiziqli qator: tor kartada (telefon) chiziq nom va qiymat ostida, kengida —
+ * bir qatorda: nom | chiziq | qiymat. */
+export const ROW = "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-[6px] text-[13px] @min-[520px]/w:grid-cols-[minmax(0,10rem)_1fr_auto]";
+export const ROW_BAR = "col-span-2 row-start-2 @min-[520px]/w:col-span-1 @min-[520px]/w:col-start-2 @min-[520px]/w:row-start-1";
+export const ROW_VAL = "@min-[520px]/w:col-start-3";
+
 /* Gorizontal chiziq: 0 dan qiymatgacha o'sadi. */
 export function Bar({ pct, color, i = 0, h = 8 }: { pct: number; color: string; i?: number; h?: number }) {
   const reduce = useReducedMotion();

@@ -32,7 +32,7 @@ export function HubTabs({
   const sp = useSearchParams();
   const date = sp.get("date");
   return (
-    <nav aria-label={t("hub.tabs")} className="-mb-1 flex flex-wrap gap-1 rounded-full border border-pn-border bg-pn-panel p-1 self-start max-w-full overflow-x-auto" data-testid={`HUB-${hub.id}`}>
+    <nav aria-label={t("hub.tabs")} className="pointer-events-auto flex max-w-full gap-1 self-start overflow-x-auto rounded-full border border-pn-border-2/70 bg-pn-panel/60 p-1 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.45)] ring-1 ring-white/5 backdrop-blur-xl backdrop-saturate-150 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid={`HUB-${hub.id}`}>
       {hub.tabs.map((id) => {
         const r = routeById(id);
         if (!r) return null;

@@ -11,7 +11,7 @@ import { Button, ExtBadge } from "../../ui/primitives";
 import { TONE_VARS } from "../../lib/tones";
 import { fmtInt } from "../../lib/format";
 import type { AiCalls, Creatives, Insights, Launch, Lost, Managers, MgrRow, MgrTotal, Sources } from "../../data/sales";
-import { ACCENTS, Bar, CountUp, GrowthLine, Info, Muted, PALETTE, WidgetCard, colorOf, pctText, sumText, talkText } from "./kit";
+import { ACCENTS, Bar, CountUp, GrowthLine, Info, Muted, PALETTE, ROW, ROW_BAR, ROW_VAL, WidgetCard, colorOf, pctText, sumText, talkText } from "./kit";
 
 type Base = { t: PT; loading: boolean; error: boolean; index: number; onSettings?: () => void };
 const RED = "#F05252";
@@ -65,7 +65,7 @@ export function SourcesWidget({ d, t, loading, error, index, onSettings }: Base 
       empty={d && d.total === 0 ? t("sd.empty.leads") : undefined}>
       {d && (
         <div className="flex flex-col items-center gap-4 @min-[520px]/w:flex-row @min-[520px]/w:items-start">
-          <svg width={180} height={180} viewBox="0 0 180 180" className="shrink-0" role="img" aria-label={t("sd.w.sources")}>
+          <svg viewBox="0 0 180 180" className="h-[160px] w-[160px] shrink-0 @min-[520px]/w:h-[180px] @min-[520px]/w:w-[180px]" role="img" aria-label={t("sd.w.sources")}>
             <g transform="rotate(-90 90 90)">
               <circle cx={90} cy={90} r={R} fill="none" stroke="currentColor" className="text-pn-panel-3" strokeWidth={22} />
               {segs.map((s, i) => {
@@ -112,10 +112,10 @@ export function ChannelsWidget({ d, t, loading, error, index, onSettings }: Base
       {d && (
         <ul className="flex flex-col gap-[10px]">
           {d.channels.slice(0, 12).map((c, i) => (
-            <li key={c.name} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-[13px]">
+            <li key={c.name} className={ROW}>
               <span className="truncate">{c.name === "—" ? t("sd.src.unknown") : c.name}</span>
-              <Bar pct={(c.sum / max) * 100} color={colorOf(d.order, c.name)} i={i} />
-              <span className="pn-mono whitespace-nowrap text-right text-[12px]">{sumText(t, c.sum)} · {pctText(c.sumShare)}</span>
+              <span className={ROW_BAR}><Bar pct={(c.sum / max) * 100} color={colorOf(d.order, c.name)} i={i} /></span>
+              <span className={`pn-mono whitespace-nowrap text-right text-[12px] text-right ${ROW_VAL}`}>{sumText(t, c.sum)} · {pctText(c.sumShare)}</span>
             </li>
           ))}
         </ul>
@@ -155,7 +155,7 @@ export function ManagersWidget({ d, t, loading, error, index, onSettings }: Base
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wide text-pn-subtle">
                 <th className="w-8 py-2 font-medium">№</th>
-                <th className="py-2 font-medium">{t("sd.m.manager")}</th>
+                <th className="sticky left-0 z-[1] bg-pn-panel py-2 pr-2 font-medium">{t("sd.m.manager")}</th>
                 {head.map((h) => <th key={h} className="py-2 pl-3 text-right font-medium">{h}</th>)}
                 {stages?.map((s) => <th key={s.id} className="max-w-[90px] truncate py-2 pl-3 text-right font-medium" title={s.name}>{s.name}</th>)}
               </tr>
@@ -164,7 +164,7 @@ export function ManagersWidget({ d, t, loading, error, index, onSettings }: Base
               {d.rows.map((r, i) => (
                 <tr key={String(r.id)} className="border-t border-pn-border-2 hover:bg-pn-panel-2">
                   <td className="py-2 text-pn-subtle">{i + 1}</td>
-                  <td className="py-2"><span className="flex items-center gap-2"><Avatar name={r.name} i={i} /><span className="truncate">{r.name}</span>{r.ext && <ExtBadge size="audio">{r.ext}</ExtBadge>}</span></td>
+                  <td className="sticky left-0 z-[1] bg-pn-panel py-2 pr-2"><span className="flex items-center gap-2"><Avatar name={r.name} i={i} /><span className="max-w-[140px] truncate">{r.name}</span>{r.ext && <ExtBadge size="audio">{r.ext}</ExtBadge>}</span></td>
                   {cells(r, r).map((c, j) => <td key={j} className="pn-mono py-2 pl-3 text-right align-top">{c}</td>)}
                   {stages?.map((s) => <td key={s.id} className="pn-mono py-2 pl-3 text-right">{r.stages[String(s.id)] ?? "·"}</td>)}
                 </tr>
@@ -181,7 +181,7 @@ export function ManagersWidget({ d, t, loading, error, index, onSettings }: Base
               {showSystem && d.system.rows.map((r, i) => (
                 <tr key={`s${String(r.id)}`} className="border-t border-pn-border-2 text-pn-muted hover:bg-pn-panel-2">
                   <td />
-                  <td className="py-2"><span className="flex items-center gap-2"><Avatar name={r.name} i={i + 3} /><span className="truncate">{r.name}</span></span></td>
+                  <td className="sticky left-0 z-[1] bg-pn-panel py-2 pr-2"><span className="flex items-center gap-2"><Avatar name={r.name} i={i + 3} /><span className="max-w-[140px] truncate">{r.name}</span></span></td>
                   {cells(r).map((c, j) => <td key={j} className="pn-mono py-2 pl-3 text-right">{c}</td>)}
                   {stages?.map((s) => <td key={s.id} className="pn-mono py-2 pl-3 text-right">{r.stages[String(s.id)] ?? "·"}</td>)}
                 </tr>
@@ -199,7 +199,7 @@ function TotalRow({ label, r, stages, cells, strong }: { label: string; r: MgrTo
   return (
     <tr className={`border-t border-pn-border-3 ${strong ? "font-semibold" : ""}`}>
       <td />
-      <td className="py-2">{label}</td>
+      <td className="sticky left-0 z-[1] bg-pn-panel py-2 pr-2">{label}</td>
       {cells({ ...r, oldestDays: null }).map((c, j) => <td key={j} className="pn-mono py-2 pl-3 text-right">{c}</td>)}
       {stages?.map((s) => <td key={s.id} />)}
     </tr>
@@ -219,10 +219,10 @@ export function CreativesWidget({ d, t, loading, error, index, onSettings }: Bas
           {!d.metaConnected && <Info>{t("sd.ads.noMeta")}</Info>}
           <p className="text-[13px] text-pn-muted">{t("sd.ads.best")}: <b className="text-pn-text">{best ? `${best.id} — ${sumText(t, best.sum)}` : "—"}</b></p>
           {d.rows.slice(0, 10).map((r, i) => (
-            <div key={r.id} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-[13px]">
+            <div key={r.id} className={ROW}>
               <span className="truncate" title={r.id}>{r.id}</span>
-              <Bar pct={(r.sales / max) * 100} color={BLUE} i={i} />
-              <span className="pn-mono whitespace-nowrap text-right text-[12px]">{r.sales} {t("sd.pcs")} / {fmtInt(r.leads)} {t("sd.lead")}</span>
+              <span className={ROW_BAR}><Bar pct={(r.sales / max) * 100} color={BLUE} i={i} /></span>
+              <span className={`pn-mono whitespace-nowrap text-right text-[12px] text-right ${ROW_VAL}`}>{r.sales} {t("sd.pcs")} / {fmtInt(r.leads)} {t("sd.lead")}</span>
             </div>
           ))}
         </div>
@@ -249,10 +249,10 @@ export function AiWidget({ d, t, loading, error, index, onSettings }: Base & { d
             <p className="pn-section-label mb-2 text-pn-muted">{t("sd.ai.result")}</p>
             <ul className="flex flex-col gap-2">
               {d.results.map((r, i) => (
-                <li key={r.key} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-[13px]">
+                <li key={r.key} className={ROW}>
                   <span className="truncate">{t(`sd.ai.r.${r.key}` as "sd.ai.r.paid")}</span>
-                  <Bar pct={r.share} color={RESULT_COLOR[r.key] ?? "#94A3B8"} i={i} />
-                  <span className="pn-mono text-[12px]">{fmtInt(r.count)} ({pctText(r.share)})</span>
+                  <span className={ROW_BAR}><Bar pct={r.share} color={RESULT_COLOR[r.key] ?? "#94A3B8"} i={i} /></span>
+                  <span className={`pn-mono text-[12px] text-right ${ROW_VAL}`}>{fmtInt(r.count)} ({pctText(r.share)})</span>
                 </li>
               ))}
             </ul>
@@ -261,10 +261,10 @@ export function AiWidget({ d, t, loading, error, index, onSettings }: Base & { d
             <p className="pn-section-label mb-2 text-pn-muted">{t("sd.ai.operators")}</p>
             <ul className="flex flex-col gap-2">
               {d.operators.slice(0, 10).map((o, i) => (
-                <li key={o.ext} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-[13px]">
+                <li key={o.ext} className={ROW}>
                   <span className="truncate">{o.name}</span>
-                  <Bar pct={o.score * 10} color={o.score >= 7 ? "#22C55E" : o.score >= 5 ? "#FACC15" : RED} i={i} />
-                  <span className="pn-mono text-[12px]">{o.score} · {o.count} {t("sd.pcs")}</span>
+                  <span className={ROW_BAR}><Bar pct={o.score * 10} color={o.score >= 7 ? "#22C55E" : o.score >= 5 ? "#FACC15" : RED} i={i} /></span>
+                  <span className={`pn-mono text-right text-[12px] ${ROW_VAL}`}>{o.score} · {o.count} {t("sd.pcs")}</span>
                 </li>
               ))}
             </ul>
@@ -309,7 +309,7 @@ export function LaunchWidget({ d, t, loading, error, index, canEdit, onEdit }: B
             <Tile label={t("sd.launch.potential")} value={fmtInt(L.potential)} sub={`${L.potentialLeads} ${t("sd.lead")} × ${fmtInt(L.avgCheck)}`} />
             <Tile label={t("sd.launch.toPlan")} value={fmtInt(L.toPlan)} sub={t("sd.launch.perDay", { v: fmtInt(L.perDay) })} />
           </div>
-          <p className="pn-mono text-[12px] text-pn-muted">{t("sd.launch.formula", { total: fmtInt(L.totalPotential), p: pctText(L.totalPotentialPct), paid: fmtInt(L.paid), exp: fmtInt(L.expected), pot: fmtInt(L.potential) })}</p>
+          <p className="pn-mono break-words text-[12px] text-pn-muted">{t("sd.launch.formula", { total: fmtInt(L.totalPotential), p: pctText(L.totalPotentialPct), paid: fmtInt(L.paid), exp: fmtInt(L.expected), pot: fmtInt(L.potential) })}</p>
           <div className="grid grid-cols-1 gap-4 @min-[1000px]/w:grid-cols-[1.4fr_1fr]">
             <SimpleTable
               head={[t("sd.launch.pipeline"), t("sd.m.leads"), t("sd.launch.sold"), t("sd.launch.agreed"), t("sd.launch.paid"), t("sd.launch.expected"), t("sd.launch.potLeads")]}
