@@ -8,6 +8,7 @@
 
 import { Fragment, useCallback, useState } from "react";
 import { LeadQualityCard } from "./LeadQuality";
+import { CrmMoneyCard } from "./CrmMoney";
 import { DashCustomizer } from "./DashCustomizer";
 import { useDashLayout } from "../../data/dashLayout";
 import { useLocale } from "../../../lib/i18n";
@@ -211,6 +212,9 @@ export function AnalyticsPage() {
                 )}
                 {id === "leadQuality" && (
                       <LeadQualityCard from={data.range.from} to={data.range.to} />
+                )}
+                {id === "crmMoney" && (
+                      <CrmMoneyCard from={data.range.from} to={data.range.to} canAdmin={!!canAdmin} />
                 )}
                 {id === "team" && (
                       <TeamCard

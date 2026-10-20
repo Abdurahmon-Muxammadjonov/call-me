@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-export const DASH_SECTIONS = ["tiles", "dynamics", "leadQuality", "team"] as const;
+export const DASH_SECTIONS = ["tiles", "dynamics", "leadQuality", "team", "crmMoney"] as const;
 export type DashSection = (typeof DASH_SECTIONS)[number];
 
 export interface DashLayout {
