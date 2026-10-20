@@ -28,7 +28,7 @@ import { useSales, useSendSalesTelegram, wOk, type Plan, type SalesQuery, type S
 import { spanOf, useSalesLayout, type SalesWidget, type Span } from "../../data/salesLayout";
 import { ComparisonWidget, DebtWidget, DynamicsWidget, FieldWidget, FunnelWidget, KpiWidget, PlanFactWidget, QuickWidget } from "./widgets1";
 import { AiWidget, ChannelsWidget, CreativesWidget, InsightsWidget, LaunchWidget, LostWidget, ManagersWidget, SourcesWidget } from "./widgets2";
-import { AskDrawer, PlanEditor, SearchPalette, WidgetCatalog } from "./overlays";
+import { PlanEditor, SearchPalette, WidgetCatalog } from "./overlays";
 import { exportSalesCsv } from "./exportCsv";
 
 const PERIODS = ["today", "week", "month", "year", "range"] as const;
@@ -72,7 +72,6 @@ export function SalesPage() {
   const dash = useSalesLayout(me ? `${me.company.id}:${me.user.id}` : undefined);
   const [catalog, setCatalog] = useState<{ open: boolean; focus: SalesWidget | null }>({ open: false, focus: null });
   const [search, setSearch] = useState(false);
-  const [ask, setAsk] = useState(false);
   const [planEdit, setPlanEdit] = useState<{ kind: "monthly" | "launch"; plan: Plan | null } | null>(null);
   const tg = useSendSalesTelegram();
   const rangeBtn = useRef<HTMLButtonElement>(null);
@@ -223,14 +222,8 @@ export function SalesPage() {
         </div>
       )}
 
-      {/* Suzuvchi AI yordamchi */}
-      <button type="button" onClick={() => setAsk(true)} className="pn-press fixed bottom-5 left-5 z-40 flex items-center gap-2 rounded-full border border-pn-border-3 bg-pn-panel px-4 py-3 text-[13px] font-semibold shadow-lg hover:bg-pn-panel-2 max-md:bottom-20 md:left-[96px]" data-testid="SD-ask-btn">
-        <Icon name="sparkle" size={16} /> {t("sd.assistant")}
-      </button>
-
       <WidgetCatalog open={catalog.open} focus={catalog.focus} onClose={() => setCatalog({ open: false, focus: null })} layout={dash.layout} onChange={dash.update} onReset={dash.reset} />
       <SearchPalette open={search} onClose={() => setSearch(false)} />
-      <AskDrawer open={ask} onClose={() => setAsk(false)} query={query} />
       {planEdit && (
         <PlanEditor
           open

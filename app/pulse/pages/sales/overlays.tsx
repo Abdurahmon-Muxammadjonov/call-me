@@ -1,17 +1,17 @@
 "use client";
 
 /* Sotuv dashboardi oynalari (2026-10-20): reja muharriri, Ctrl+K bitim
- * qidiruvi, AI yordamchi va vidjetlarni sozlash. */
+ * qidiruvi va vidjetlarni sozlash. AI yordamchi — har sahifada (shell/Assistant.tsx). */
 
 import { useEffect, useRef, useState } from "react";
 import { usePT } from "../../i18n";
 import { Drawer, Modal, OverlayHeader } from "../../ui/overlays";
 import { Button, Spinner, StatusPill } from "../../ui/primitives";
-import { Field, SelectInput, Switch, TextArea, TextInput } from "../../ui/form";
+import { Field, SelectInput, Switch, TextInput } from "../../ui/form";
 import { Icon } from "../../ui/Icon";
 import { toast } from "../../ui/toast";
 import { fmtInt } from "../../lib/format";
-import { useAskSales, useDeletePlan, useLeadSearch, useSavePlan, type Plan, type SalesQuery } from "../../data/sales";
+import { useDeletePlan, useLeadSearch, useSavePlan, type Plan } from "../../data/sales";
 import { SALES_WIDGETS, cycleSpan, moveWidget, spanOf, toggleWidget, type SalesLayout, type SalesWidget } from "../../data/salesLayout";
 import { sumText } from "./kit";
 
@@ -124,50 +124,6 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
           )}
       </div>
     </Modal>
-  );
-}
-
-/* --------------------------------------------------------- AI yordamchi */
-export function AskDrawer({ open, onClose, query }: { open: boolean; onClose: () => void; query: SalesQuery }) {
-  const t = usePT();
-  const ask = useAskSales();
-  const [text, setText] = useState("");
-  const [log, setLog] = useState<Array<{ q: string; a: string | null; err?: boolean }>>([]);
-  const send = (question: string) => {
-    const q = question.trim();
-    if (!q || ask.isPending) return;
-    setText("");
-    setLog((l) => [...l, { q, a: null }]);
-    ask.mutate({ question: q, q: query }, {
-      onSuccess: (r) => setLog((l) => l.map((x, i) => (i === l.length - 1 ? { ...x, a: r.answer } : x))),
-      onError: (e) => setLog((l) => l.map((x, i) => (i === l.length - 1 ? { ...x, a: String((e as Error).message), err: true } : x))),
-    });
-  };
-  const examples = [t("sd.ai.ex1"), t("sd.ai.ex2"), t("sd.ai.ex3")];
-  return (
-    <Drawer open={open} onClose={onClose} side="left" width={420} label={t("sd.assistant")} testId="SD-ask">
-      <div className="border-b border-pn-border-2 px-5 py-4"><OverlayHeader title={t("sd.assistant")} onClose={onClose} /></div>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
-        {log.length === 0 && (
-          <div className="flex flex-col gap-2">
-            <p className="text-[13px] text-pn-muted">{t("sd.ai.intro")}</p>
-            {examples.map((e) => <button key={e} type="button" onClick={() => send(e)} className="pn-press rounded-xl border border-pn-border-2 px-3 py-2 text-left text-[13px] hover:bg-pn-panel-2">{e}</button>)}
-          </div>
-        )}
-        {log.map((m, i) => (
-          <div key={i} className="flex flex-col gap-2">
-            <p className="self-end rounded-2xl rounded-br-md bg-pn-accent px-3 py-2 text-[13px] text-pn-accent-ink">{m.q}</p>
-            {m.a == null ? <span className="flex items-center gap-2 text-[13px] text-pn-muted"><Spinner /> {t("sd.ai.thinking")}</span>
-              : <p className={`whitespace-pre-wrap rounded-2xl rounded-bl-md bg-pn-panel-2 px-3 py-2 text-[13px] ${m.err ? "text-pn-bad-text" : ""}`}>{m.a}</p>}
-          </div>
-        ))}
-      </div>
-      <form className="flex items-end gap-2 border-t border-pn-border-2 px-5 py-4" onSubmit={(e) => { e.preventDefault(); send(text); }}>
-        <TextArea value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder={t("sd.ai.ph")} className="min-h-0 resize-none"
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(text); } }} />
-        <Button variant="primary" type="submit" disabled={!text.trim()} loading={ask.isPending} testId="SD-ask-send">{t("sd.ai.send")}</Button>
-      </form>
-    </Drawer>
   );
 }
 

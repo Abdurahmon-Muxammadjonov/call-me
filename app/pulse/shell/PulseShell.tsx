@@ -33,6 +33,7 @@ import { Icon } from "../ui/Icon";
 import { Button, IconButton } from "../ui/primitives";
 import { Drawer, Modal, OVERLAY_ROOT_ID } from "../ui/overlays";
 import { ToastHost } from "../ui/toast";
+import { AssistantButton } from "./Assistant";
 import { usePT } from "../i18n";
 import { useBadges, useMe } from "../data/me";
 import { apiFetch } from "../data/api";
@@ -184,12 +185,16 @@ export function PulseShell({ fontClass, children }: { fontClass: string; childre
             )}
             {/* Birlashtirilgan bo'lim (Dashboard / Qo'ng'iroqlar tahlili) — tablar (2026-10-16). */}
             {allowed && hubOf(routeId) && (
-              <Suspense fallback={null}>
-                <HubTabs hub={hubOf(routeId)!} active={routeId} isLocked={gate.isLocked} onLockedClick={gate.onLockedClick} />
-              </Suspense>
+              // Pastga tushganda ham ko'rinib turadi (2026-10-20, foydalanuvchi talabi).
+              <div className="sticky top-16 z-20 -mx-4 bg-pn-bg/90 px-4 py-2 backdrop-blur-md lg:top-0 lg:-ml-5 lg:-mr-8 lg:pl-5 lg:pr-8" data-testid="HUB-STICKY">
+                <Suspense fallback={null}>
+                  <HubTabs hub={hubOf(routeId)!} active={routeId} isLocked={gate.isLocked} onLockedClick={gate.onLockedClick} />
+                </Suspense>
+              </div>
             )}
             {allowed ? <InPulseShellContext.Provider value={true}>{children}</InPulseShellContext.Provider> : <PageSkeleton />}
           </main>
+          {allowed && <AssistantButton />}
         </div>
       </div>
 

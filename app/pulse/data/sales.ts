@@ -111,8 +111,9 @@ export function useSales(q: SalesQuery) {
     queryKey: ["v1", me?.company.id ?? "_", "/analytics/sales", q],
     queryFn: ({ signal }) => apiFetch<SalesData>(`/analytics/sales?${qs(q)}`, { signal }),
     enabled: !!me,
-    staleTime: 60_000,
-    refetchInterval: 5 * 60_000,
+    // CRM o'zgarishi 1–2 daqiqada ko'rinsin (backend har 2 daqiqada + webhook).
+    staleTime: 30_000,
+    refetchInterval: 60_000,
     placeholderData: keepPreviousData,
   });
 }
@@ -159,13 +160,6 @@ export function useSendSalesTelegram() {
   });
 }
 
-export function useAskSales() {
-  return useMutation({
-    mutationFn: (p: { question: string; q: SalesQuery }) =>
-      apiFetch<{ answer: string }>("/analytics/sales/ask", { method: "POST", body: { question: p.question, ...p.q } }),
-  });
-}
-
 export interface SalesSettings {
   ready: boolean;
   connected?: boolean;
@@ -173,6 +167,7 @@ export interface SalesSettings {
   fields?: Array<{ id: number; name: string; type: string }>;
   pipelines?: Array<{ id: number; name: string; statuses: Array<{ id: number; name: string; kind: PayKind }> }>;
   users?: Array<{ id: number; name: string }>;
+  webhook_url?: string | null;
 }
 
 export function useSalesSettings() {

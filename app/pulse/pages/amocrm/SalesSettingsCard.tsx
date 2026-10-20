@@ -71,6 +71,17 @@ export function SalesSettingsCard() {
       </div>
       <Notice tone="neutral" className="mt-4">{t("ss.paidNote")}</Notice>
 
+      {d.webhook_url && (
+        <div className="mt-6">
+          <p className="pn-section-label mb-2 text-pn-muted">{t("ss.webhook")}</p>
+          <p className="mb-3 text-[13px] text-pn-muted">{t("ss.webhookHint")}</p>
+          <div className="flex items-center gap-2">
+            <TextInput readOnly value={d.webhook_url} className="pn-mono text-[12px]!" onFocus={(e) => e.currentTarget.select()} aria-label={t("ss.webhook")} />
+            <Button variant="secondary" icon="link" onClick={() => { void navigator.clipboard?.writeText(d.webhook_url!).then(() => toast(t("ss.copied"), "good")); }} testId="CRM-WEBHOOK-copy">{t("ss.copy")}</Button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-6">
         <p className="pn-section-label mb-2 text-pn-muted">{t("ss.potential")}</p>
         <p className="mb-3 text-[13px] text-pn-muted">{t("ss.potentialHint")}</p>
