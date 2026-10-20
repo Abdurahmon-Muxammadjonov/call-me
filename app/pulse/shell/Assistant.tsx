@@ -1,7 +1,8 @@
 "use client";
 
 /* AI YORDAMCHI — har sahifada o'ng pastda kichik tugma (2026-10-20,
- * foydalanuvchi talabi). Bosilsa kattaroq oyna: messenjer kabi yozishuv.
+ * foydalanuvchi talabi). Bosilsa o'ng pastda 500×500 yumaloq oyna (sahifani
+ * to'smaydi, layout'da — sahifa almashsa ham yopilmaydi): messenjer kabi yozishuv.
  * Savollar: "bugun nechta audio tushdi", "nechtasi muvaffaqiyatli", "qaysi
  * xodim zo'r ishlayapti", "audiolardan xulosa" — javob GPT'dan, faqat shu
  * kompaniya ma'lumoti bo'yicha. Faqat direktor/admin. Yozishuv shu tabda
@@ -9,7 +10,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePT } from "../i18n";
-import { Drawer, OverlayHeader } from "../ui/overlays";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button, Spinner } from "../ui/primitives";
 import { TextArea } from "../ui/form";
 import { Icon } from "../ui/Icon";
@@ -60,6 +61,10 @@ export function AssistantButton() {
     end.current?.scrollIntoView({ block: "end" });
   }, [log, open]);
 
+  useEffect(() => {
+    if (open) requestAnimationFrame(() => inputRef.current?.focus());
+  }, [open]);
+
   if (!canUse) return null;
 
   const send = (q: string) => {
@@ -77,57 +82,82 @@ export function AssistantButton() {
 
   return (
     <>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="dialog"
+            aria-label={t("ast.title")}
+            data-testid="AI-ASSIST"
+            initial={{ opacity: 0, y: 16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            style={{ transformOrigin: "bottom right" }}
+            className="fixed bottom-[76px] right-5 z-50 flex h-[min(500px,calc(100dvh-110px))] w-[min(500px,calc(100vw-32px))] flex-col overflow-hidden rounded-[22px] border border-pn-border-3 bg-pn-panel text-pn-text shadow-2xl max-lg:right-4"
+            onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-pn-border-2 px-4 py-3">
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-pn-accent text-pn-accent-ink"><Icon name="sparkle" size={15} /></span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[14px] font-semibold">{t("ast.title")}</span>
+                  <span className="block truncate text-[11px] text-pn-muted">{t("ast.sub")}</span>
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1">
+                {log.length > 0 && <Button variant="link" onClick={() => setLog([])} testId="AI-ASSIST-clear">{t("ast.clear")}</Button>}
+                <button type="button" onClick={() => setOpen(false)} aria-label={t("common.close")} className="pn-press grid h-8 w-8 place-items-center rounded-full text-pn-muted hover:bg-pn-panel-2 hover:text-pn-text">
+                  <Icon name="close" size={15} />
+                </button>
+              </span>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+              {log.length === 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-[13px] text-pn-muted">{t("ast.intro")}</p>
+                  {examples.map((e) => (
+                    <button key={e} type="button" onClick={() => send(e)} className="pn-press rounded-xl border border-pn-border-2 px-3 py-2 text-left text-[13px] hover:bg-pn-panel-2">{e}</button>
+                  ))}
+                </div>
+              )}
+              {log.map((m, i) =>
+                m.role === "user" ? (
+                  <p key={i} className="max-w-[85%] self-end whitespace-pre-wrap rounded-2xl rounded-br-md bg-pn-accent px-3 py-2 text-[13px] text-pn-accent-ink">{m.content}</p>
+                ) : (
+                  <div key={i} className={`max-w-[92%] self-start rounded-2xl rounded-bl-md bg-pn-panel-2 px-3 py-2 text-[13px] leading-relaxed ${m.error ? "text-pn-bad-text" : ""}`}>
+                    {m.error ? m.content : <Rich text={m.content} />}
+                  </div>
+                )
+              )}
+              {ask.isPending && <span className="flex items-center gap-2 self-start text-[13px] text-pn-muted"><Spinner /> {t("ast.thinking")}</span>}
+              <div ref={end} />
+            </div>
+            <form className="flex items-end gap-2 border-t border-pn-border-2 px-3 py-3" onSubmit={(e) => { e.preventDefault(); send(text); }}>
+              <TextArea
+                ref={inputRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={1}
+                placeholder={t("ast.ph")}
+                className="max-h-24 min-h-0 resize-none py-[10px]!"
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(text); } }}
+                data-testid="AI-ASSIST-input"
+              />
+              <Button variant="primary" type="submit" compact disabled={!text.trim()} loading={ask.isPending} testId="AI-ASSIST-send">{t("ast.send")}</Button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        className="pn-press fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-pn-accent px-4 py-3 text-[13px] font-semibold text-pn-accent-ink shadow-lg hover:opacity-90 max-lg:bottom-4 max-lg:right-4"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="pn-press fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-pn-accent px-4 py-3 text-[13px] font-semibold text-pn-accent-ink shadow-lg hover:opacity-90 max-lg:bottom-4 max-lg:right-4"
         aria-label={t("ast.title")}
         data-testid="AI-ASSIST-BTN"
       >
-        <Icon name="sparkle" size={16} /> {t("ast.title")}
+        <Icon name={open ? "close" : "sparkle"} size={16} /> {t("ast.title")}
       </button>
-      <Drawer open={open} onClose={() => setOpen(false)} width={560} label={t("ast.title")} testId="AI-ASSIST" initialFocusRef={inputRef}>
-        <div className="border-b border-pn-border-2 px-5 py-4">
-          <OverlayHeader title={<span className="flex items-center gap-2"><Icon name="sparkle" size={16} />{t("ast.title")}</span>} onClose={() => setOpen(false)}>
-            {log.length > 0 && <Button variant="link" onClick={() => setLog([])} testId="AI-ASSIST-clear">{t("ast.clear")}</Button>}
-          </OverlayHeader>
-          <p className="mt-1 text-[12px] text-pn-muted">{t("ast.sub")}</p>
-        </div>
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
-          {log.length === 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-[13px] text-pn-muted">{t("ast.intro")}</p>
-              {examples.map((e) => (
-                <button key={e} type="button" onClick={() => send(e)} className="pn-press rounded-xl border border-pn-border-2 px-3 py-2 text-left text-[13px] hover:bg-pn-panel-2">{e}</button>
-              ))}
-            </div>
-          )}
-          {log.map((m, i) =>
-            m.role === "user" ? (
-              <p key={i} className="max-w-[85%] self-end whitespace-pre-wrap rounded-2xl rounded-br-md bg-pn-accent px-3 py-2 text-[13px] text-pn-accent-ink">{m.content}</p>
-            ) : (
-              <div key={i} className={`max-w-[92%] self-start rounded-2xl rounded-bl-md bg-pn-panel-2 px-3 py-2 text-[13px] leading-relaxed ${m.error ? "text-pn-bad-text" : ""}`}>
-                {m.error ? m.content : <Rich text={m.content} />}
-              </div>
-            )
-          )}
-          {ask.isPending && <span className="flex items-center gap-2 self-start text-[13px] text-pn-muted"><Spinner /> {t("ast.thinking")}</span>}
-          <div ref={end} />
-        </div>
-        <form className="flex items-end gap-2 border-t border-pn-border-2 px-5 py-4" onSubmit={(e) => { e.preventDefault(); send(text); }}>
-          <TextArea
-            ref={inputRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={2}
-            placeholder={t("ast.ph")}
-            className="min-h-0 resize-none"
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(text); } }}
-            data-testid="AI-ASSIST-input"
-          />
-          <Button variant="primary" type="submit" disabled={!text.trim()} loading={ask.isPending} testId="AI-ASSIST-send">{t("ast.send")}</Button>
-        </form>
-      </Drawer>
     </>
   );
 }
