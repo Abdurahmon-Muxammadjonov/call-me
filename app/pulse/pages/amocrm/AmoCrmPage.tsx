@@ -21,6 +21,7 @@ import { CrmManagersCard } from "./CrmManagersCard";
 import { TelegramReportCard } from "./TelegramReportCard";
 import { CrmIntegrationsCard } from "./CrmIntegrationsCard";
 import { SalesSettingsCard } from "./SalesSettingsCard";
+import { MetaAdsCard } from "./MetaAdsCard";
 import { PageHeader } from "../../shell/PageHeader";
 import { HeaderBell } from "../../shell/Notifications";
 import { useSelectedDate } from "../../shell/useSelectedDate";
@@ -293,6 +294,8 @@ export function AmoCrmPage() {
       <CrmIntegrationsCard />
 
       <SalesSettingsCard />
+
+      <MetaAdsCard />
 
       <TelegramReportCard />
 

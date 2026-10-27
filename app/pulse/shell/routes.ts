@@ -7,7 +7,7 @@ import type { IconName } from "../ui/Icon";
 import type { PKey } from "../i18n";
 
 export type RouteId =
-  | "analytics" | "sales" | "control" | "compare" | "staffManage" | "staffStats" | "status" | "audio" | "upload" | "deep"
+  | "analytics" | "sales" | "target" | "control" | "compare" | "staffManage" | "staffStats" | "status" | "audio" | "upload" | "deep"
   | "operators" | "categories" | "criteria" | "amocrm" | "brand";
 
 export interface NavRoute {
@@ -39,7 +39,7 @@ export interface Hub {
 }
 
 export const HUBS: Record<HubId, Hub> = {
-  dashboard: { id: "dashboard", label: "nav.hub.dashboard", icon: "grid", tabs: ["analytics", "sales", "control", "compare"] },
+  dashboard: { id: "dashboard", label: "nav.hub.dashboard", icon: "grid", tabs: ["analytics", "sales", "target", "control", "compare"] },
   calls: { id: "calls", label: "nav.hub.calls", icon: "wave", tabs: ["audio", "status", "deep", "criteria", "categories"] },
 };
 
@@ -47,6 +47,8 @@ export const MAIN_ROUTES: NavRoute[] = [
   { id: "analytics", href: "/dashboard", icon: "grid", label: "nav.analytics", hub: "dashboard" },
   // Sotuv dashboardi (amoCRM) — 2026-10-20.
   { id: "sales", href: "/dashboard/sales", icon: "trendUp", label: "nav.sales", sectionKey: "reports", hub: "dashboard" },
+  // Target tahlil (Meta Ads + amoCRM) — 2026-10-27.
+  { id: "target", href: "/dashboard/target", icon: "target", label: "nav.target", sectionKey: "reports", hub: "dashboard" },
   { id: "control", href: "/dashboard/management", icon: "gauge", label: "nav.control", sectionKey: "reports", hub: "dashboard" },
   { id: "compare", href: "/dashboard/comparison", icon: "compare", label: "nav.compare", sectionKey: "reports", hub: "dashboard" },
   { id: "audio", href: "/dashboard/recordings", icon: "wave", label: "nav.audio", sectionKey: "call_analytics", hub: "calls" },
